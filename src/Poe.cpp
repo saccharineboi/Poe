@@ -110,6 +110,14 @@ namespace Poe
     {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+        else if (key == GLFW_KEY_M && action == GLFW_PRESS) {
+            static bool isWireframe;
+            isWireframe = !isWireframe;
+            if (isWireframe)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            else
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
     }
 
     ////////////////////////////////////////
@@ -220,8 +228,6 @@ namespace Poe
 
         basic.Use();
         staticMesh.Bind();
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
