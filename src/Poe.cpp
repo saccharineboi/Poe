@@ -15,8 +15,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Poe.hpp"
+#include "IO.hpp"
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 namespace Poe
 {
@@ -97,5 +103,412 @@ namespace Poe
                 break;
         }
         std::fprintf(stderr, "\n");
+    }
+
+    ////////////////////////////////////////
+    static void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
+    {
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+
+    ////////////////////////////////////////
+    static void InitGLFW()
+    {
+        if (!glfwInit()) {
+            std::fprintf(stderr, "ERROR: couldn't initialize GLFW\n");
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
+    ////////////////////////////////////////
+    static GLFWwindow* CreateWindow()
+    {
+        GLFWwindow* window = glfwCreateWindow(1600, 900, "Poe", nullptr, nullptr);
+        if (!window) {
+            std::fprintf(stderr, "ERROR: couldn't create window\n");
+            glfwTerminate();
+            std::exit(EXIT_FAILURE);
+        }
+        return window;
+    }
+
+    ////////////////////////////////////////
+    static void SetHints()
+    {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+#ifdef _DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
+    }
+
+    ////////////////////////////////////////
+    static void InitOpenGL(GLFWwindow* window)
+    {
+        glfwMakeContextCurrent(window);
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+            std::fprintf(stderr, "ERROR: couldn't initialize glad\n");
+            glfwTerminate();
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
+    ////////////////////////////////////////
+    static void DebugOutput()
+    {
+        std::printf("[DEBUG] GL version: %s\n", glGetString(GL_VERSION));
+        std::printf("[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+        std::printf("[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
+        std::printf("[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
+    }
+
+    ////////////////////////////////////////
+    static void EnableDebugContext()
+    {
+#ifdef _DEBUG
+        int dflags;
+        glGetIntegerv(GL_CONTEXT_FLAGS, &dflags);
+        if (dflags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(GraphicsDebugOutput, nullptr);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+            std::printf("[DEBUG] GL debug output is ON\n");
+        }
+        else
+            std::printf("[DEBUG] GL debug output is OFF\n");
+#endif
+    }
+
+    ////////////////////////////////////////
+    static void SetCallbacks(GLFWwindow* window)
+    {
+        glfwSetKeyCallback(window, keyCallback);
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+
+    ////////////////////////////////////////
+    int Run()
+    {
+        InitGLFW();
+        SetHints();
+        GLFWwindow* window = CreateWindow();
+        InitOpenGL(window);
+        DebugOutput();
+        EnableDebugContext();
+        SetCallbacks(window);
+
+        int fbWidth, fbHeight;
+        glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+        glViewport(0, 0, fbWidth, fbHeight);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+        auto staticMesh = CreateColoredCircle(0.5f, 50);
+        // auto staticMesh = CreateColoredTriangle();
+
+        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile("../shaders/basic.vert"));
+        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile("../shaders/basic.frag"));
+        Program basic{ &vshader, &fshader };
+
+        basic.Use();
+        staticMesh.Bind();
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            staticMesh.Draw();
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+
+        glfwTerminate();
+        return EXIT_SUCCESS;
+    }
+
+    ////////////////////////////////////////
+    VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
+    {
+        mMode = mode;
+        mNumElements = vertices.size();
+
+        glGenBuffers(1, &mId);
+        glBindBuffer(GL_ARRAY_BUFFER, mId);
+            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    ////////////////////////////////////////
+    VertexBuffer::VertexBuffer(VertexBuffer&& other)
+    {
+        mId = other.mId;
+        mNumElements = other.mNumElements;
+        mMode = other.mMode;
+
+        other.mId = 0;
+        other.mNumElements = 0;
+    }
+
+    ////////////////////////////////////////
+    VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other)
+    {
+        glDeleteBuffers(1, &mId);
+
+        mId = other.mId;
+        mNumElements = other.mNumElements;
+        mMode = other.mMode;
+
+        other.mId = 0;
+        other.mNumElements = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
+    {
+        mMode = mode;
+        mNumElements = indices.size();
+
+        glGenBuffers(1, &mId);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    ////////////////////////////////////////
+    IndexBuffer::IndexBuffer(IndexBuffer&& other)
+    {
+        mId = other.mId;
+        mNumElements = other.mNumElements;
+        mMode = other.mMode;
+
+        other.mId = 0;
+        other.mNumElements = 0;
+    }
+
+    ////////////////////////////////////////
+    IndexBuffer& IndexBuffer::operator=(IndexBuffer&& other)
+    {
+        glDeleteBuffers(1, &mId);
+
+        mId = other.mId;
+        mNumElements = other.mNumElements;
+        mMode = other.mMode;
+
+        other.mId = 0;
+        other.mNumElements = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
+        : mNumIndices{static_cast<int>(ebo.GetNumElements())}
+    {
+        glGenVertexArrays(1, &mId);
+        glBindVertexArray(mId);
+            vbo.Bind();
+            for (const VertexInfo& info : infos) {
+                glEnableVertexAttribArray(info.loc);
+                glVertexAttribPointer(info.loc, info.numElements, info.dataType, GL_FALSE, info.stride, info.offset);
+            }
+            vbo.UnBind();
+            ebo.Bind();
+        glBindVertexArray(0);
+        ebo.UnBind();
+    }
+
+    ////////////////////////////////////////
+    VAO::VAO(VAO&& other)
+    {
+        mId = other.mId;
+        mNumIndices = other.mNumIndices;
+
+        other.mId = 0;
+        other.mNumIndices = 0;
+    }
+
+    ////////////////////////////////////////
+    VAO& VAO::operator=(VAO&& other)
+    {
+        glDeleteVertexArrays(1, &mId);
+
+        mId = other.mId;
+        mNumIndices = other.mNumIndices;
+
+        other.mId = 0;
+        other.mNumIndices = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    Shader::Shader(int type, const std::string& source)
+        : mType{type}
+    {
+        mId = glCreateShader(type);
+        const char* shaderSrc = source.c_str();
+        glShaderSource(mId, 1, &shaderSrc, nullptr);
+        glCompileShader(mId);
+
+        int success = 0;
+        glGetShaderiv(mId, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            char infolog[512];
+            glGetShaderInfoLog(mId, 512, nullptr, infolog);
+            std::fprintf(stderr, "ERROR: %s\n", infolog);
+        }
+    }
+
+    ////////////////////////////////////////
+    Shader::Shader(Shader&& other)
+    {
+        mId = other.mId;
+        mType = other.mType;
+
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Shader& Shader::operator=(Shader&& other)
+    {
+        glDeleteShader(mId);
+
+        mId = other.mId;
+        mType = other.mType;
+
+        other.mId = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    Program::Program(const std::initializer_list<const Shader*>& shaders)
+    {
+        mId = glCreateProgram();
+        for (const Shader* shader : shaders)
+            glAttachShader(mId, shader->GetId());
+        glLinkProgram(mId);
+
+        int success = 0;
+        glGetProgramiv(mId, GL_LINK_STATUS, &success);
+        if (!success) {
+            char infolog[512];
+            glGetProgramInfoLog(mId, 512, nullptr, infolog);
+            std::fprintf(stderr, "ERROR: %s\n", infolog);
+        }
+    }
+
+    ////////////////////////////////////////
+    Program::Program(Program&& other)
+    {
+        mId = other.mId;
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Program& Program::operator=(Program&& other)
+    {
+        glDeleteProgram(mId);
+        mId = other.mId;
+        other.mId = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    StaticMesh::StaticMesh(const std::vector<float>& vertices,
+                           const std::vector<unsigned>& indices,
+                           const std::vector<VertexInfo>& infos)
+        : mVbo(vertices, GL_STATIC_DRAW),
+          mEbo(indices, GL_STATIC_DRAW),
+          mVao(mVbo, mEbo, infos)
+    {}
+
+    ////////////////////////////////////////
+    StaticMesh CreateColoredTriangle()
+    {
+        std::vector<float> vertices {
+            -0.5f, -0.5f,   1.0f, 0.0f, 0.0f,
+             0.5f, -0.5f,   0.0f, 1.0f, 0.0f,
+             0.0f,  0.5f,   0.0f, 0.0f, 1.0f
+        };
+        std::vector<unsigned> indices { 0, 1, 2 };
+
+        std::vector<VertexInfo> infos{
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateColoredQuad()
+    {
+        std::vector<float> vertices {
+            -0.5f, -0.5f,   1.0f, 0.0f, 0.0f,
+             0.5f, -0.5f,   0.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f,   0.0f, 0.0f, 1.0f,
+             0.5f,  0.5f,   1.0f, 1.0f, 0.0f
+        };
+        std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
+
+        std::vector<VertexInfo> infos{
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateColoredCircle(float radius, int numSegments)
+    {
+        std::vector<float> vertices;
+        vertices.reserve((numSegments + 1) * 5);
+
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+
+        vertices.push_back(1.0f);
+        vertices.push_back(1.0f);
+        vertices.push_back(1.0f);
+
+        const float angleDelta = PI2 / static_cast<float>(numSegments);
+        for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
+            vertices.push_back(std::cos(angle) * radius);
+            vertices.push_back(std::sin(angle) * radius);
+
+            vertices.push_back(1.0f);
+            vertices.push_back((std::cos(angle) + 1.0f) * 0.5f);
+            vertices.push_back((std::sin(angle) + 1.0f) * 0.5f);
+        }
+
+        std::vector<unsigned> indices;
+        indices.reserve((numSegments + 1) * 3);
+
+        for (int i = 0; i < numSegments; ++i) {
+            indices.push_back(0);
+            indices.push_back(i + 1);
+            indices.push_back(i + 2);
+        }
+
+        indices.push_back(0);
+        indices.push_back(numSegments);
+        indices.push_back(1);
+
+        std::vector<VertexInfo> infos{
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
     }
 }
