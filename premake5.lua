@@ -32,6 +32,7 @@ project "poe"
     filter { "system:linux", "action:gmake2" }
         buildoptions { "-std=c++20",
                        "-O1",
+                       "-march=native",
                        "-Wall",
                        "-Wextra",
                        "-Wpedantic",
