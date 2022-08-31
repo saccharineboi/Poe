@@ -410,6 +410,9 @@ namespace Poe
             glGetProgramInfoLog(mId, 512, nullptr, infolog);
             std::fprintf(stderr, "ERROR: %s\n", infolog);
         }
+
+        for (const Shader* shader : shaders)
+            glDetachShader(mId, shader->GetId());
     }
 
     ////////////////////////////////////////
