@@ -583,7 +583,7 @@ namespace Poe
         std::vector<unsigned> indices { 0, 1, 2 };
 
         std::vector<VertexInfo> infos{
-            { 0, 2, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
         };
 
         return StaticMesh(vertices, indices, infos);
