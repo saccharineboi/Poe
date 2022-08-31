@@ -17,6 +17,25 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+#define GLM_FORCE_INLINE
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+#include <glm/mat3x3.hpp>
+#include <glm/mat4x4.hpp>
+
+#include <glm/common.hpp>
+#include <glm/exponential.hpp>
+#include <glm/matrix.hpp>
+#include <glm/trigonometric.hpp>
+
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <vector>
 #include <initializer_list>
@@ -28,6 +47,7 @@ namespace Poe
     ////////////////////////////////////////
     inline constexpr float PI = 3.1415926f;
     inline constexpr float PI2 = 6.2831853f;
+    inline constexpr float PIH = 1.5707963f;
     inline constexpr float R2D = 57.295779f;
     inline constexpr float D2R = 0.017453293f;
 
@@ -145,6 +165,21 @@ namespace Poe
     struct Program : public ObjectGL
     {
     private:
+        std::unordered_map<std::string, int> mUniforms;
+
+        int FindUniform(const std::string& name)
+        {
+            auto iter = mUniforms.find(name);
+            if (iter == mUniforms.end()) {
+                int loc = glGetUniformLocation(mId, name.c_str());
+                if (-1 == loc)
+                    std::fprintf(stderr, "[DEBUG] ERROR: %s not found\n", name.c_str());
+                else
+                    mUniforms.insert(std::pair(name, loc));
+                return loc;
+            }
+            return iter->second;
+        }
 
     public:
         Program(const std::initializer_list<const Shader*>& shaders);
@@ -156,7 +191,38 @@ namespace Poe
 
         void Use() const { glUseProgram(mId); }
         void Halt() const { glUseProgram(0); }
+
+        void Uniform(const std::string& name, float x)
+        { glUniform1f(FindUniform(name), x); }
+
+        void Uniform(const std::string& name, float x, float y)
+        { glUniform2f(FindUniform(name), x, y); }
+
+        void Uniform(const std::string& name, float x, float y, float z)
+        { glUniform3f(FindUniform(name), x, y, z); }
+
+        void Uniform(const std::string& name, float x, float y, float z, float w)
+        { glUniform4f(FindUniform(name), x, y, z, w); }
+
+        void Uniform(const std::string& name, const glm::vec2& v)
+        { glUniform2fv(FindUniform(name), 1, glm::value_ptr(v)); }
+
+        void Uniform(const std::string& name, const glm::vec3& v)
+        { glUniform3fv(FindUniform(name), 1, glm::value_ptr(v)); }
+
+        void Uniform(const std::string& name, const glm::vec4& v)
+        { glUniform4fv(FindUniform(name), 1, glm::value_ptr(v)); }
+
+        void Uniform(const std::string& name, const glm::mat3& m)
+        { glUniformMatrix3fv(FindUniform(name), 1, GL_FALSE, glm::value_ptr(m)); }
+
+        void Uniform(const std::string& name, const glm::mat4& m)
+        { glUniformMatrix4fv(FindUniform(name), 1, GL_FALSE, glm::value_ptr(m)); }
     };
+
+    ////////////////////////////////////////
+    Program CreateBasicProgram(const std::string& rootPath);
+    Program CreateEmissiveColorProgram(const std::string& rootPath);
 
     ////////////////////////////////////////
     struct StaticMesh
@@ -180,10 +246,64 @@ namespace Poe
 
     ////////////////////////////////////////
     StaticMesh CreateColoredTriangle();
-
-    ////////////////////////////////////////
     StaticMesh CreateColoredQuad();
+    StaticMesh CreateColoredCircle(float radius, int numSegments);
 
     ////////////////////////////////////////
-    StaticMesh CreateColoredCircle(float radius, int numSegments);
+    StaticMesh CreateTriangle();
+    StaticMesh CreateQuad();
+    StaticMesh CreateCircle(float radius, int numSegments);
+
+    ////////////////////////////////////////
+    struct FirstPersonCameraState
+    {
+        bool movingForward = false;
+        bool movingBackward = false;
+        bool movingLeft = false;
+        bool movingRight = false;
+        bool movingUp = false;
+        bool movingDown;
+    };
+
+    ////////////////////////////////////////
+    struct FirstPersonCameraInputConfig
+    {
+        int moveForwardKey = GLFW_KEY_W;
+        int moveBackwardKey = GLFW_KEY_S;
+        int moveLeftKey = GLFW_KEY_A;
+        int moveRightKey = GLFW_KEY_D;
+        int moveUpKey = GLFW_KEY_Q;
+        int moveDownKey = GLFW_KEY_E;
+    };
+
+    ////////////////////////////////////////
+    struct FirstPersonCamera
+    {
+        FirstPersonCameraState mState;
+        FirstPersonCameraInputConfig mInputConfig;
+
+        bool mIsMouseCaptured = false;
+
+        float mFovy = PIH;
+        float mAspectRatio = 16.0f / 9.0f;
+        float mNear = 0.5f;
+        float mFar = 100.0f;
+
+        float mSpeed = 10.0f;
+        float mSensitivity = 0.001f;
+        float mSmoothness = 10.0f;
+
+        glm::mat4 mProjection = glm::mat4(1.0f);
+        glm::mat4 mView = glm::mat4(1.0f);
+
+        glm::vec3 mPosition = glm::vec3(0.0f, 1.0f, 10.0f);
+        glm::vec3 mDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 mUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        glm::vec3 mTargetPosition = mPosition;
+
+        void UpdateInputConfig(int key, int action);
+        void UpdateDirection(float mouseX, float mouseY);
+        void Update(float dt);
+    };
 }

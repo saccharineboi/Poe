@@ -16,13 +16,10 @@
 
 #include "Poe.hpp"
 #include "IO.hpp"
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "Utility.hpp"
 
 #include <cstdio>
 #include <cstdlib>
-#include <cmath>
 
 namespace Poe
 {
@@ -106,6 +103,9 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    static FirstPersonCamera mainCamera;
+
+    ////////////////////////////////////////
     static void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
     {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -118,6 +118,31 @@ namespace Poe
             else
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
+
+        mainCamera.UpdateInputConfig(key, action);
+    }
+
+    ////////////////////////////////////////
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+    {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            static bool isCaptured;
+            isCaptured = !isCaptured;
+            if (isCaptured) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                mainCamera.mIsMouseCaptured = true;
+            }
+            else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                mainCamera.mIsMouseCaptured = false;
+            }
+        }
+    }
+
+    ////////////////////////////////////////
+    static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
+    {
+        mainCamera.UpdateDirection(static_cast<float>(xpos), static_cast<float>(ypos));
     }
 
     ////////////////////////////////////////
@@ -196,6 +221,8 @@ namespace Poe
     static void SetCallbacks(GLFWwindow* window)
     {
         glfwSetKeyCallback(window, keyCallback);
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
+        glfwSetCursorPosCallback(window, cursorPositionCallback);
         if (glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
@@ -219,19 +246,27 @@ namespace Poe
         glEnable(GL_CULL_FACE);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-        auto staticMesh = CreateColoredCircle(0.5f, 50);
+        auto staticMesh = CreateCircle(1.0f, 50);
         // auto staticMesh = CreateColoredTriangle();
 
-        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile("../shaders/basic.vert"));
-        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile("../shaders/basic.frag"));
-        Program basic{ &vshader, &fshader };
+        auto program = CreateEmissiveColorProgram("../shaders/");
 
-        basic.Use();
+        program.Use();
         staticMesh.Bind();
+
+        float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+        auto projection = glm::perspective(glm::radians(PIH), aspect, 0.5f, 100.0f);
+        auto modelView = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -50.0f));
 
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            float dt = Utility::ComputeDeltaTime();
+            mainCamera.Update(dt);
+
+            program.Uniform("uProjection", mainCamera.mProjection);
+            program.Uniform("uModelView", mainCamera.mView);
+            program.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
             staticMesh.Draw();
 
             glfwSwapBuffers(window);
@@ -432,6 +467,22 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Program CreateBasicProgram(const std::string& rootPath)
+    {
+        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile(rootPath + "basic.vert"));
+        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile(rootPath + "basic.frag"));
+        return Program{ &vshader, &fshader };
+    }
+
+    ////////////////////////////////////////
+    Program CreateEmissiveColorProgram(const std::string& rootPath)
+    {
+        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile(rootPath + "emissive_color.vert"));
+        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile(rootPath + "emissive_color.frag"));
+        return Program{ &vshader, &fshader };
+    }
+
+    ////////////////////////////////////////
     StaticMesh::StaticMesh(const std::vector<float>& vertices,
                            const std::vector<unsigned>& indices,
                            const std::vector<VertexInfo>& infos)
@@ -492,12 +543,12 @@ namespace Poe
 
         const float angleDelta = PI2 / static_cast<float>(numSegments);
         for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
-            vertices.push_back(std::cos(angle) * radius);
-            vertices.push_back(std::sin(angle) * radius);
+            vertices.push_back(glm::cos(angle) * radius);
+            vertices.push_back(glm::sin(angle) * radius);
 
             vertices.push_back(1.0f);
-            vertices.push_back((std::cos(angle) + 1.0f) * 0.5f);
-            vertices.push_back((std::sin(angle) + 1.0f) * 0.5f);
+            vertices.push_back((glm::cos(angle) + 1.0f) * 0.5f);
+            vertices.push_back((glm::sin(angle) + 1.0f) * 0.5f);
         }
 
         std::vector<unsigned> indices;
@@ -519,5 +570,187 @@ namespace Poe
         };
 
         return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateTriangle()
+    {
+        std::vector<float> vertices {
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+             0.0f,  0.5f, 0.0f
+        };
+        std::vector<unsigned> indices { 0, 1, 2 };
+
+        std::vector<VertexInfo> infos{
+            { 0, 2, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateQuad()
+    {
+        std::vector<float> vertices {
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+            -0.5f,  0.5f, 0.0f,
+             0.5f,  0.5f, 0.0f
+        };
+        std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateCircle(float radius, int numSegments)
+    {
+        std::vector<float> vertices;
+        vertices.reserve((numSegments + 1) * 3);
+
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+
+        const float angleDelta = PI2 / static_cast<float>(numSegments);
+        for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
+            vertices.push_back(glm::cos(angle) * radius);
+            vertices.push_back(glm::sin(angle) * radius);
+            vertices.push_back(0.0f);
+        }
+
+        std::vector<unsigned> indices;
+        indices.reserve((numSegments + 1) * 3);
+
+        for (int i = 0; i < numSegments; ++i) {
+            indices.push_back(0);
+            indices.push_back(i + 1);
+            indices.push_back(i + 2);
+        }
+
+        indices.push_back(0);
+        indices.push_back(numSegments);
+        indices.push_back(1);
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    void FirstPersonCamera::UpdateInputConfig(int key, int action)
+    {
+        if (key == mInputConfig.moveForwardKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingForward = true;
+                mState.movingBackward = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingForward = false;
+        }
+        else if (key == mInputConfig.moveBackwardKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingBackward = true;
+                mState.movingForward = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingBackward = false;
+        }
+
+        if (key == mInputConfig.moveLeftKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingLeft = true;
+                mState.movingRight = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingLeft = false;
+        }
+        else if (key == mInputConfig.moveRightKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingRight = true;
+                mState.movingLeft = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingRight = false;
+        }
+
+        if (key == mInputConfig.moveUpKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingUp = true;
+                mState.movingDown = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingUp = false;
+        }
+        else if (key == mInputConfig.moveDownKey) {
+            if (action == GLFW_PRESS) {
+                mState.movingDown = true;
+                mState.movingUp = false;
+            }
+            else if (action == GLFW_RELEASE)
+                mState.movingDown = false;
+        }
+    }
+
+    ////////////////////////////////////////
+    void FirstPersonCamera::Update(float dt)
+    {
+        if (mState.movingForward)
+            mTargetPosition += mDirection * mSpeed * dt;
+        else if (mState.movingBackward)
+            mTargetPosition -= mDirection * mSpeed * dt;
+
+        if (mState.movingLeft)
+            mTargetPosition -= glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
+        else if (mState.movingRight)
+            mTargetPosition += glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
+
+        if (mState.movingUp)
+            mTargetPosition += mUp * mSpeed * dt;
+        else if (mState.movingDown)
+            mTargetPosition -= mUp * mSpeed * dt;
+
+        mPosition = Utility::Lerp(mPosition, mTargetPosition, mSmoothness * dt);
+
+        mView = glm::lookAt(mPosition, mPosition + mDirection, mUp);
+        mProjection = glm::perspective(mFovy, mAspectRatio, mNear, mFar);
+    }
+
+    ////////////////////////////////////////
+    void FirstPersonCamera::UpdateDirection(float mouseX, float mouseY)
+    {
+#define PITCH_LIMIT (89.0f * D2R)
+
+        static float lastX = mouseX;
+        static float lastY = mouseY;
+
+        float dx = mSensitivity * (mouseX - lastX);
+        float dy = mSensitivity * (mouseY - lastY);
+
+        lastX = mouseX;
+        lastY = mouseY;
+
+        static float pitch;
+        static float yaw = -PIH;
+
+        if (mIsMouseCaptured) {
+            yaw += dx;
+            pitch -= dy;
+            if (pitch < -PITCH_LIMIT)
+                pitch = -PITCH_LIMIT;
+            else if (pitch > PITCH_LIMIT)
+                pitch = PITCH_LIMIT;
+
+            mDirection.x = glm::cos(yaw) * glm::cos(pitch);
+            mDirection.y = glm::sin(pitch);
+            mDirection.z = glm::sin(yaw) * glm::cos(pitch);
+        }
     }
 }
