@@ -254,10 +254,6 @@ namespace Poe
         program.Use();
         staticMesh.Bind();
 
-        float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
-        auto projection = glm::perspective(glm::radians(PIH), aspect, 0.5f, 100.0f);
-        auto modelView = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -50.0f));
-
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
