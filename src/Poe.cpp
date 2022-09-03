@@ -251,7 +251,6 @@ namespace Poe
 
         ShaderLoader shaderLoader;
         auto program = CreateEmissiveColorProgram("../shaders/", shaderLoader);
-        auto anotherProgram = CreateEmissiveColorProgram("../shaders/", shaderLoader);
 
         program.Use();
         staticMesh.Bind();
@@ -308,14 +307,16 @@ namespace Poe
     ////////////////////////////////////////
     VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other)
     {
-        glDeleteBuffers(1, &mId);
+        if (this != &other) {
+            glDeleteBuffers(1, &mId);
 
-        mId = other.mId;
-        mNumElements = other.mNumElements;
-        mMode = other.mMode;
+            mId = other.mId;
+            mNumElements = other.mNumElements;
+            mMode = other.mMode;
 
-        other.mId = 0;
-        other.mNumElements = 0;
+            other.mId = 0;
+            other.mNumElements = 0;
+        }
         return *this;
     }
 
@@ -345,14 +346,16 @@ namespace Poe
     ////////////////////////////////////////
     IndexBuffer& IndexBuffer::operator=(IndexBuffer&& other)
     {
-        glDeleteBuffers(1, &mId);
+        if (this != &other) {
+            glDeleteBuffers(1, &mId);
 
-        mId = other.mId;
-        mNumElements = other.mNumElements;
-        mMode = other.mMode;
+            mId = other.mId;
+            mNumElements = other.mNumElements;
+            mMode = other.mMode;
 
-        other.mId = 0;
-        other.mNumElements = 0;
+            other.mId = 0;
+            other.mNumElements = 0;
+        }
         return *this;
     }
 
@@ -386,13 +389,15 @@ namespace Poe
     ////////////////////////////////////////
     VAO& VAO::operator=(VAO&& other)
     {
-        glDeleteVertexArrays(1, &mId);
+        if (this != &other) {
+            glDeleteVertexArrays(1, &mId);
 
-        mId = other.mId;
-        mNumIndices = other.mNumIndices;
+            mId = other.mId;
+            mNumIndices = other.mNumIndices;
 
-        other.mId = 0;
-        other.mNumIndices = 0;
+            other.mId = 0;
+            other.mNumIndices = 0;
+        }
         return *this;
     }
 
@@ -426,12 +431,14 @@ namespace Poe
     ////////////////////////////////////////
     Shader& Shader::operator=(Shader&& other)
     {
-        glDeleteShader(mId);
+        if (this != &other) {
+            glDeleteShader(mId);
 
-        mId = other.mId;
-        mType = other.mType;
+            mId = other.mId;
+            mType = other.mType;
 
-        other.mId = 0;
+            other.mId = 0;
+        }
         return *this;
     }
 
@@ -465,9 +472,11 @@ namespace Poe
     ////////////////////////////////////////
     Program& Program::operator=(Program&& other)
     {
-        glDeleteProgram(mId);
-        mId = other.mId;
-        other.mId = 0;
+        if (this != &other) {
+            glDeleteProgram(mId);
+            mId = other.mId;
+            other.mId = 0;
+        }
         return *this;
     }
 
