@@ -249,7 +249,9 @@ namespace Poe
         auto staticMesh = CreateCube();
         // auto staticMesh = CreateColoredTriangle();
 
-        auto program = CreateEmissiveColorProgram("../shaders/");
+        ShaderLoader shaderLoader;
+        auto program = CreateEmissiveColorProgram("../shaders/", shaderLoader);
+        auto anotherProgram = CreateEmissiveColorProgram("../shaders/", shaderLoader);
 
         program.Use();
         staticMesh.Bind();
@@ -470,18 +472,18 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Program CreateBasicProgram(const std::string& rootPath)
+    Program CreateBasicProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile(rootPath + "basic.vert"));
-        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile(rootPath + "basic.frag"));
+        Shader vshader(GL_VERTEX_SHADER, loader.Load(rootPath + "basic.vert"));
+        Shader fshader(GL_FRAGMENT_SHADER, loader.Load(rootPath + "basic.frag"));
         return Program{ &vshader, &fshader };
     }
 
     ////////////////////////////////////////
-    Program CreateEmissiveColorProgram(const std::string& rootPath)
+    Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader vshader(GL_VERTEX_SHADER, IO::ReadTextFile(rootPath + "emissive_color.vert"));
-        Shader fshader(GL_FRAGMENT_SHADER, IO::ReadTextFile(rootPath + "emissive_color.frag"));
+        Shader vshader(GL_VERTEX_SHADER, loader.Load(rootPath + "emissive_color.vert"));
+        Shader fshader(GL_FRAGMENT_SHADER, loader.Load(rootPath + "emissive_color.frag"));
         return Program{ &vshader, &fshader };
     }
 
@@ -818,5 +820,21 @@ namespace Poe
             mDirection.y = glm::sin(pitch);
             mDirection.z = glm::sin(yaw) * glm::cos(pitch);
         }
+    }
+
+    ////////////////////////////////////////
+    std::string ShaderLoader::Load(const std::string& shaderUrl)
+    {
+        auto iter = mShaders.find(shaderUrl);
+        if (iter == mShaders.end()) {
+            std::string contents = IO::ReadTextFile(shaderUrl);
+            if (contents.length() > 0) {
+                mShaders.insert(std::pair(shaderUrl, contents));
+                std::printf("[DEBUG] (NEW) (%ld bytes) shader source from %s\n", contents.length(), shaderUrl.c_str());
+            }
+            return contents;
+        }
+        std::printf("[DEBUG] (CACHED) (%ld bytes) shader source from %s\n", iter->second.length(), shaderUrl.c_str());
+        return iter->second;
     }
 }

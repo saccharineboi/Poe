@@ -221,8 +221,19 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    Program CreateBasicProgram(const std::string& rootPath);
-    Program CreateEmissiveColorProgram(const std::string& rootPath);
+    struct ShaderLoader
+    {
+    private:
+        // key: path, data: shader content
+        std::unordered_map<std::string, std::string> mShaders;
+
+    public:
+        std::string Load(const std::string& shaderUrl);
+    };
+
+    ////////////////////////////////////////
+    Program CreateBasicProgram(const std::string& rootPath, ShaderLoader&);
+    Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
     struct StaticMesh
@@ -263,7 +274,7 @@ namespace Poe
         bool movingLeft = false;
         bool movingRight = false;
         bool movingUp = false;
-        bool movingDown;
+        bool movingDown = false;
     };
 
     ////////////////////////////////////////
