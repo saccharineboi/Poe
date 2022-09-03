@@ -265,6 +265,7 @@ namespace Poe
     StaticMesh CreateQuad();
     StaticMesh CreateCircle(float radius, int numSegments);
     StaticMesh CreateCube();
+    StaticMesh CreateGrid(int numX, int numZ);
 
     ////////////////////////////////////////
     struct FirstPersonCameraState
@@ -298,7 +299,7 @@ namespace Poe
 
         float mFovy = PIH;
         float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 0.5f;
+        float mNear = 1.0f;
         float mFar = 100.0f;
 
         float mSpeed = 10.0f;

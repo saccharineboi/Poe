@@ -244,18 +244,20 @@ namespace Poe
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+        constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
+        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
         auto staticMesh = CreateCube();
-        // auto staticMesh = CreateColoredTriangle();
+        auto grid = CreateGrid(100, 100);
 
         ShaderLoader shaderLoader;
         auto program = CreateEmissiveColorProgram("../shaders/", shaderLoader);
 
         program.Use();
-        staticMesh.Bind();
 
-        mainCamera.mPosition = glm::vec3(0.0f, 1.0f, 3.0f);
+        mainCamera.mSensitivity = 0.0025f;
+        mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
 
         float rads = 0.0f;
@@ -266,12 +268,24 @@ namespace Poe
             mainCamera.Update(dt);
 
             rads += dt;
-            auto model = glm::rotate(glm::mat4(1.0f), rads, glm::vec3(1.0f, 0.0f, 1.0f));
+            auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 1.0f));
 
-            program.Uniform("uProjection", mainCamera.mProjection);
+            program.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
             program.Uniform("uModelView", mainCamera.mView * model);
             program.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
+            program.Uniform("uFogColor", clearColor);
+            program.Uniform("uFogDistance", 25.0f);
+            program.Uniform("uFogExp", 3.0f);
+
+            staticMesh.Bind();
             staticMesh.Draw();
+
+            program.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView);
+            program.Uniform("uModelView", mainCamera.mView);
+            program.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+            grid.Bind();
+            grid.Draw(GL_LINES);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
@@ -713,6 +727,50 @@ namespace Poe
             // bottom
             20, 23, 22, 20, 22, 21
         };
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateGrid(int numX, int numZ)
+    {
+        std::vector<float> vertices;
+        vertices.reserve(numX * 2 * 3 + numZ * 2 * 3);
+
+        const float startPosX = -0.5f * static_cast<float>(numX - 1);
+        constexpr float offsetX = 1.0f;
+
+        const float startPosZ = -0.5f * static_cast<float>(numZ - 1);
+        constexpr float offsetZ = 1.0f;
+
+        for (int i = 0; i < numX; ++i) {
+            vertices.push_back(startPosX + offsetX * static_cast<float>(i));
+            vertices.push_back(0.0f);
+            vertices.push_back(startPosZ);
+
+            vertices.push_back(startPosX + offsetX * static_cast<float>(i));
+            vertices.push_back(0.0f);
+            vertices.push_back(startPosZ + offsetZ * static_cast<float>(numZ - 1));
+        }
+
+        for (int i = 0; i < numZ; ++i) {
+            vertices.push_back(startPosX);
+            vertices.push_back(0.0f);
+            vertices.push_back(startPosZ + offsetZ * static_cast<float>(i));
+
+            vertices.push_back(startPosX + offsetX * static_cast<float>(numX - 1));
+            vertices.push_back(0.0f);
+            vertices.push_back(startPosZ + offsetZ * static_cast<float>(i));
+        }
+
+        std::vector<unsigned> indices;
+        indices.reserve(2 * (numX + numZ));
+        for (int i = 0; i < 2 * (numX + numZ); ++i)
+            indices.push_back(i);
 
         std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
