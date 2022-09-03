@@ -246,7 +246,7 @@ namespace Poe
         glEnable(GL_CULL_FACE);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-        auto staticMesh = CreateCircle(1.0f, 50);
+        auto staticMesh = CreateCube();
         // auto staticMesh = CreateColoredTriangle();
 
         auto program = CreateEmissiveColorProgram("../shaders/");
@@ -254,14 +254,21 @@ namespace Poe
         program.Use();
         staticMesh.Bind();
 
+        mainCamera.mPosition = glm::vec3(0.0f, 1.0f, 3.0f);
+        mainCamera.mTargetPosition = mainCamera.mPosition;
+
+        float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
 
+            rads += dt;
+            auto model = glm::rotate(glm::mat4(1.0f), rads, glm::vec3(1.0f, 0.0f, 1.0f));
+
             program.Uniform("uProjection", mainCamera.mProjection);
-            program.Uniform("uModelView", mainCamera.mView);
+            program.Uniform("uModelView", mainCamera.mView * model);
             program.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
             staticMesh.Draw();
 
@@ -632,6 +639,69 @@ namespace Poe
         indices.push_back(0);
         indices.push_back(numSegments);
         indices.push_back(1);
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateCube()
+    {
+        std::vector<float> vertices{
+            // front
+            -0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+
+            // right
+             0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f,  0.5f,
+
+             // back
+             -0.5f, -0.5f, -0.5f,
+              0.5f, -0.5f, -0.5f,
+              0.5f,  0.5f, -0.5f,
+             -0.5f,  0.5f, -0.5f,
+
+             // left
+             -0.5f, -0.5f, -0.5f,
+             -0.5f, -0.5f,  0.5f,
+             -0.5f,  0.5f,  0.5f,
+             -0.5f,  0.5f, -0.5f,
+
+             // top
+             -0.5f, 0.5f,  0.5f,
+              0.5f, 0.5f,  0.5f,
+              0.5f, 0.5f, -0.5f,
+             -0.5f, 0.5f, -0.5f,
+
+             // bottom
+             -0.5f, -0.5f,  0.5f,
+              0.5f, -0.5f,  0.5f,
+              0.5f, -0.5f, -0.5f,
+             -0.5f, -0.5f, -0.5f
+        };
+
+        std::vector<unsigned> indices{
+            // front
+            0, 1, 2, 2, 3, 0,
+            // right
+            4, 5, 6, 6, 7, 4,
+            // back
+            8, 11, 10, 8, 10, 9,
+            // left
+            12, 13, 14, 14, 15, 12,
+            // top
+            16, 17, 18, 18, 19, 16,
+            // bottom
+            20, 23, 22, 20, 22, 21
+        };
 
         std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
