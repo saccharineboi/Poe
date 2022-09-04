@@ -18,6 +18,9 @@
 #include "IO.hpp"
 #include "Utility.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -252,13 +255,39 @@ namespace Poe
         auto grid = CreateGrid(100, 100);
 
         ShaderLoader shaderLoader;
-        auto program = CreateEmissiveColorProgram("../shaders/", shaderLoader);
+        auto emissiveColorProgram = CreateEmissiveColorProgram("../shaders/", shaderLoader);
+        auto emissiveTextureProgram = CreateEmissiveTextureProgram("../shaders/", shaderLoader);
 
-        program.Use();
-
-        mainCamera.mSensitivity = 0.0025f;
         mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
+
+        int texWidth, texHeight, texNumChannels;
+        unsigned char* texData = stbi_load("../textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", &texWidth, &texHeight, &texNumChannels, 0);
+        if (!texData) {
+            std::fprintf(stderr, "[DEBUG] ERROR: couldn't load texture\n");
+        }
+        std::printf("[DEBUG] width: %d, height: %d, channels: %d\n", texWidth, texHeight, texNumChannels);
+
+        unsigned texId;
+        glGenTextures(1, &texId);
+        glBindTexture(GL_TEXTURE_2D, texId);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            if (GLAD_GL_EXT_texture_filter_anisotropic) {
+                float maxAnisotropy;
+                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+                std::printf("[DEBUG] max anisotropy: %.0f\n", maxAnisotropy);
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        // glBindTexture(GL_TEXTURE_2D, 0);
+
+        stbi_image_free(texData);
+
+        glActiveTexture(GL_TEXTURE0);
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -270,20 +299,25 @@ namespace Poe
             rads += dt;
             auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 1.0f));
+            model = glm::scale(model, glm::vec3(2.0f));
 
-            program.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
-            program.Uniform("uModelView", mainCamera.mView * model);
-            program.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
-            program.Uniform("uFogColor", clearColor);
-            program.Uniform("uFogDistance", 25.0f);
-            program.Uniform("uFogExp", 3.0f);
+            emissiveTextureProgram.Use();
+            emissiveTextureProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
+            emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
+            emissiveTextureProgram.Uniform("uFogColor", clearColor);
+            emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
+            emissiveTextureProgram.Uniform("uFogExp", 3.0f);
 
             staticMesh.Bind();
             staticMesh.Draw();
 
-            program.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView);
-            program.Uniform("uModelView", mainCamera.mView);
-            program.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+            emissiveColorProgram.Use();
+            emissiveColorProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView);
+            emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
+            emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+            emissiveColorProgram.Uniform("uFogColor", clearColor);
+            emissiveColorProgram.Uniform("uFogDistance", 25.0f);
+            emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);
 
@@ -291,6 +325,7 @@ namespace Poe
             glfwPollEvents();
         }
 
+        glDeleteTextures(1, &texId);
         glfwTerminate();
         return EXIT_SUCCESS;
     }
@@ -501,16 +536,29 @@ namespace Poe
     ////////////////////////////////////////
     Program CreateBasicProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader vshader(GL_VERTEX_SHADER, loader.Load(rootPath + "basic.vert"));
-        Shader fshader(GL_FRAGMENT_SHADER, loader.Load(rootPath + "basic.frag"));
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "basic.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "basic.frag");
         return Program{ &vshader, &fshader };
     }
 
     ////////////////////////////////////////
     Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader vshader(GL_VERTEX_SHADER, loader.Load(rootPath + "emissive_color.vert"));
-        Shader fshader(GL_FRAGMENT_SHADER, loader.Load(rootPath + "emissive_color.frag"));
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_color.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_color.frag");
+        return Program{ &vshader, &fshader };
+    }
+
+    ////////////////////////////////////////
+    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
+    {
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_texture.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_texture.frag");
+        Program program{ &vshader, &fshader };
+
+        program.Use();
+            program.Uniform("uEmissiveTexture", 0);
+        program.Halt();
         return Program{ &vshader, &fshader };
     }
 
@@ -681,40 +729,40 @@ namespace Poe
     {
         std::vector<float> vertices{
             // front
-            -0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f,  0.5f,
-             0.5f,  0.5f,  0.5f,
-            -0.5f,  0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,        0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,        1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,        1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,        0.0f, 1.0f,
 
             // right
-             0.5f, -0.5f,  0.5f,
-             0.5f, -0.5f, -0.5f,
-             0.5f,  0.5f, -0.5f,
-             0.5f,  0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,        0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,        1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,        1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,        0.0f, 1.0f,
 
              // back
-             -0.5f, -0.5f, -0.5f,
-              0.5f, -0.5f, -0.5f,
-              0.5f,  0.5f, -0.5f,
-             -0.5f,  0.5f, -0.5f,
+             -0.5f, -0.5f, -0.5f,       0.0f, 0.0f,
+              0.5f, -0.5f, -0.5f,       1.0f, 0.0f,
+              0.5f,  0.5f, -0.5f,       1.0f, 1.0f,
+             -0.5f,  0.5f, -0.5f,       0.0f, 1.0f,
 
              // left
-             -0.5f, -0.5f, -0.5f,
-             -0.5f, -0.5f,  0.5f,
-             -0.5f,  0.5f,  0.5f,
-             -0.5f,  0.5f, -0.5f,
+             -0.5f, -0.5f, -0.5f,       0.0f, 0.0f,
+             -0.5f, -0.5f,  0.5f,       1.0f, 0.0f,
+             -0.5f,  0.5f,  0.5f,       1.0f, 1.0f,
+             -0.5f,  0.5f, -0.5f,       0.0f, 1.0f,
 
              // top
-             -0.5f, 0.5f,  0.5f,
-              0.5f, 0.5f,  0.5f,
-              0.5f, 0.5f, -0.5f,
-             -0.5f, 0.5f, -0.5f,
+             -0.5f, 0.5f,  0.5f,        0.0f, 0.0f,
+              0.5f, 0.5f,  0.5f,        1.0f, 0.0f,
+              0.5f, 0.5f, -0.5f,        1.0f, 1.0f,
+             -0.5f, 0.5f, -0.5f,        0.0f, 1.0f,
 
              // bottom
-             -0.5f, -0.5f,  0.5f,
-              0.5f, -0.5f,  0.5f,
-              0.5f, -0.5f, -0.5f,
-             -0.5f, -0.5f, -0.5f
+             -0.5f, -0.5f,  0.5f,       0.0f, 0.0f,
+              0.5f, -0.5f,  0.5f,       1.0f, 0.0f,
+              0.5f, -0.5f, -0.5f,       1.0f, 1.0f,
+             -0.5f, -0.5f, -0.5f,       0.0f, 1.0f
         };
 
         std::vector<unsigned> indices{
@@ -733,7 +781,8 @@ namespace Poe
         };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -894,18 +943,15 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    std::string ShaderLoader::Load(const std::string& shaderUrl)
+    Shader& ShaderLoader::Load(int type, const std::string& shaderUrl)
     {
         auto iter = mShaders.find(shaderUrl);
         if (iter == mShaders.end()) {
             std::string contents = IO::ReadTextFile(shaderUrl);
-            if (contents.length() > 0) {
-                mShaders.insert(std::pair(shaderUrl, contents));
-                std::printf("[DEBUG] (NEW) (%ld bytes) shader source from %s\n", contents.length(), shaderUrl.c_str());
-            }
-            return contents;
+            Shader shader(type, contents);
+            auto s = mShaders.insert(std::pair(shaderUrl, std::move(shader)));
+            return s.first->second;
         }
-        std::printf("[DEBUG] (CACHED) (%ld bytes) shader source from %s\n", iter->second.length(), shaderUrl.c_str());
         return iter->second;
     }
 }

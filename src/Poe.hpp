@@ -193,6 +193,18 @@ namespace Poe
         void Use() const { glUseProgram(mId); }
         void Halt() const { glUseProgram(0); }
 
+        void Uniform(const std::string& name, int x)
+        { glUniform1i(FindUniform(name), x); }
+
+        void Uniform(const std::string& name, int x, int y)
+        { glUniform2i(FindUniform(name), x, y); }
+
+        void Uniform(const std::string& name, int x, int y, int z)
+        { glUniform3i(FindUniform(name), x, y, z); }
+
+        void Uniform(const std::string& name, int x, int y, int z, int w)
+        { glUniform4i(FindUniform(name), x, y, z, w); }
+
         void Uniform(const std::string& name, float x)
         { glUniform1f(FindUniform(name), x); }
 
@@ -226,15 +238,16 @@ namespace Poe
     {
     private:
         // key: path, data: shader content
-        std::unordered_map<std::string, std::string> mShaders;
+        std::unordered_map<std::string, Shader> mShaders;
 
     public:
-        std::string Load(const std::string& shaderUrl);
+        Shader& Load(int type, const std::string& shaderUrl);
     };
 
     ////////////////////////////////////////
     Program CreateBasicProgram(const std::string& rootPath, ShaderLoader&);
     Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
     struct StaticMesh
@@ -300,11 +313,11 @@ namespace Poe
 
         float mFovy = PIH;
         float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 1.0f;
+        float mNear = 0.3f;
         float mFar = 100.0f;
 
         float mSpeed = 10.0f;
-        float mSensitivity = 0.001f;
+        float mSensitivity = 0.0025f;
         float mSmoothness = 10.0f;
 
         glm::mat4 mProjection = glm::mat4(1.0f);
