@@ -65,11 +65,12 @@ namespace Poe
 
     public:
         ObjectGL() {}
-        ~ObjectGL() {}
+        virtual ~ObjectGL() {}
 
         unsigned GetId() const { return mId; }
 
-        ObjectGL(const ObjectGL&) = delete; ObjectGL& operator=(const ObjectGL&) = delete;
+        ObjectGL(const ObjectGL&) = delete;
+        ObjectGL& operator=(const ObjectGL&) = delete;
     };
 
     ////////////////////////////////////////
@@ -80,7 +81,7 @@ namespace Poe
         std::size_t mNumElements;
 
     public:
-        ~BufferGL() {}
+        virtual ~BufferGL() {}
 
         int GetMode() const { return mMode; }
         std::size_t GetNumElements() const { return mNumElements; }
