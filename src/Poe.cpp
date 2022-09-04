@@ -305,6 +305,8 @@ namespace Poe
         glBindBuffer(GL_ARRAY_BUFFER, mId);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        std::printf("[DEBUG] (VBO) allocated %ld bytes for buffer %u\n", vertices.size() * sizeof(float), mId);
     }
 
     ////////////////////////////////////////
@@ -344,6 +346,8 @@ namespace Poe
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        std::printf("[DEBUG] (EBO) allocated %ld bytes for buffer %u\n", indices.size() * sizeof(float), mId);
     }
 
     ////////////////////////////////////////
