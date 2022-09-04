@@ -1,0 +1,17 @@
+#version 330 core
+
+in vec3 vEyeSpace;
+in vec2 vTexCoord;
+
+uniform sampler2D uEmissiveTexture;
+
+uniform vec4 uFogColor;
+uniform float uFogDistance;
+uniform float uFogExp;
+
+out vec4 color;
+void main(void)
+{
+    vec4 emissiveColor = texture(uEmissiveTexture, vTexCoord);
+    color = mix(emissiveColor, uFogColor, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+}
