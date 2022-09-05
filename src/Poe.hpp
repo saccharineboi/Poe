@@ -250,6 +250,94 @@ namespace Poe
     Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
+    struct Texture2DParams
+    {
+        int textureFormat = GL_RGB;
+        int internalFormat = GL_RGB;
+        bool generateMipmaps = true;
+        float maxAnisotropy = 16.0f;
+        int wrapS = GL_REPEAT;
+        int wrapT = GL_REPEAT;
+        int minF = GL_LINEAR_MIPMAP_LINEAR;
+        int magF = GL_LINEAR;
+        int type = GL_UNSIGNED_BYTE;
+    };
+
+    ////////////////////////////////////////
+    struct Texture2D : public ObjectGL
+    {
+    private:
+        int mWidth;
+        int mHeight;
+        int mNumChannels;
+        std::string mUrl;
+
+        int mTextureFormat;
+        int mInternalFormat;
+        bool mGenerateMipmaps;
+        float mMaxAnisotropy;
+        int mWrapS;
+        int mWrapT;
+        int mMinF;
+        int mMagF;
+        int mType;
+
+        template <typename T>
+        void Create(T* data);
+
+    public:
+        Texture2D(const std::string& url, const Texture2DParams&);
+
+        template <typename T>
+        Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams&);
+
+        ~Texture2D() { glDeleteTextures(1, &mId); }
+
+        Texture2D(Texture2D&&);
+        Texture2D& operator=(Texture2D&&);
+
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetNumChannels() const { return mNumChannels; }
+        std::string GetUrl() const { return mUrl; }
+
+        int GetTextureFormat() const { return mTextureFormat; }
+        int GetInternalFormat() const { return mInternalFormat; }
+        bool HasMipmaps() const { return mGenerateMipmaps; }
+        float GetMaxAnisotropy() const { return mMaxAnisotropy; }
+        int GetWrapS() const { return mWrapS; }
+        int GetWrapT() const { return mWrapT; }
+        int GetMinF() const { return mMinF; }
+        int GetMagF() const { return mMagF; }
+        int GetType() const { return mType; }
+
+        void Bind(int loc = 0) const
+        {
+            glActiveTexture(GL_TEXTURE0 + loc);
+            glBindTexture(GL_TEXTURE_2D, mId);
+        }
+
+        void UnBind(int loc = 0) const
+        {
+            glActiveTexture(GL_TEXTURE0 + loc);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    };
+
+    ////////////////////////////////////////
+    Texture2D CreateCheckerboardTexture2D();
+
+    ////////////////////////////////////////
+    struct Texture2DLoader
+    {
+    private:
+        std::unordered_map<std::string, Texture2D> mTextures;
+
+    public:
+        Texture2D& Load(const std::string& url, const Texture2DParams&);
+    };
+
+    ////////////////////////////////////////
     struct StaticMesh
     {
     private:
@@ -313,7 +401,7 @@ namespace Poe
 
         float mFovy = PIH;
         float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 0.3f;
+        float mNear = 0.1f;
         float mFar = 100.0f;
 
         float mSpeed = 10.0f;

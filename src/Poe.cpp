@@ -261,33 +261,12 @@ namespace Poe
         mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
 
-        int texWidth, texHeight, texNumChannels;
-        unsigned char* texData = stbi_load("../textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", &texWidth, &texHeight, &texNumChannels, 0);
-        if (!texData) {
-            std::fprintf(stderr, "[DEBUG] ERROR: couldn't load texture\n");
-        }
-        std::printf("[DEBUG] width: %d, height: %d, channels: %d\n", texWidth, texHeight, texNumChannels);
+        // Texture2DLoader texture2DLoader;
+        // Texture2D& meshTexture = texture2DLoader.Load("../textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", Texture2DParams{});
 
-        unsigned texId;
-        glGenTextures(1, &texId);
-        glBindTexture(GL_TEXTURE_2D, texId);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            if (GLAD_GL_EXT_texture_filter_anisotropic) {
-                float maxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-                std::printf("[DEBUG] max anisotropy: %.0f\n", maxAnisotropy);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
-            }
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        // glBindTexture(GL_TEXTURE_2D, 0);
+        auto meshTexture = CreateCheckerboardTexture2D();
 
-        stbi_image_free(texData);
-
-        glActiveTexture(GL_TEXTURE0);
+        meshTexture.Bind();
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -297,7 +276,7 @@ namespace Poe
             mainCamera.Update(dt);
 
             rads += dt;
-            auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
             model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 1.0f));
             model = glm::scale(model, glm::vec3(2.0f));
 
@@ -307,6 +286,8 @@ namespace Poe
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
             emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
+            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(2.0f));
+            emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
 
             staticMesh.Bind();
             staticMesh.Draw();
@@ -325,7 +306,6 @@ namespace Poe
             glfwPollEvents();
         }
 
-        glDeleteTextures(1, &texId);
         glfwTerminate();
         return EXIT_SUCCESS;
     }
@@ -341,7 +321,7 @@ namespace Poe
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        std::printf("[DEBUG] (VBO) allocated %ld bytes for buffer %u\n", vertices.size() * sizeof(float), mId);
+        std::printf("[DEBUG] Allocated %ld bytes for vertex buffer %u\n", vertices.size() * sizeof(float), mId);
     }
 
     ////////////////////////////////////////
@@ -382,7 +362,7 @@ namespace Poe
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-        std::printf("[DEBUG] (EBO) allocated %ld bytes for buffer %u\n", indices.size() * sizeof(float), mId);
+        std::printf("[DEBUG] Allocated %ld bytes for index buffer %u\n", indices.size() * sizeof(float), mId);
     }
 
     ////////////////////////////////////////
@@ -951,6 +931,146 @@ namespace Poe
             Shader shader(type, contents);
             auto s = mShaders.insert(std::pair(shaderUrl, std::move(shader)));
             return s.first->second;
+        }
+        return iter->second;
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    void Texture2D::Create(T* data)
+    {
+        glGenTextures(1, &mId);
+        glBindTexture(GL_TEXTURE_2D, mId);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mWrapS);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mWrapT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mMinF);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mMagF);
+            if (GLAD_GL_EXT_texture_filter_anisotropic) {
+                float gpuMaxAnisotropy;
+                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, mMaxAnisotropy <= gpuMaxAnisotropy ? mMaxAnisotropy : gpuMaxAnisotropy);
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, mInternalFormat, mWidth, mHeight, 0, mTextureFormat, mType, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %u\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mGenerateMipmaps ? 2 : 1), mId);
+    }
+
+    ////////////////////////////////////////
+    Texture2D::Texture2D(const std::string& url, const Texture2DParams& params)
+        : mUrl{url},
+          mTextureFormat{params.textureFormat},
+          mInternalFormat{params.internalFormat},
+          mGenerateMipmaps{params.generateMipmaps},
+          mMaxAnisotropy{params.maxAnisotropy},
+          mWrapS{params.wrapS},
+          mWrapT{params.wrapT},
+          mMinF{params.minF},
+          mMagF{params.magF},
+          mType{params.type}
+    {
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
+        if (!data) {
+            std::fprintf(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
+            return;
+        }
+        Create(data);
+        stbi_image_free(data);
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
+        : mUrl{"<None>"},
+          mTextureFormat{params.textureFormat},
+          mInternalFormat{params.internalFormat},
+          mGenerateMipmaps{params.generateMipmaps},
+          mMaxAnisotropy{params.maxAnisotropy},
+          mWrapS{params.wrapS},
+          mWrapT{params.wrapT},
+          mMinF{params.minF},
+          mMagF{params.magF},
+          mType{params.type}
+    {
+        mWidth = width;
+        mHeight = height;
+        mNumChannels = numChannels;
+
+        Create(data);
+    }
+
+    ////////////////////////////////////////
+    Texture2D::Texture2D(Texture2D&& other)
+    {
+        mId = other.mId;
+
+        mWidth = other.mWidth;
+        mHeight = other.mHeight;
+        mNumChannels = other.mNumChannels;
+        mUrl = other.mUrl;
+
+        mTextureFormat = other.mTextureFormat;
+        mInternalFormat = other.mInternalFormat;
+        mGenerateMipmaps = other.mGenerateMipmaps;
+        mMaxAnisotropy = other.mMaxAnisotropy;
+        mWrapS = other.mWrapS;
+        mWrapT = other.mWrapT;
+        mMinF = other.mMinF;
+        mMagF = other.mMagF;
+        mType = other.mType;
+
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Texture2D& Texture2D::operator=(Texture2D&& other)
+    {
+        glDeleteTextures(1, &mId);
+
+        mId = other.mId;
+
+        mWidth = other.mWidth;
+        mHeight = other.mHeight;
+        mNumChannels = other.mNumChannels;
+        mUrl = other.mUrl;
+
+        mTextureFormat = other.mTextureFormat;
+        mInternalFormat = other.mInternalFormat;
+        mGenerateMipmaps = other.mGenerateMipmaps;
+        mMaxAnisotropy = other.mMaxAnisotropy;
+        mWrapS = other.mWrapS;
+        mWrapT = other.mWrapT;
+        mMinF = other.mMinF;
+        mMagF = other.mMagF;
+        mType = other.mType;
+
+        other.mId = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    Texture2D CreateCheckerboardTexture2D()
+    {
+        Texture2DParams params{ .minF = GL_NEAREST,
+                                .magF = GL_NEAREST,
+                                .type = GL_FLOAT };
+        float data[] {
+            0.25f, 0.25f, 0.25f,    0.75f, 0.75f, 0.75f,
+            0.75f, 0.75f, 0.75f,    0.25f, 0.25f, 0.25f
+        };
+        return Texture2D(data, 2, 2, 3, params);
+    }
+
+    ////////////////////////////////////////
+    Texture2D& Texture2DLoader::Load(const std::string& url, const Texture2DParams& params)
+    {
+        auto iter = mTextures.find(url);
+        if (iter == mTextures.end()) {
+            Texture2D texture(url, params);
+            auto t = mTextures.insert(std::pair(url, std::move(texture)));
+            return t.first->second;
         }
         return iter->second;
     }
