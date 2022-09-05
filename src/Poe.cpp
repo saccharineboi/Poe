@@ -1027,26 +1027,28 @@ namespace Poe
     ////////////////////////////////////////
     Texture2D& Texture2D::operator=(Texture2D&& other)
     {
-        glDeleteTextures(1, &mId);
+        if (this != &other) {
+            glDeleteTextures(1, &mId);
 
-        mId = other.mId;
+            mId = other.mId;
 
-        mWidth = other.mWidth;
-        mHeight = other.mHeight;
-        mNumChannels = other.mNumChannels;
-        mUrl = other.mUrl;
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+            mNumChannels = other.mNumChannels;
+            mUrl = other.mUrl;
 
-        mTextureFormat = other.mTextureFormat;
-        mInternalFormat = other.mInternalFormat;
-        mGenerateMipmaps = other.mGenerateMipmaps;
-        mMaxAnisotropy = other.mMaxAnisotropy;
-        mWrapS = other.mWrapS;
-        mWrapT = other.mWrapT;
-        mMinF = other.mMinF;
-        mMagF = other.mMagF;
-        mType = other.mType;
+            mTextureFormat = other.mTextureFormat;
+            mInternalFormat = other.mInternalFormat;
+            mGenerateMipmaps = other.mGenerateMipmaps;
+            mMaxAnisotropy = other.mMaxAnisotropy;
+            mWrapS = other.mWrapS;
+            mWrapT = other.mWrapT;
+            mMinF = other.mMinF;
+            mMagF = other.mMagF;
+            mType = other.mType;
 
-        other.mId = 0;
+            other.mId = 0;
+        }
         return *this;
     }
 
