@@ -78,13 +78,13 @@ namespace Poe
     {
     protected:
         int mMode;
-        std::size_t mNumElements;
+        int mNumElements;
 
     public:
         virtual ~BufferGL() {}
 
         int GetMode() const { return mMode; }
-        std::size_t GetNumElements() const { return mNumElements; }
+        int GetNumElements() const { return mNumElements; }
     };
 
     ////////////////////////////////////////

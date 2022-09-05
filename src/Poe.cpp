@@ -286,7 +286,7 @@ namespace Poe
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
             emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
-            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(2.0f));
+            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(3.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
 
             staticMesh.Bind();
@@ -314,7 +314,7 @@ namespace Poe
     VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
     {
         mMode = mode;
-        mNumElements = vertices.size();
+        mNumElements = static_cast<int>(vertices.size());
 
         glGenBuffers(1, &mId);
         glBindBuffer(GL_ARRAY_BUFFER, mId);
@@ -355,7 +355,7 @@ namespace Poe
     IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
     {
         mMode = mode;
-        mNumElements = indices.size();
+        mNumElements = static_cast<int>(indices.size());
 
         glGenBuffers(1, &mId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
@@ -394,7 +394,7 @@ namespace Poe
 
     ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
-        : mNumIndices{static_cast<int>(ebo.GetNumElements())}
+        : mNumIndices{ebo.GetNumElements()}
     {
         glGenVertexArrays(1, &mId);
         glBindVertexArray(mId);
