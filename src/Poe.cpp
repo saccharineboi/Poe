@@ -736,34 +736,25 @@ namespace Poe
     {
         glGenTextures(1, &mId);
         glBindTexture(GL_TEXTURE_2D, mId);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mWrapS);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mWrapT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mMinF);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mMagF);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mParams.wrapS);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mParams.wrapT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mParams.minF);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mParams.magF);
             if (GLAD_GL_EXT_texture_filter_anisotropic) {
                 float gpuMaxAnisotropy;
                 glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, mMaxAnisotropy <= gpuMaxAnisotropy ? mMaxAnisotropy : gpuMaxAnisotropy);
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
             }
-            glTexImage2D(GL_TEXTURE_2D, 0, mInternalFormat, mWidth, mHeight, 0, mTextureFormat, mType, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexImage2D(GL_TEXTURE_2D, 0, mParams.internalFormat, mWidth, mHeight, 0, mParams.textureFormat, mParams.type, data);
+            if (mParams.generateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %u\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mGenerateMipmaps ? 2 : 1), mId);
+        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %u\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mId);
     }
 
     ////////////////////////////////////////
     Texture2D::Texture2D(const std::string& url, const Texture2DParams& params)
-        : mUrl{url},
-          mTextureFormat{params.textureFormat},
-          mInternalFormat{params.internalFormat},
-          mGenerateMipmaps{params.generateMipmaps},
-          mMaxAnisotropy{params.maxAnisotropy},
-          mWrapS{params.wrapS},
-          mWrapT{params.wrapT},
-          mMinF{params.minF},
-          mMagF{params.magF},
-          mType{params.type}
+        : mUrl{url}, mParams{params}
     {
         stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
@@ -778,16 +769,7 @@ namespace Poe
     ////////////////////////////////////////
     template <typename T>
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
-        : mUrl{"<None>"},
-          mTextureFormat{params.textureFormat},
-          mInternalFormat{params.internalFormat},
-          mGenerateMipmaps{params.generateMipmaps},
-          mMaxAnisotropy{params.maxAnisotropy},
-          mWrapS{params.wrapS},
-          mWrapT{params.wrapT},
-          mMinF{params.minF},
-          mMagF{params.magF},
-          mType{params.type}
+        : mUrl{"<None>"}, mParams{params}
     {
         mWidth = width;
         mHeight = height;
@@ -805,16 +787,7 @@ namespace Poe
         mHeight = other.mHeight;
         mNumChannels = other.mNumChannels;
         mUrl = other.mUrl;
-
-        mTextureFormat = other.mTextureFormat;
-        mInternalFormat = other.mInternalFormat;
-        mGenerateMipmaps = other.mGenerateMipmaps;
-        mMaxAnisotropy = other.mMaxAnisotropy;
-        mWrapS = other.mWrapS;
-        mWrapT = other.mWrapT;
-        mMinF = other.mMinF;
-        mMagF = other.mMagF;
-        mType = other.mType;
+        mParams = other.mParams;
 
         other.mId = 0;
     }
@@ -831,16 +804,7 @@ namespace Poe
             mHeight = other.mHeight;
             mNumChannels = other.mNumChannels;
             mUrl = other.mUrl;
-
-            mTextureFormat = other.mTextureFormat;
-            mInternalFormat = other.mInternalFormat;
-            mGenerateMipmaps = other.mGenerateMipmaps;
-            mMaxAnisotropy = other.mMaxAnisotropy;
-            mWrapS = other.mWrapS;
-            mWrapT = other.mWrapT;
-            mMinF = other.mMinF;
-            mMagF = other.mMagF;
-            mType = other.mType;
+            mParams = other.mParams;
 
             other.mId = 0;
         }

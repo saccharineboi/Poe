@@ -269,15 +269,7 @@ namespace Poe
         int mNumChannels;
         std::string mUrl;
 
-        int mTextureFormat;
-        int mInternalFormat;
-        bool mGenerateMipmaps;
-        float mMaxAnisotropy;
-        int mWrapS;
-        int mWrapT;
-        int mMinF;
-        int mMagF;
-        int mType;
+        Texture2DParams mParams;
 
         template <typename T>
         void Create(T* data);
@@ -298,15 +290,15 @@ namespace Poe
         int GetNumChannels() const { return mNumChannels; }
         std::string GetUrl() const { return mUrl; }
 
-        int GetTextureFormat() const { return mTextureFormat; }
-        int GetInternalFormat() const { return mInternalFormat; }
-        bool HasMipmaps() const { return mGenerateMipmaps; }
-        float GetMaxAnisotropy() const { return mMaxAnisotropy; }
-        int GetWrapS() const { return mWrapS; }
-        int GetWrapT() const { return mWrapT; }
-        int GetMinF() const { return mMinF; }
-        int GetMagF() const { return mMagF; }
-        int GetType() const { return mType; }
+        int GetTextureFormat() const { return mParams.textureFormat; }
+        int GetInternalFormat() const { return mParams.internalFormat; }
+        bool HasMipmaps() const { return mParams.generateMipmaps; }
+        float GetMaxAnisotropy() const { return mParams.maxAnisotropy; }
+        int GetWrapS() const { return mParams.wrapS; }
+        int GetWrapT() const { return mParams.wrapT; }
+        int GetMinF() const { return mParams.minF; }
+        int GetMagF() const { return mParams.magF; }
+        int GetType() const { return mParams.type; }
 
         void Bind(int loc = 0) const
         {
