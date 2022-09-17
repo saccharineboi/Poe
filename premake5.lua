@@ -13,7 +13,8 @@ project "poe"
     files {
         "src/main.cpp",
         "tp/glad/glad.cpp",
-        "src/Poe.cpp"
+        "src/Poe.cpp",
+        "src/Demo.cpp"
     }
 
     includedirs { "include", "source" }
