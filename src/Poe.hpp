@@ -62,6 +62,8 @@ namespace Poe
 
     public:
         ObjectGL() {}
+        explicit ObjectGL(unsigned id) : mId{id} {}
+
         virtual ~ObjectGL() {}
 
         unsigned GetId() const { return mId; }
@@ -73,12 +75,21 @@ namespace Poe
     ////////////////////////////////////////
     struct BufferGL : public ObjectGL
     {
+    private:
+        unsigned CreateId();
+
     protected:
         int mMode;
         int mNumElements;
 
     public:
-        virtual ~BufferGL() {}
+        BufferGL(int mode, int numElements);
+        BufferGL(int id, int mode, int numElements);
+
+        virtual ~BufferGL() { glDeleteBuffers(1, &mId); }
+
+        BufferGL(const BufferGL&) = delete;
+        BufferGL& operator=(const BufferGL&) = delete;
 
         int GetMode() const { return mMode; }
         int GetNumElements() const { return mNumElements; }
@@ -88,8 +99,6 @@ namespace Poe
     struct VertexBuffer : public BufferGL
     {
         VertexBuffer(const std::vector<float>& vertices, int mode);
-
-        ~VertexBuffer() { glDeleteBuffers(1, &mId); }
 
         VertexBuffer(VertexBuffer&&);
         VertexBuffer& operator=(VertexBuffer&&);
@@ -102,8 +111,6 @@ namespace Poe
     struct IndexBuffer : public BufferGL
     {
         IndexBuffer(const std::vector<unsigned>& indices, int mode);
-
-        ~IndexBuffer() { glDeleteBuffers(1, &mId); }
 
         IndexBuffer(IndexBuffer&&);
         IndexBuffer& operator=(IndexBuffer&&);
@@ -127,6 +134,8 @@ namespace Poe
     {
     private:
         int mNumIndices;
+
+        unsigned CreateId();
 
     public:
         VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos);
@@ -273,6 +282,8 @@ namespace Poe
 
         template <typename T>
         void Create(T* data);
+
+        unsigned CreateId();
 
     public:
         Texture2D(const std::string& url, const Texture2DParams&);

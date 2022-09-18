@@ -106,12 +106,25 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
+    unsigned BufferGL::CreateId()
     {
-        mMode = mode;
-        mNumElements = static_cast<int>(vertices.size());
+        unsigned id;
+        glGenBuffers(1, &id);
+        return id;
+    }
 
-        glGenBuffers(1, &mId);
+    ////////////////////////////////////////
+    BufferGL::BufferGL(int mode, int numElements)
+        : ObjectGL(CreateId()), mMode{mode}, mNumElements{numElements} {}
+
+    ////////////////////////////////////////
+    BufferGL::BufferGL(int id, int mode, int numElements)
+        : ObjectGL(id), mMode{mode}, mNumElements{numElements} {}
+
+    ////////////////////////////////////////
+    VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
+        : BufferGL(mode, static_cast<int>(vertices.size()))
+    {
         glBindBuffer(GL_ARRAY_BUFFER, mId);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -121,11 +134,8 @@ namespace Poe
 
     ////////////////////////////////////////
     VertexBuffer::VertexBuffer(VertexBuffer&& other)
+        : BufferGL(other.mId, other.mMode, other.mNumElements)
     {
-        mId = other.mId;
-        mNumElements = other.mNumElements;
-        mMode = other.mMode;
-
         other.mId = 0;
         other.mNumElements = 0;
     }
@@ -148,11 +158,8 @@ namespace Poe
 
     ////////////////////////////////////////
     IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
+        : BufferGL(mode, static_cast<int>(indices.size()))
     {
-        mMode = mode;
-        mNumElements = static_cast<int>(indices.size());
-
-        glGenBuffers(1, &mId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -162,11 +169,8 @@ namespace Poe
 
     ////////////////////////////////////////
     IndexBuffer::IndexBuffer(IndexBuffer&& other)
+        : BufferGL(other.mId, other.mMode, other.mNumElements)
     {
-        mId = other.mId;
-        mNumElements = other.mNumElements;
-        mMode = other.mMode;
-
         other.mId = 0;
         other.mNumElements = 0;
     }
@@ -188,10 +192,17 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
-        : mNumIndices{ebo.GetNumElements()}
+    unsigned VAO::CreateId()
     {
-        glGenVertexArrays(1, &mId);
+        unsigned id;
+        glGenVertexArrays(1, &id);
+        return id;
+    }
+
+    ////////////////////////////////////////
+    VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
+        : ObjectGL(CreateId()), mNumIndices{ebo.GetNumElements()}
+    {
         glBindVertexArray(mId);
             vbo.Bind();
             for (const VertexInfo& info : infos) {
@@ -206,8 +217,8 @@ namespace Poe
 
     ////////////////////////////////////////
     VAO::VAO(VAO&& other)
+        : ObjectGL(other.mId)
     {
-        mId = other.mId;
         mNumIndices = other.mNumIndices;
 
         other.mId = 0;
@@ -231,9 +242,8 @@ namespace Poe
 
     ////////////////////////////////////////
     Shader::Shader(int type, const std::string& source)
-        : mType{type}
+        : ObjectGL(glCreateShader(type)), mType{type}
     {
-        mId = glCreateShader(type);
         const char* shaderSrc = source.c_str();
         glShaderSource(mId, 1, &shaderSrc, nullptr);
         glCompileShader(mId);
@@ -249,10 +259,9 @@ namespace Poe
 
     ////////////////////////////////////////
     Shader::Shader(Shader&& other)
+        : ObjectGL(other.mId)
     {
-        mId = other.mId;
         mType = other.mType;
-
         other.mId = 0;
     }
 
@@ -272,8 +281,8 @@ namespace Poe
 
     ////////////////////////////////////////
     Program::Program(const std::initializer_list<const Shader*>& shaders)
+        : ObjectGL(glCreateProgram())
     {
-        mId = glCreateProgram();
         for (const Shader* shader : shaders)
             glAttachShader(mId, shader->GetId());
         glLinkProgram(mId);
@@ -292,8 +301,8 @@ namespace Poe
 
     ////////////////////////////////////////
     Program::Program(Program&& other)
+        : ObjectGL(other.mId)
     {
-        mId = other.mId;
         other.mId = 0;
     }
 
@@ -731,10 +740,17 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    unsigned Texture2D::CreateId()
+    {
+        unsigned id;
+        glGenTextures(1, &id);
+        return id;
+    }
+
+    ////////////////////////////////////////
     template <typename T>
     void Texture2D::Create(T* data)
     {
-        glGenTextures(1, &mId);
         glBindTexture(GL_TEXTURE_2D, mId);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mParams.wrapS);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mParams.wrapT);
@@ -754,7 +770,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Texture2D::Texture2D(const std::string& url, const Texture2DParams& params)
-        : mUrl{url}, mParams{params}
+        : ObjectGL(CreateId()), mUrl{url}, mParams{params}
     {
         stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
@@ -769,7 +785,7 @@ namespace Poe
     ////////////////////////////////////////
     template <typename T>
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
-        : mUrl{"<None>"}, mParams{params}
+        : ObjectGL(CreateId()), mUrl{"<None>"}, mParams{params}
     {
         mWidth = width;
         mHeight = height;
@@ -780,9 +796,8 @@ namespace Poe
 
     ////////////////////////////////////////
     Texture2D::Texture2D(Texture2D&& other)
+        : ObjectGL(other.mId)
     {
-        mId = other.mId;
-
         mWidth = other.mWidth;
         mHeight = other.mHeight;
         mNumChannels = other.mNumChannels;
