@@ -41,6 +41,7 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <string>
+#include <functional>
 
 namespace Poe
 {
@@ -189,7 +190,7 @@ namespace Poe
         }
 
     public:
-        Program(const std::initializer_list<const Shader*>& shaders);
+        Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders);
 
         ~Program() { glDeleteProgram(mId); }
 

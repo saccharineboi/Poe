@@ -280,11 +280,11 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Program::Program(const std::initializer_list<const Shader*>& shaders)
+    Program::Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders)
         : ObjectGL(glCreateProgram())
     {
-        for (const Shader* shader : shaders)
-            glAttachShader(mId, shader->GetId());
+        for (const Shader& shader : shaders)
+            glAttachShader(mId, shader.GetId());
         glLinkProgram(mId);
 
         int success = 0;
@@ -295,8 +295,8 @@ namespace Poe
             std::fprintf(stderr, "ERROR: %s\n", infolog);
         }
 
-        for (const Shader* shader : shaders)
-            glDetachShader(mId, shader->GetId());
+        for (const Shader& shader : shaders)
+            glDetachShader(mId, shader.GetId());
     }
 
     ////////////////////////////////////////
@@ -322,7 +322,7 @@ namespace Poe
     {
         Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "basic.vert");
         Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "basic.frag");
-        return Program{ &vshader, &fshader };
+        return Program{ vshader, fshader };
     }
 
     ////////////////////////////////////////
@@ -330,7 +330,7 @@ namespace Poe
     {
         Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_color.vert");
         Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_color.frag");
-        return Program{ &vshader, &fshader };
+        return Program{ vshader, fshader };
     }
 
     ////////////////////////////////////////
@@ -338,12 +338,12 @@ namespace Poe
     {
         Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_texture.vert");
         Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_texture.frag");
-        Program program{ &vshader, &fshader };
+        Program program{ vshader, fshader };
 
         program.Use();
             program.Uniform("uEmissiveTexture", 0);
         program.Halt();
-        return Program{ &vshader, &fshader };
+        return program;
     }
 
     ////////////////////////////////////////
