@@ -733,9 +733,15 @@ namespace Poe
             else if (pitch > PITCH_LIMIT)
                 pitch = PITCH_LIMIT;
 
-            mDirection.x = glm::cos(yaw) * glm::cos(pitch);
-            mDirection.y = glm::sin(pitch);
-            mDirection.z = glm::sin(yaw) * glm::cos(pitch);
+            float sin_pitch = glm::sin(pitch);
+            float cos_pitch = glm::cos(pitch);
+
+            float sin_yaw = glm::sin(yaw);
+            float cos_yaw = glm::cos(yaw);
+
+            mDirection.x = cos_yaw * cos_pitch;
+            mDirection.y = sin_pitch;
+            mDirection.z = sin_yaw * cos_pitch;
         }
     }
 
