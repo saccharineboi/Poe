@@ -106,35 +106,22 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    unsigned BufferGL::CreateId()
-    {
-        unsigned id;
-        glGenBuffers(1, &id);
-        return id;
-    }
-
-    ////////////////////////////////////////
-    BufferGL::BufferGL(int mode, int numElements)
-        : ObjectGL(CreateId()), mMode{mode}, mNumElements{numElements} {}
-
-    ////////////////////////////////////////
-    BufferGL::BufferGL(int id, int mode, int numElements)
-        : ObjectGL(id), mMode{mode}, mNumElements{numElements} {}
-
-    ////////////////////////////////////////
     VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
-        : BufferGL(mode, static_cast<int>(vertices.size()))
+        : mMode{mode}, mNumElements{static_cast<int>(vertices.size())}
     {
+        glGenBuffers(1, &mId);
         glBindBuffer(GL_ARRAY_BUFFER, mId);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+#ifdef _DEBUG
         std::printf("[DEBUG] Allocated %ld bytes for vertex buffer %u\n", vertices.size() * sizeof(float), mId);
+#endif
     }
 
     ////////////////////////////////////////
     VertexBuffer::VertexBuffer(VertexBuffer&& other)
-        : BufferGL(other.mId, other.mMode, other.mNumElements)
+        : mId{other.mId}, mMode{other.mMode}, mNumElements{other.mNumElements}
     {
         other.mId = 0;
         other.mNumElements = 0;
@@ -158,18 +145,21 @@ namespace Poe
 
     ////////////////////////////////////////
     IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
-        : BufferGL(mode, static_cast<int>(indices.size()))
+        : mMode{mode}, mNumElements{static_cast<int>(indices.size())}
     {
+        glGenBuffers(1, &mId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+#ifdef _DEBUG
         std::printf("[DEBUG] Allocated %ld bytes for index buffer %u\n", indices.size() * sizeof(float), mId);
+#endif
     }
 
     ////////////////////////////////////////
     IndexBuffer::IndexBuffer(IndexBuffer&& other)
-        : BufferGL(other.mId, other.mMode, other.mNumElements)
+        : mId{other.mId}, mMode{other.mMode}, mNumElements{other.mNumElements}
     {
         other.mId = 0;
         other.mNumElements = 0;
@@ -192,17 +182,10 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    unsigned VAO::CreateId()
-    {
-        unsigned id;
-        glGenVertexArrays(1, &id);
-        return id;
-    }
-
-    ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
-        : ObjectGL(CreateId()), mNumIndices{ebo.GetNumElements()}
+        : mNumIndices{ebo.GetNumElements()}
     {
+        glGenVertexArrays(1, &mId);
         glBindVertexArray(mId);
             vbo.Bind();
             for (const VertexInfo& info : infos) {
@@ -217,10 +200,8 @@ namespace Poe
 
     ////////////////////////////////////////
     VAO::VAO(VAO&& other)
-        : ObjectGL(other.mId)
+        : mId{other.mId}, mNumIndices{other.mNumIndices}
     {
-        mNumIndices = other.mNumIndices;
-
         other.mId = 0;
         other.mNumIndices = 0;
     }
@@ -242,7 +223,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Shader::Shader(int type, const std::string& source)
-        : ObjectGL(glCreateShader(type)), mType{type}
+        : mId{glCreateShader(type)}, mType{type}
     {
         const char* shaderSrc = source.c_str();
         glShaderSource(mId, 1, &shaderSrc, nullptr);
@@ -253,15 +234,16 @@ namespace Poe
         if (!success) {
             char infolog[512];
             glGetShaderInfoLog(mId, 512, nullptr, infolog);
-            std::fprintf(stderr, "ERROR: %s\n", infolog);
+#ifdef _DEBUG
+            std::fprintf(stderr, "[DEBUG] ERROR: %s\n", infolog);
+#endif
         }
     }
 
     ////////////////////////////////////////
     Shader::Shader(Shader&& other)
-        : ObjectGL(other.mId)
+        : mId{other.mId}, mType{other.mType}
     {
-        mType = other.mType;
         other.mId = 0;
     }
 
@@ -281,7 +263,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Program::Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders)
-        : ObjectGL(glCreateProgram())
+        : mId{glCreateProgram()}
     {
         for (const Shader& shader : shaders)
             glAttachShader(mId, shader.GetId());
@@ -292,7 +274,9 @@ namespace Poe
         if (!success) {
             char infolog[512];
             glGetProgramInfoLog(mId, 512, nullptr, infolog);
-            std::fprintf(stderr, "ERROR: %s\n", infolog);
+#ifdef _DEBUG
+            std::fprintf(stderr, "[DEBUG] ERROR: %s\n", infolog);
+#endif
         }
 
         for (const Shader& shader : shaders)
@@ -301,7 +285,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Program::Program(Program&& other)
-        : ObjectGL(other.mId)
+        : mId{other.mId}, mUniforms{other.mUniforms}
     {
         other.mId = 0;
     }
@@ -312,6 +296,7 @@ namespace Poe
         if (this != &other) {
             glDeleteProgram(mId);
             mId = other.mId;
+            mUniforms = other.mUniforms;
             other.mId = 0;
         }
         return *this;
@@ -768,17 +753,10 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    unsigned Texture2D::CreateId()
-    {
-        unsigned id;
-        glGenTextures(1, &id);
-        return id;
-    }
-
-    ////////////////////////////////////////
     template <typename T>
     void Texture2D::Create(T* data)
     {
+        glGenTextures(1, &mId);
         glBindTexture(GL_TEXTURE_2D, mId);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mParams.wrapS);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mParams.wrapT);
@@ -793,17 +771,21 @@ namespace Poe
             if (mParams.generateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+#ifdef _DEBUG
         std::printf("[DEBUG] Allocated %ld bytes for 2D texture %u\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mId);
+#endif
     }
 
     ////////////////////////////////////////
     Texture2D::Texture2D(const std::string& url, const Texture2DParams& params)
-        : ObjectGL(CreateId()), mUrl{url}, mParams{params}
+        : mUrl{url}, mParams{params}
     {
         stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
         if (!data) {
+#ifdef _DEBUG
             std::fprintf(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
+#endif
             return;
         }
         Create(data);
@@ -813,7 +795,7 @@ namespace Poe
     ////////////////////////////////////////
     template <typename T>
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
-        : ObjectGL(CreateId()), mUrl{"<None>"}, mParams{params}
+        : mUrl{"<None>"}, mParams{params}
     {
         mWidth = width;
         mHeight = height;
@@ -824,14 +806,8 @@ namespace Poe
 
     ////////////////////////////////////////
     Texture2D::Texture2D(Texture2D&& other)
-        : ObjectGL(other.mId)
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mUrl{other.mUrl}, mParams{other.mParams}
     {
-        mWidth = other.mWidth;
-        mHeight = other.mHeight;
-        mNumChannels = other.mNumChannels;
-        mUrl = other.mUrl;
-        mParams = other.mParams;
-
         other.mId = 0;
     }
 

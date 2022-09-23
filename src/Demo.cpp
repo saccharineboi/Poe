@@ -114,10 +114,12 @@ namespace Poe
     ////////////////////////////////////////
     static void DebugOutput()
     {
+#ifdef _DEBUG
         std::printf("[DEBUG] GL version: %s\n", glGetString(GL_VERSION));
         std::printf("[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
         std::printf("[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
         std::printf("[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
+#endif
     }
 
     ////////////////////////////////////////
@@ -169,7 +171,7 @@ namespace Poe
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
-        auto staticMesh = CreatePyramid();
+        auto staticMesh = CreateCube();
         auto grid = CreateGrid(100, 100);
 
         std::string shadersRoot = (argc > 1) ? argv[1] : "..";

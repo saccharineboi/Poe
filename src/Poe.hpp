@@ -56,68 +56,57 @@ namespace Poe
     void APIENTRY GraphicsDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
     ////////////////////////////////////////
-    struct ObjectGL
-    {
-    protected:
-        unsigned mId;
-
-    public:
-        ObjectGL() {}
-        explicit ObjectGL(unsigned id) : mId{id} {}
-
-        virtual ~ObjectGL() {}
-
-        unsigned GetId() const { return mId; }
-
-        ObjectGL(const ObjectGL&) = delete;
-        ObjectGL& operator=(const ObjectGL&) = delete;
-    };
-
-    ////////////////////////////////////////
-    struct BufferGL : public ObjectGL
+    struct VertexBuffer
     {
     private:
-        unsigned CreateId();
-
-    protected:
+        unsigned mId;
         int mMode;
         int mNumElements;
 
     public:
-        BufferGL(int mode, int numElements);
-        BufferGL(int id, int mode, int numElements);
-
-        virtual ~BufferGL() { glDeleteBuffers(1, &mId); }
-
-        BufferGL(const BufferGL&) = delete;
-        BufferGL& operator=(const BufferGL&) = delete;
-
-        int GetMode() const { return mMode; }
-        int GetNumElements() const { return mNumElements; }
-    };
-
-    ////////////////////////////////////////
-    struct VertexBuffer : public BufferGL
-    {
         VertexBuffer(const std::vector<float>& vertices, int mode);
+
+        ~VertexBuffer() { glDeleteBuffers(1, &mId); }
+
+        VertexBuffer(const VertexBuffer&) = delete;
+        VertexBuffer& operator=(const VertexBuffer&) = delete;
 
         VertexBuffer(VertexBuffer&&);
         VertexBuffer& operator=(VertexBuffer&&);
 
         void Bind() const { glBindBuffer(GL_ARRAY_BUFFER, mId); }
         void UnBind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+
+        unsigned GetId() const { return mId; }
+        int GetMode() const { return mMode; }
+        int GetNumElements() const { return mNumElements; }
     };
 
     ////////////////////////////////////////
-    struct IndexBuffer : public BufferGL
+    struct IndexBuffer
     {
+    private:
+        unsigned mId;
+        int mMode;
+        int mNumElements;
+
+    public:
         IndexBuffer(const std::vector<unsigned>& indices, int mode);
+
+        ~IndexBuffer() { glDeleteBuffers(1, &mId); }
+
+        IndexBuffer(const IndexBuffer&) = delete;
+        IndexBuffer& operator=(const IndexBuffer&) = delete;
 
         IndexBuffer(IndexBuffer&&);
         IndexBuffer& operator=(IndexBuffer&&);
 
         void Bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId); }
         void UnBind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+
+        unsigned GetId() const { return mId; }
+        int GetMode() const { return mMode; }
+        int GetNumElements() const { return mNumElements; }
     };
 
     ////////////////////////////////////////
@@ -131,17 +120,19 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct VAO : public ObjectGL
+    struct VAO
     {
     private:
+        unsigned mId;
         int mNumIndices;
-
-        unsigned CreateId();
 
     public:
         VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos);
 
         ~VAO() { glDeleteVertexArrays(1, &mId); }
+
+        VAO(const VAO&) = delete;
+        VAO& operator=(const VAO&) = delete;
 
         VAO(VAO&&);
         VAO& operator=(VAO&&);
@@ -150,12 +141,16 @@ namespace Poe
         void UnBind() const { glBindVertexArray(0); }
 
         void Draw(int mode = GL_TRIANGLES) const { glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr); }
+
+        unsigned GetId() const { return mId; }
+        int GetNumIndices() const { return mNumIndices; }
     };
 
     ////////////////////////////////////////
-    struct Shader : public ObjectGL
+    struct Shader
     {
     private:
+        unsigned mId;
         int mType;
 
     public:
@@ -163,16 +158,21 @@ namespace Poe
 
         ~Shader() { glDeleteShader(mId); }
 
+        Shader(const Shader&) = delete;
+        Shader& operator=(const Shader&) = delete;
+
         Shader(Shader&&);
         Shader& operator=(Shader&&);
 
+        unsigned GetId() const { return mId; }
         int GetType() const { return mType; }
     };
 
     ////////////////////////////////////////
-    struct Program : public ObjectGL
+    struct Program
     {
     private:
+        unsigned mId;
         std::unordered_map<std::string, int> mUniforms;
 
         int FindUniform(const std::string& name)
@@ -180,8 +180,11 @@ namespace Poe
             auto iter = mUniforms.find(name);
             if (iter == mUniforms.end()) {
                 int loc = glGetUniformLocation(mId, name.c_str());
-                if (-1 == loc)
+                if (-1 == loc) {
+#ifdef _DEBUG
                     std::fprintf(stderr, "[DEBUG] ERROR: %s not found\n", name.c_str());
+#endif
+                }
                 else
                     mUniforms.insert(std::pair(name, loc));
                 return loc;
@@ -193,6 +196,9 @@ namespace Poe
         Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders);
 
         ~Program() { glDeleteProgram(mId); }
+
+        Program(const Program&) = delete;
+        Program& operator=(const Program&) = delete;
 
         Program(Program&&);
         Program& operator=(Program&&);
@@ -238,6 +244,8 @@ namespace Poe
 
         void Uniform(const std::string& name, const glm::mat4& m)
         { glUniformMatrix4fv(FindUniform(name), 1, GL_FALSE, glm::value_ptr(m)); }
+
+        unsigned GetId() const { return mId; }
     };
 
     ////////////////////////////////////////
@@ -271,9 +279,11 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct Texture2D : public ObjectGL
+    struct Texture2D
     {
     private:
+        unsigned mId;
+
         int mWidth;
         int mHeight;
         int mNumChannels;
@@ -284,8 +294,6 @@ namespace Poe
         template <typename T>
         void Create(T* data);
 
-        unsigned CreateId();
-
     public:
         Texture2D(const std::string& url, const Texture2DParams&);
 
@@ -294,8 +302,13 @@ namespace Poe
 
         ~Texture2D() { glDeleteTextures(1, &mId); }
 
+        Texture2D(const Texture2D&) = delete;
+        Texture2D& operator=(const Texture2D&) = delete;
+
         Texture2D(Texture2D&&);
         Texture2D& operator=(Texture2D&&);
+
+        unsigned GetId() const { return mId; }
 
         int GetWidth() const { return mWidth; }
         int GetHeight() const { return mHeight; }
