@@ -186,7 +186,7 @@ namespace Poe
         // Texture2DLoader texture2DLoader;
         // Texture2D& meshTexture = texture2DLoader.Load(texturesRoot + "/textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", Texture2DParams{});
 
-        auto meshTexture = CreateCheckerboardTexture2D();
+        auto meshTexture = CreateCheckerboardTexture2D(glm::vec3(1.0f, 0.8f, 0.6f), glm::vec3(0.2f, 0.4f, 0.6f));
 
         meshTexture.Bind();
 

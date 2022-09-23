@@ -855,14 +855,14 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Texture2D CreateCheckerboardTexture2D()
+    Texture2D CreateCheckerboardTexture2D(const glm::vec3& color0, const glm::vec3& color1)
     {
         Texture2DParams params{ .minF = GL_NEAREST,
                                 .magF = GL_NEAREST,
                                 .type = GL_FLOAT };
         float data[] {
-            0.25f, 0.25f, 0.25f,    0.75f, 0.75f, 0.75f,
-            0.75f, 0.75f, 0.75f,    0.25f, 0.25f, 0.25f
+            color0.r, color0.g, color0.b,    color1.r, color1.g, color1.b,
+            color1.r, color1.g, color1.b,    color0.r, color0.g, color0.b
         };
         return Texture2D(data, 2, 2, 3, params);
     }

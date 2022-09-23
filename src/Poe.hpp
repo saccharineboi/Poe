@@ -326,7 +326,7 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    Texture2D CreateCheckerboardTexture2D();
+    Texture2D CreateCheckerboardTexture2D(const glm::vec3& color0, const glm::vec3& color1);
 
     ////////////////////////////////////////
     struct Texture2DLoader
