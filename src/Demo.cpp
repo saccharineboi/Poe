@@ -149,7 +149,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    int Run()
+    int Run(int argc, char** argv)
     {
         InitGLFW();
         SetHints();
@@ -169,18 +169,22 @@ namespace Poe
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
-        auto staticMesh = CreateCube();
+        auto staticMesh = CreatePyramid();
         auto grid = CreateGrid(100, 100);
 
+        std::string shadersRoot = (argc > 1) ? argv[1] : "..";
+
         ShaderLoader shaderLoader;
-        auto emissiveColorProgram = CreateEmissiveColorProgram("../shaders/", shaderLoader);
-        auto emissiveTextureProgram = CreateEmissiveTextureProgram("../shaders/", shaderLoader);
+        auto emissiveColorProgram = CreateEmissiveColorProgram(shadersRoot, shaderLoader);
+        auto emissiveTextureProgram = CreateEmissiveTextureProgram(shadersRoot, shaderLoader);
 
         mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
 
+        std::string texturesRoot = (argc > 2) ? argv[2] : "..";
+
         // Texture2DLoader texture2DLoader;
-        // Texture2D& meshTexture = texture2DLoader.Load("../textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", Texture2DParams{});
+        // Texture2D& meshTexture = texture2DLoader.Load(texturesRoot + "/textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", Texture2DParams{});
 
         auto meshTexture = CreateCheckerboardTexture2D();
 
@@ -195,7 +199,7 @@ namespace Poe
 
             rads += dt;
             auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-            model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 1.0f));
+            model = glm::rotate(model, rads, glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::scale(model, glm::vec3(2.0f));
 
             emissiveTextureProgram.Use();

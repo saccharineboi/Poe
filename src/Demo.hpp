@@ -19,5 +19,5 @@
 namespace Poe
 {
     ////////////////////////////////////////
-    int Run();
+    int Run(int argc, char** argv);
 }

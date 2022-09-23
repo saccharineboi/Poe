@@ -17,7 +17,7 @@
 #include "Demo.hpp"
 
 ////////////////////////////////////////
-int main()
+int main(int argc, char** argv)
 {
-    return Poe::Run();
+    return Poe::Run(argc, argv);
 }

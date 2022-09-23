@@ -320,24 +320,24 @@ namespace Poe
     ////////////////////////////////////////
     Program CreateBasicProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "basic.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "basic.frag");
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/basic.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/basic.frag");
         return Program{ vshader, fshader };
     }
 
     ////////////////////////////////////////
     Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_color.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_color.frag");
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag");
         return Program{ vshader, fshader };
     }
 
     ////////////////////////////////////////
     Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
     {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "emissive_texture.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "emissive_texture.frag");
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag");
         Program program{ vshader, fshader };
 
         program.Use();
@@ -611,6 +611,34 @@ namespace Poe
 
         std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+        };
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreatePyramid()
+    {
+        std::vector<float> vertices{
+            0.0f,  0.5f,  0.0f,       0.5f, 1.0f,
+           -0.5f, -0.5f, -0.5f,       0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,       1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,       0.0f, 0.0f,
+           -0.5f, -0.5f,  0.5f,       1.0f, 0.0f
+        };
+
+        std::vector<unsigned> indices{
+            0, 2, 1,
+            0, 3, 2,
+            0, 4, 3,
+            0, 1, 4,
+            1, 2, 4,
+            2, 3, 4
+        };
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
         return StaticMesh(vertices, indices, infos);

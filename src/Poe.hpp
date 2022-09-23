@@ -369,6 +369,7 @@ namespace Poe
     StaticMesh CreateCircle(float radius, int numSegments);
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
+    StaticMesh CreatePyramid();
 
     ////////////////////////////////////////
     struct FirstPersonCameraState
