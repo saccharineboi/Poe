@@ -110,6 +110,8 @@ namespace Poe
         : mMode{mode}, mNumElements{static_cast<int>(vertices.size())}
     {
         glGenBuffers(1, &mId);
+        assert(mId != 0);
+
         glBindBuffer(GL_ARRAY_BUFFER, mId);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -148,6 +150,8 @@ namespace Poe
         : mMode{mode}, mNumElements{static_cast<int>(indices.size())}
     {
         glGenBuffers(1, &mId);
+        assert(mId != 0);
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -186,6 +190,8 @@ namespace Poe
         : mNumIndices{ebo.GetNumElements()}
     {
         glGenVertexArrays(1, &mId);
+        assert(mId != 0);
+
         glBindVertexArray(mId);
             vbo.Bind();
             for (const VertexInfo& info : infos) {
@@ -225,6 +231,8 @@ namespace Poe
     Shader::Shader(int type, const std::string& source)
         : mId{glCreateShader(type)}, mType{type}
     {
+        assert(mId != 0 && source.size() > 0);
+
         const char* shaderSrc = source.c_str();
         glShaderSource(mId, 1, &shaderSrc, nullptr);
         glCompileShader(mId);
@@ -265,6 +273,8 @@ namespace Poe
     Program::Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders)
         : mId{glCreateProgram()}
     {
+        assert(mId != 0);
+
         for (const Shader& shader : shaders)
             glAttachShader(mId, shader.GetId());
         glLinkProgram(mId);
@@ -337,8 +347,7 @@ namespace Poe
                            const std::vector<VertexInfo>& infos)
         : mVbo(vertices, GL_STATIC_DRAW),
           mEbo(indices, GL_STATIC_DRAW),
-          mVao(mVbo, mEbo, infos)
-    {}
+          mVao(mVbo, mEbo, infos) {}
 
     ////////////////////////////////////////
     StaticMesh CreateColoredTriangle()
@@ -763,6 +772,8 @@ namespace Poe
     void Texture2D::Create(T* data)
     {
         glGenTextures(1, &mId);
+        assert(mId != 0);
+
         glBindTexture(GL_TEXTURE_2D, mId);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mParams.wrapS);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mParams.wrapT);
@@ -786,6 +797,8 @@ namespace Poe
     Texture2D::Texture2D(const std::string& url, const Texture2DParams& params)
         : mUrl{url}, mParams{params}
     {
+        assert(url.size() > 0);
+
         stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
         if (!data) {
@@ -803,6 +816,8 @@ namespace Poe
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
         : mUrl{"<None>"}, mParams{params}
     {
+        assert(data != nullptr);
+
         mWidth = width;
         mHeight = height;
         mNumChannels = numChannels;
@@ -839,9 +854,11 @@ namespace Poe
     ////////////////////////////////////////
     Texture2D CreateCheckerboardTexture2D(const glm::vec3& color0, const glm::vec3& color1)
     {
-        Texture2DParams params{ .minF = GL_NEAREST,
-                                .magF = GL_NEAREST,
-                                .type = GL_FLOAT };
+        Texture2DParams params{};
+        params.minF = GL_NEAREST;
+        params.magF = GL_NEAREST;
+        params.type = GL_FLOAT;
+
         float data[] {
             color0.r, color0.g, color0.b,    color1.r, color1.g, color1.b,
             color1.r, color1.g, color1.b,    color0.r, color0.g, color0.b
