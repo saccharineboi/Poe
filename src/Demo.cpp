@@ -204,7 +204,7 @@ namespace Poe
             emissiveTextureProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
             emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
-            emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
+            emissiveTextureProgram.Uniform("uFogDistance", 50.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
@@ -215,7 +215,7 @@ namespace Poe
             emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
             emissiveColorProgram.Uniform("uFogColor", clearColor);
-            emissiveColorProgram.Uniform("uFogDistance", 25.0f);
+            emissiveColorProgram.Uniform("uFogDistance", 50.0f);
             emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);

@@ -679,7 +679,8 @@ namespace Poe
                                                  aiProcess_GenUVCoords |
                                                  aiProcess_TransformUVCoords |
                                                  aiProcess_OptimizeMeshes |
-                                                 aiProcess_OptimizeGraph);
+                                                 aiProcess_OptimizeGraph |
+                                                 aiProcess_FlipUVs);
         if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
             std::fprintf(stderr, "[ERROR] ASSIMP: %s\n", importer.GetErrorString());
             return;

@@ -464,7 +464,7 @@ namespace Poe
         float mFovy = PIH;
         float mAspectRatio = 16.0f / 9.0f;
         float mNear = 0.1f;
-        float mFar = 100.0f;
+        float mFar = 1000.0f;
 
         float mSpeed = 10.0f;
         float mSensitivity = 0.0025f;
