@@ -434,14 +434,15 @@ namespace Poe
     StaticMesh CreateTriangle()
     {
         std::vector<float> vertices {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-             0.0f,  0.5f, 0.0f
+            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,     1.0f, 0.0f,
+             0.0f,  0.5f, 0.0f,     0.5f, 1.0f
         };
         std::vector<unsigned> indices { 0, 1, 2 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -451,15 +452,16 @@ namespace Poe
     StaticMesh CreateQuad()
     {
         std::vector<float> vertices {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-            -0.5f,  0.5f, 0.0f,
-             0.5f,  0.5f, 0.0f
+            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,     1.0f, 0.0f,
+            -0.5f,  0.5f, 0.0f,     0.0f, 1.0f,
+             0.5f,  0.5f, 0.0f,     1.0f, 1.0f
         };
         std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -475,11 +477,21 @@ namespace Poe
         vertices.push_back(0.0f);
         vertices.push_back(0.0f);
 
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
+
         const float angleDelta = PI2 / static_cast<float>(numSegments);
         for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
-            vertices.push_back(glm::cos(angle) * radius);
-            vertices.push_back(glm::sin(angle) * radius);
-            vertices.push_back(0.0f);
+            float xPos = glm::cos(angle) * radius;
+            float yPos = glm::sin(angle) * radius;
+            float zPos = 0.0f;
+
+            vertices.push_back(xPos);
+            vertices.push_back(yPos);
+            vertices.push_back(zPos);
+
+            vertices.push_back(xPos);
+            vertices.push_back(yPos);
         }
 
         std::vector<unsigned> indices;
@@ -496,7 +508,8 @@ namespace Poe
         indices.push_back(1);
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
         return StaticMesh(vertices, indices, infos);
