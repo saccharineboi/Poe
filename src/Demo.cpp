@@ -171,9 +171,7 @@ namespace Poe
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
-        auto staticMesh = CreateCube();
         auto grid = CreateGrid(100, 100);
-        auto floor = CreateCircle(1.0f, 100);
 
         std::string shadersRoot = (argc > 1) ? argv[1] : "..";
 
@@ -186,28 +184,21 @@ namespace Poe
 
         std::string texturesRoot = (argc > 2) ? argv[2] : "..";
 
-        // Texture2DLoader texture2DLoader;
-        // Texture2D& meshTexture = texture2DLoader.Load(texturesRoot + "/textures/abstract_5-4K/4K-abstract_5-diffuse.jpg", Texture2DParams{});
-
-        auto meshTexture = CreateCheckerboardTexture2D(glm::vec3(1.0f, 0.8f, 0.6f), glm::vec3(0.2f, 0.4f, 0.6f));
-        auto floorTexture = CreateCheckerboardTexture2D();
-
-        staticMesh.AddTexture(meshTexture);
-        floor.AddTexture(floorTexture);
+        Texture2DLoader texture2DLoader;
+        StaticModel staticModel("/home/saccharineboi/Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
         float rads = 0.0f;
-        float texOffset = 0.0f;
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
 
-            rads += dt;
-            texOffset += dt * 0.5f;
+            rads += 0.0f;
 
             auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-            model = glm::rotate(model, rads, glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.01f));
 
             emissiveTextureProgram.Use();
             emissiveTextureProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
@@ -215,25 +206,9 @@ namespace Poe
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
             emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
-            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(3.0f));
+            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
-
-            staticMesh.Bind();
-            staticMesh.BindTextures();
-            staticMesh.Draw();
-
-            auto floorModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
-            floorModel = glm::rotate(floorModel, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            floorModel = glm::scale(floorModel, glm::vec3(5.0f));
-
-            emissiveTextureProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * floorModel);
-            emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * floorModel);
-            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(5.0f));
-            emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(texOffset));
-
-            floor.Bind();
-            floor.BindTextures();
-            floor.Draw();
+            staticModel.Draw();
 
             emissiveColorProgram.Use();
             emissiveColorProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView);
