@@ -350,6 +350,16 @@ namespace Poe
           mVao(mVbo, mEbo, infos) {}
 
     ////////////////////////////////////////
+    StaticMesh::StaticMesh(const std::vector<float>& vertices,
+                           const std::vector<unsigned>& indices,
+                           const std::vector<VertexInfo>& infos,
+                           const std::vector<std::reference_wrapper<const Texture2D>> textures)
+        : mVbo(vertices, GL_STATIC_DRAW),
+          mEbo(indices, GL_STATIC_DRAW),
+          mVao(mVbo, mEbo, infos),
+          mTextures{textures} {}
+
+    ////////////////////////////////////////
     StaticMesh CreateColoredTriangle()
     {
         std::vector<float> vertices {
@@ -652,6 +662,97 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    void StaticModel::Load()
+    {
+        assert(mPath.size() > 0);
+        Assimp::Importer importer;
+        const aiScene* scene = importer.ReadFile(mPath.data(),
+                                                 aiProcess_JoinIdenticalVertices |
+                                                 aiProcess_Triangulate |
+                                                 aiProcess_GenNormals |
+                                                 aiProcess_ImproveCacheLocality |
+                                                 aiProcess_ValidateDataStructure |
+                                                 aiProcess_ImproveCacheLocality |
+                                                 aiProcess_RemoveRedundantMaterials |
+                                                 aiProcess_FixInfacingNormals |
+                                                 aiProcess_FindInvalidData |
+                                                 aiProcess_GenUVCoords |
+                                                 aiProcess_TransformUVCoords |
+                                                 aiProcess_OptimizeMeshes |
+                                                 aiProcess_OptimizeGraph);
+        if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
+            std::fprintf(stderr, "[ERROR] ASSIMP: %s\n", importer.GetErrorString());
+            return;
+        }
+        mDirectory = mPath.substr(0, mPath.find_last_of('/'));
+        LoadNode(scene->mRootNode, scene);
+    }
+
+    ////////////////////////////////////////
+    void StaticModel::LoadNode(aiNode* node, const aiScene* scene)
+    {
+        assert(node != nullptr && scene != nullptr);
+        for (int i = 0; i < static_cast<int>(node->mNumMeshes); ++i) {
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+            mMeshes.push_back(LoadStaticMesh(mesh, scene));
+        }
+        for (int i = 0; i < static_cast<int>(node->mNumChildren); ++i)
+            LoadNode(node->mChildren[i], scene);
+    }
+
+    // ////////////////////////////////////////
+    StaticMesh StaticModel::LoadStaticMesh(aiMesh* mesh, const aiScene* scene)
+    {
+        assert(mesh != nullptr && scene != nullptr);
+
+        std::vector<float> vertices;
+        std::vector<unsigned> indices;
+        std::vector<std::reference_wrapper<const Texture2D>> textures;
+
+        for (int i = 0; i < static_cast<int>(mesh->mNumVertices); ++i) {
+            vertices.push_back(mesh->mVertices[i].x);
+            vertices.push_back(mesh->mVertices[i].y);
+            vertices.push_back(mesh->mVertices[i].z);
+
+            vertices.push_back(mesh->mTextureCoords[0][i].x);
+            vertices.push_back(mesh->mTextureCoords[0][i].y);
+        }
+
+        for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i) {
+            const aiFace& face = mesh->mFaces[i];
+            for (int j = 0; j < static_cast<int>(face.mNumIndices); ++j)
+                indices.push_back(face.mIndices[j]);
+        }
+
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        if (material != nullptr)
+            textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+        };
+
+        return StaticMesh(vertices, indices, infos, textures);
+    }
+
+    // ////////////////////////////////////////
+    std::vector<std::reference_wrapper<const Texture2D>> StaticModel::Load2DTextures(aiMaterial* material, aiTextureType type, std::string_view typeName)
+    {
+        std::vector<std::reference_wrapper<const Texture2D>> textures;
+        for (int i = 0; i < static_cast<int>(material->GetTextureCount(type)); ++i) {
+            aiString str_ai;
+            material->GetTexture(type, i, &str_ai);
+            std::string str{ str_ai.C_Str() };
+
+            Texture2DParams params{};
+            const Texture2D& tex = mTexture2DLoader.Load(mDirectory + '/' + str, params);
+            textures.push_back(tex);
+        }
+        return textures;
+    }
+
+    ////////////////////////////////////////
     void FirstPersonCamera::UpdateInputConfig(int key, int action)
     {
         if (key == mInputConfig.moveForwardKey) {
@@ -812,7 +913,6 @@ namespace Poe
     {
         assert(url.size() > 0);
 
-        stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
         if (!data) {
 #ifdef _DEBUG
@@ -820,6 +920,19 @@ namespace Poe
 #endif
             return;
         }
+
+        switch (mNumChannels) {
+            case 1:
+                mParams.textureFormat = mParams.internalFormat = GL_RED;
+                break;
+            case 2:
+                mParams.textureFormat = mParams.internalFormat = GL_RG;
+                break;
+            case 4:
+                mParams.textureFormat = mParams.internalFormat = GL_RGBA;
+                break;
+        }
+
         Create(data);
         stbi_image_free(data);
     }

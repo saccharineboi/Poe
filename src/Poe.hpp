@@ -37,6 +37,10 @@
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include <vector>
 #include <initializer_list>
 #include <unordered_map>
@@ -367,6 +371,11 @@ namespace Poe
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos);
 
+        StaticMesh(const std::vector<float>& vertices,
+                   const std::vector<unsigned>& indices,
+                   const std::vector<VertexInfo>& infos,
+                   const std::vector<std::reference_wrapper<const Texture2D>> textures);
+
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
         void Draw(int mode = GL_TRIANGLES) const { mVao.Draw(mode); }
@@ -374,7 +383,7 @@ namespace Poe
 
         void BindTextures() const
         { int i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
-        void UnbindTextures() const
+        void UnBindTextures() const
         { int i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
     };
 
@@ -396,12 +405,30 @@ namespace Poe
     {
     private:
         std::string mPath;
+        std::string mDirectory;
         std::vector<StaticMesh> mMeshes;
+        Texture2DLoader& mTexture2DLoader;
+
+        void Load();
+        void LoadNode(aiNode* node, const aiScene* scene);
+        StaticMesh LoadStaticMesh(aiMesh* mesh, const aiScene* scene);
+        std::vector<std::reference_wrapper<const Texture2D>> Load2DTextures(aiMaterial* material, aiTextureType type, std::string_view typeName);
 
     public:
-        explicit StaticModel(const std::string& modelPath);
+        StaticModel(const std::string& modelPath, Texture2DLoader& texture2DLoader)
+            : mPath{modelPath}, mTexture2DLoader{texture2DLoader} { Load(); }
+
+        void Draw(int mode = GL_TRIANGLES) const
+        {
+            for (const StaticMesh& staticMesh : mMeshes) {
+                staticMesh.Bind();
+                staticMesh.BindTextures();
+                staticMesh.Draw(mode);
+            }
+        }
 
         std::string GetPath() const { return mPath; }
+        std::string GetDirectory() const { return mDirectory; }
     };
 
     ////////////////////////////////////////
