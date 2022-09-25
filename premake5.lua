@@ -20,7 +20,7 @@ project "poe"
     includedirs { "include", "source" }
 
     filter "system:linux"
-        links { "m", "glfw", "pthread", "GL" }
+        links { "m", "glfw", "pthread", "GL", "assimp" }
 
     filter "configurations:debug"
         defines { "_DEBUG" }
