@@ -768,11 +768,11 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Shader& ShaderLoader::Load(int type, const std::string& shaderUrl)
+    Shader& ShaderLoader::Load(int type, std::string_view shaderUrl)
     {
-        auto iter = mShaders.find(shaderUrl);
+        auto iter = mShaders.find(shaderUrl.data());
         if (iter == mShaders.end()) {
-            std::string contents = IO::ReadTextFile(shaderUrl);
+            std::string contents = IO::ReadTextFile(shaderUrl.data());
             Shader shader(type, contents);
             auto s = mShaders.insert(std::pair(shaderUrl, std::move(shader)));
             return s.first->second;

@@ -41,6 +41,7 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <string>
+#include <string_view>
 #include <functional>
 
 namespace Poe
@@ -175,14 +176,14 @@ namespace Poe
         unsigned mId;
         std::unordered_map<std::string, int> mUniforms;
 
-        int FindUniform(const std::string& name)
+        int FindUniform(std::string_view name)
         {
-            auto iter = mUniforms.find(name);
+            auto iter = mUniforms.find(name.data());
             if (iter == mUniforms.end()) {
-                int loc = glGetUniformLocation(mId, name.c_str());
+                int loc = glGetUniformLocation(mId, name.data());
                 if (-1 == loc) {
 #ifdef _DEBUG
-                    std::fprintf(stderr, "[DEBUG] ERROR: %s not found\n", name.c_str());
+                    std::fprintf(stderr, "[DEBUG] ERROR: %s not found\n", name.data());
 #endif
                 }
                 else
@@ -206,43 +207,43 @@ namespace Poe
         void Use() const { glUseProgram(mId); }
         void Halt() const { glUseProgram(0); }
 
-        void Uniform(const std::string& name, int x)
+        void Uniform(std::string_view name, int x)
         { glUniform1i(FindUniform(name), x); }
 
-        void Uniform(const std::string& name, int x, int y)
+        void Uniform(std::string_view name, int x, int y)
         { glUniform2i(FindUniform(name), x, y); }
 
-        void Uniform(const std::string& name, int x, int y, int z)
+        void Uniform(std::string_view name, int x, int y, int z)
         { glUniform3i(FindUniform(name), x, y, z); }
 
-        void Uniform(const std::string& name, int x, int y, int z, int w)
+        void Uniform(std::string_view name, int x, int y, int z, int w)
         { glUniform4i(FindUniform(name), x, y, z, w); }
 
-        void Uniform(const std::string& name, float x)
+        void Uniform(std::string_view name, float x)
         { glUniform1f(FindUniform(name), x); }
 
-        void Uniform(const std::string& name, float x, float y)
+        void Uniform(std::string_view name, float x, float y)
         { glUniform2f(FindUniform(name), x, y); }
 
-        void Uniform(const std::string& name, float x, float y, float z)
+        void Uniform(std::string_view name, float x, float y, float z)
         { glUniform3f(FindUniform(name), x, y, z); }
 
-        void Uniform(const std::string& name, float x, float y, float z, float w)
+        void Uniform(std::string_view name, float x, float y, float z, float w)
         { glUniform4f(FindUniform(name), x, y, z, w); }
 
-        void Uniform(const std::string& name, const glm::vec2& v)
+        void Uniform(std::string_view name, const glm::vec2& v)
         { glUniform2fv(FindUniform(name), 1, glm::value_ptr(v)); }
 
-        void Uniform(const std::string& name, const glm::vec3& v)
+        void Uniform(std::string_view name, const glm::vec3& v)
         { glUniform3fv(FindUniform(name), 1, glm::value_ptr(v)); }
 
-        void Uniform(const std::string& name, const glm::vec4& v)
+        void Uniform(std::string_view name, const glm::vec4& v)
         { glUniform4fv(FindUniform(name), 1, glm::value_ptr(v)); }
 
-        void Uniform(const std::string& name, const glm::mat3& m)
+        void Uniform(std::string_view name, const glm::mat3& m)
         { glUniformMatrix3fv(FindUniform(name), 1, GL_FALSE, glm::value_ptr(m)); }
 
-        void Uniform(const std::string& name, const glm::mat4& m)
+        void Uniform(std::string_view name, const glm::mat4& m)
         { glUniformMatrix4fv(FindUniform(name), 1, GL_FALSE, glm::value_ptr(m)); }
 
         unsigned GetId() const { return mId; }
@@ -256,7 +257,7 @@ namespace Poe
         std::unordered_map<std::string, Shader> mShaders;
 
     public:
-        Shader& Load(int type, const std::string& shaderUrl);
+        Shader& Load(int type, std::string_view shaderUrl);
     };
 
     ////////////////////////////////////////
@@ -359,17 +360,22 @@ namespace Poe
         VertexBuffer mVbo;
         IndexBuffer mEbo;
         VAO mVao;
+        std::vector<std::reference_wrapper<const Texture2D>> mTextures;
 
     public:
         StaticMesh(const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos);
 
-        ~StaticMesh() {}
-
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
         void Draw(int mode = GL_TRIANGLES) const { mVao.Draw(mode); }
+        void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
+
+        void BindTextures() const
+        { int i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
+        void UnbindTextures() const
+        { int i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
     };
 
     ////////////////////////////////////////
@@ -384,6 +390,19 @@ namespace Poe
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
     StaticMesh CreatePyramid();
+
+    ////////////////////////////////////////
+    struct StaticModel
+    {
+    private:
+        std::string mPath;
+        std::vector<StaticMesh> mMeshes;
+
+    public:
+        explicit StaticModel(const std::string& modelPath);
+
+        std::string GetPath() const { return mPath; }
+    };
 
     ////////////////////////////////////////
     struct FirstPersonCameraState

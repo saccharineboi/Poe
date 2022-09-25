@@ -192,6 +192,9 @@ namespace Poe
         auto meshTexture = CreateCheckerboardTexture2D(glm::vec3(1.0f, 0.8f, 0.6f), glm::vec3(0.2f, 0.4f, 0.6f));
         auto floorTexture = CreateCheckerboardTexture2D();
 
+        staticMesh.AddTexture(meshTexture);
+        floor.AddTexture(floorTexture);
+
         float rads = 0.0f;
         float texOffset = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -215,8 +218,8 @@ namespace Poe
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(3.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
 
-            meshTexture.Bind();
             staticMesh.Bind();
+            staticMesh.BindTextures();
             staticMesh.Draw();
 
             auto floorModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
@@ -228,8 +231,8 @@ namespace Poe
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(5.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(texOffset));
 
-            floorTexture.Bind();
             floor.Bind();
+            floor.BindTextures();
             floor.Draw();
 
             emissiveColorProgram.Use();
