@@ -270,6 +270,20 @@ namespace Poe
     Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
+    struct PostProcessProgram
+    {
+    private:
+        Program mProgram;
+
+    public:
+        PostProcessProgram(const std::string& rootPath, ShaderLoader&);
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+        void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
+    };
+
+    ////////////////////////////////////////
     struct Texture2DParams
     {
         int textureFormat = GL_RGB;

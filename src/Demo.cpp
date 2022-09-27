@@ -195,8 +195,13 @@ namespace Poe
         Renderbuffer rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight);
         Framebuffer fbo(fboTexture, rbo);
 
+        PostProcessProgram postProcessProgram("..", shaderLoader);
+
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
+
+
+            fbo.Bind();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
@@ -243,6 +248,13 @@ namespace Poe
             emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);
+
+            fbo.UnBind();
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            fboTexture.Bind();
+            postProcessProgram.Use();
+            postProcessProgram.Draw();
 
             glfwSwapBuffers(window);
             glfwPollEvents();

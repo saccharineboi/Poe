@@ -342,6 +342,16 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    PostProcessProgram::PostProcessProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/post_process.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/post_process.frag") }
+    {
+        mProgram.Use();
+            mProgram.Uniform("uScreenTexture", 0);
+        mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
     StaticMesh::StaticMesh(const std::vector<float>& vertices,
                            const std::vector<unsigned>& indices,
                            const std::vector<VertexInfo>& infos)
