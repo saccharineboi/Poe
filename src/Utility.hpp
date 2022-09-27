@@ -1,4 +1,4 @@
-// Poe: OpenGL 3.3 Renderer
+// Poe: OpenGL Renderer
 // Copyright (C) 2022 saccharineboi
 //
 // This program is free software: you can redistribute it and/or modify

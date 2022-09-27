@@ -1,4 +1,4 @@
-// Poe: OpenGL 3.3 Renderer
+// Poe: OpenGL Renderer
 // Copyright (C) 2022 saccharineboi
 //
 // This program is free software: you can redistribute it and/or modify
@@ -90,8 +90,8 @@ namespace Poe
     ////////////////////////////////////////
     static void SetHints()
     {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -166,12 +166,17 @@ namespace Poe
         glViewport(0, 0, fbWidth, fbHeight);
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
         glEnable(GL_CULL_FACE);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
         auto grid = CreateGrid(100, 100);
+        auto quad = CreateQuad();
 
         std::string shadersRoot = (argc > 1) ? argv[1] : "..";
 
@@ -187,35 +192,54 @@ namespace Poe
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("/home/saccharineboi/Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
+        Texture2D& quadTexture = texture2DLoader.Load("../textures/blending_transparent_window.png", Texture2DParams{});
+        quad.AddTexture(quadTexture);
+
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
+            auto projView = mainCamera.mProjection * mainCamera.mView;
 
-            rads += 0.0f;
+            rads += dt;
 
             auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
             model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             model = glm::scale(model, glm::vec3(0.01f));
 
             emissiveTextureProgram.Use();
-            emissiveTextureProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView * model);
+            emissiveTextureProgram.Uniform("uPVM", projView * model);
             emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
-            emissiveTextureProgram.Uniform("uFogDistance", 50.0f);
+            emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
             staticModel.Draw();
 
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 10.0f, 0.0f));
+            model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(5.0f));
+
+            glDisable(GL_CULL_FACE);
+
+            emissiveTextureProgram.Uniform("uPVM", projView * model);
+            emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
+            quad.BindTextures();
+            quad.Bind();
+            quad.Draw();
+
+            glEnable(GL_CULL_FACE);
+
             emissiveColorProgram.Use();
-            emissiveColorProgram.Uniform("uPVM", mainCamera.mProjection * mainCamera.mView);
+            emissiveColorProgram.Uniform("uPVM", projView);
             emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
             emissiveColorProgram.Uniform("uFogColor", clearColor);
-            emissiveColorProgram.Uniform("uFogDistance", 50.0f);
+            emissiveColorProgram.Uniform("uFogDistance", 25.0f);
             emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);

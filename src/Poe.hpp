@@ -1,4 +1,4 @@
-// Poe: OpenGL 3.3 Renderer
+// Poe: OpenGL Renderer
 // Copyright (C) 2022 saccharineboi
 //
 // This program is free software: you can redistribute it and/or modify
@@ -463,7 +463,7 @@ namespace Poe
 
         float mFovy = PIH;
         float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 0.1f;
+        float mNear = 0.3f;
         float mFar = 1000.0f;
 
         float mSpeed = 10.0f;

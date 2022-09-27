@@ -1,4 +1,4 @@
-// Poe: OpenGL 3.3 Renderer
+// Poe: OpenGL Renderer
 // Copyright (C) 2022 saccharineboi
 //
 // This program is free software: you can redistribute it and/or modify
@@ -928,6 +928,9 @@ namespace Poe
                 break;
             case 2:
                 mParams.textureFormat = mParams.internalFormat = GL_RG;
+                break;
+            case 3:
+                mParams.textureFormat = mParams.internalFormat = GL_RGB;
                 break;
             case 4:
                 mParams.textureFormat = mParams.internalFormat = GL_RGBA;
