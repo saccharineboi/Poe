@@ -178,22 +178,22 @@ namespace Poe
         auto grid = CreateGrid(100, 100);
         auto quad = CreateQuad();
 
-        std::string shadersRoot = (argc > 1) ? argv[1] : "..";
-
         ShaderLoader shaderLoader;
-        auto emissiveColorProgram = CreateEmissiveColorProgram(shadersRoot, shaderLoader);
-        auto emissiveTextureProgram = CreateEmissiveTextureProgram(shadersRoot, shaderLoader);
+        auto emissiveColorProgram = CreateEmissiveColorProgram("..", shaderLoader);
+        auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
 
         mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
-
-        std::string texturesRoot = (argc > 2) ? argv[2] : "..";
 
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("/home/saccharineboi/Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
         Texture2D& quadTexture = texture2DLoader.Load("../textures/blending_transparent_window.png", Texture2DParams{});
         quad.AddTexture(quadTexture);
+
+        auto fboTexture = CreateFramebufferTexture2D(fbWidth, fbHeight);
+        Renderbuffer rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight);
+        Framebuffer fbo(fboTexture, rbo);
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {

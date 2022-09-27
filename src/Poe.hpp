@@ -304,8 +304,7 @@ namespace Poe
 
         template <typename T>
         Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams&);
-
-        ~Texture2D() { glDeleteTextures(1, &mId); }
+~Texture2D() { glDeleteTextures(1, &mId); }
 
         Texture2D(const Texture2D&) = delete;
         Texture2D& operator=(const Texture2D&) = delete;
@@ -346,6 +345,7 @@ namespace Poe
     ////////////////////////////////////////
     Texture2D CreateCheckerboardTexture2D(const glm::vec3& color0 = glm::vec3(0.75f),
                                           const glm::vec3& color1 = glm::vec3(0.25f));
+    Texture2D CreateFramebufferTexture2D(int width, int height);
 
     ////////////////////////////////////////
     struct Texture2DLoader
@@ -355,6 +355,63 @@ namespace Poe
 
     public:
         Texture2D& Load(const std::string& url, const Texture2DParams&);
+    };
+
+    ////////////////////////////////////////
+    struct Renderbuffer
+    {
+    private:
+        unsigned mId;
+        int mType;
+        int mWidth, mHeight;
+
+    public:
+        Renderbuffer(int type, int width, int height);
+
+        ~Renderbuffer() { glDeleteRenderbuffers(1, &mId); }
+
+        Renderbuffer(const Renderbuffer&) = delete;
+        Renderbuffer& operator=(const Renderbuffer&) = delete;
+
+        Renderbuffer(Renderbuffer&&);
+        Renderbuffer& operator=(Renderbuffer&&);
+
+        void Bind() const { glBindRenderbuffer(GL_RENDERBUFFER, mId); }
+        void UnBind() const { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+
+        unsigned GetId() const { return mId; }
+        int GetType() const { return mType; }
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+    };
+
+    ////////////////////////////////////////
+    struct Framebuffer
+    {
+    private:
+        unsigned mId;
+        std::vector<std::reference_wrapper<const Texture2D>> mColorAttachments;
+        std::vector<std::reference_wrapper<const Renderbuffer>> mRenderbuffers;
+
+    public:
+        explicit Framebuffer(const Texture2D& colorAttachment);
+        Framebuffer(const Texture2D& colorAttachment, const Renderbuffer& rbo);
+
+        ~Framebuffer() { glDeleteFramebuffers(1, &mId); }
+
+        Framebuffer(const Framebuffer&) = delete;
+        Framebuffer& operator=(const Framebuffer&) = delete;
+
+        Framebuffer(Framebuffer&&);
+        Framebuffer& operator=(Framebuffer&&);
+
+        void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, mId); }
+        void UnBind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+        bool Check() const;
+
+        unsigned GetId() const { return mId; }
+        std::size_t GetColorAttachmentsCount() const { return mColorAttachments.size(); }
+        std::size_t GetRenderbuffersCount() const { return mRenderbuffers.size(); }
     };
 
     ////////////////////////////////////////
@@ -374,7 +431,7 @@ namespace Poe
         StaticMesh(const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos,
-                   const std::vector<std::reference_wrapper<const Texture2D>> textures);
+                   const std::vector<std::reference_wrapper<const Texture2D>>& textures);
 
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }

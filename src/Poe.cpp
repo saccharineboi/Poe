@@ -353,7 +353,7 @@ namespace Poe
     StaticMesh::StaticMesh(const std::vector<float>& vertices,
                            const std::vector<unsigned>& indices,
                            const std::vector<VertexInfo>& infos,
-                           const std::vector<std::reference_wrapper<const Texture2D>> textures)
+                           const std::vector<std::reference_wrapper<const Texture2D>>& textures)
         : mVbo(vertices, GL_STATIC_DRAW),
           mEbo(indices, GL_STATIC_DRAW),
           mVao(mVbo, mEbo, infos),
@@ -946,8 +946,6 @@ namespace Poe
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
         : mUrl{"<None>"}, mParams{params}
     {
-        assert(data != nullptr);
-
         mWidth = width;
         mHeight = height;
         mNumChannels = numChannels;
@@ -997,6 +995,16 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Texture2D CreateFramebufferTexture2D(int width, int height)
+    {
+        Texture2DParams params{};
+        params.minF = params.magF = GL_LINEAR;
+        params.generateMipmaps = false;
+        unsigned char* data = nullptr;
+        return Texture2D(data, width, height, 3, params);
+    }
+
+    ////////////////////////////////////////
     Texture2D& Texture2DLoader::Load(const std::string& url, const Texture2DParams& params)
     {
         auto iter = mTextures.find(url);
@@ -1006,5 +1014,113 @@ namespace Poe
             return t.first->second;
         }
         return iter->second;
+    }
+
+    ////////////////////////////////////////
+    Renderbuffer::Renderbuffer(int type, int width, int height)
+        : mType{type}, mWidth{width}, mHeight{height}
+    {
+        glGenRenderbuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, mId);
+            glRenderbufferStorage(GL_RENDERBUFFER, type, width, height);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+#ifdef _DEBUG
+        std::printf("[DEBUG] Created renderbuffer %u\n", mId);
+#endif
+    }
+
+    ////////////////////////////////////////
+    Renderbuffer::Renderbuffer(Renderbuffer&& other)
+        : mId{other.mId}, mType{other.mType}, mWidth{other.mWidth}, mHeight{other.mHeight}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Renderbuffer& Renderbuffer::operator=(Renderbuffer&& other)
+    {
+        if (this != &other) {
+            glDeleteRenderbuffers(1, &mId);
+
+            mId = other.mId;
+            mType = other.mType;
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+
+            other.mId = 0;
+        }
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    bool Framebuffer::Check() const
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, mId);
+        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#ifdef _DEBUG
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+            std::fprintf(stderr, "ERROR: framebuffer %u is not complete", mId);
+#endif
+        return status == GL_FRAMEBUFFER_COMPLETE;
+    }
+
+    ////////////////////////////////////////
+    Framebuffer::Framebuffer(const Texture2D& colorAttachment)
+    {
+        glGenFramebuffers(1, &mId);
+        assert(mId != 0);
+
+#ifdef _DEBUG
+        std::printf("[DEBUG] Created framebuffer %u\n", mId);
+#endif
+
+        glBindFramebuffer(GL_FRAMEBUFFER, mId);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        mColorAttachments.push_back(colorAttachment);
+        Check();
+    }
+
+    ////////////////////////////////////////
+    Framebuffer::Framebuffer(const Texture2D& colorAttachment, const Renderbuffer& rbo)
+    {
+        glGenFramebuffers(1, &mId);
+        assert(mId != 0);
+
+#ifdef _DEBUG
+        std::printf("[DEBUG] Created framebuffer %u\n", mId);
+#endif
+
+        glBindFramebuffer(GL_FRAMEBUFFER, mId);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        mColorAttachments.push_back(colorAttachment);
+        mRenderbuffers.push_back(rbo);
+        Check();
+    }
+
+    ////////////////////////////////////////
+    Framebuffer::Framebuffer(Framebuffer&& other)
+        : mId{other.mId}, mColorAttachments{other.mColorAttachments}, mRenderbuffers{other.mRenderbuffers}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Framebuffer& Framebuffer::operator=(Framebuffer&& other)
+    {
+        glDeleteFramebuffers(1, &mId);
+
+        mId = other.mId;
+        mColorAttachments = other.mColorAttachments;
+        mRenderbuffers = other.mRenderbuffers;
+
+        other.mId = 0;
+        return *this;
     }
 }
