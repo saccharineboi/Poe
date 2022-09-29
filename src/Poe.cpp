@@ -739,7 +739,7 @@ namespace Poe
         if (material != nullptr)
             textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 
-        std::vector<VertexInfo> infos{
+        static std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
             { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };

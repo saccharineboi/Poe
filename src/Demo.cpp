@@ -199,8 +199,6 @@ namespace Poe
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
-
-
             fbo.Bind();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
