@@ -440,12 +440,19 @@ namespace Poe
     public:
         StaticMesh(const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
-                   const std::vector<VertexInfo>& infos);
+                   const std::vector<VertexInfo>& infos)
+            : mVbo(vertices, GL_STATIC_DRAW),
+              mEbo(indices, GL_STATIC_DRAW),
+              mVao(mVbo, mEbo, infos) {}
 
         StaticMesh(const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos,
-                   const std::vector<std::reference_wrapper<const Texture2D>>& textures);
+                   const std::vector<std::reference_wrapper<const Texture2D>>& textures)
+            : mVbo(vertices, GL_STATIC_DRAW),
+              mEbo(indices, GL_STATIC_DRAW),
+              mVao(mVbo, mEbo, infos),
+              mTextures{textures} {}
 
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
