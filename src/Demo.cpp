@@ -18,6 +18,7 @@
 #include "IO.hpp"
 #include "Utility.hpp"
 
+#include <utility>
 #include <cstdio>
 #include <cstdlib>
 
@@ -186,7 +187,7 @@ namespace Poe
         mainCamera.mTargetPosition = mainCamera.mPosition;
 
         Texture2DLoader texture2DLoader;
-        StaticModel staticModel("/home/saccharineboi/Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
+        StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
         Texture2D& quadTexture = texture2DLoader.Load("../textures/blending_transparent_window.png", Texture2DParams{});
         quad.AddTexture(quadTexture);

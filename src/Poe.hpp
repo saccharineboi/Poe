@@ -463,6 +463,9 @@ namespace Poe
         { int i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
         void UnBindTextures() const
         { int i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
+
+        int GetNumVertices() const { return mVbo.GetNumElements(); }
+        int GetNumIndices() const { return mEbo.GetNumElements(); }
     };
 
     ////////////////////////////////////////

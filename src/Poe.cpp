@@ -115,10 +115,6 @@ namespace Poe
         glBindBuffer(GL_ARRAY_BUFFER, mId);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-#ifdef _DEBUG
-        std::printf("[DEBUG] Allocated %ld bytes for vertex buffer %u\n", vertices.size() * sizeof(float), mId);
-#endif
     }
 
     ////////////////////////////////////////
@@ -155,10 +151,6 @@ namespace Poe
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-#ifdef _DEBUG
-        std::printf("[DEBUG] Allocated %ld bytes for index buffer %u\n", indices.size() * sizeof(float), mId);
-#endif
     }
 
     ////////////////////////////////////////
@@ -679,6 +671,14 @@ namespace Poe
         }
         mDirectory = mPath.substr(0, mPath.find_last_of('/'));
         LoadNode(scene->mRootNode, scene);
+#ifdef _DEBUG
+        int numVertices{}, numIndices{};
+        for (const StaticMesh& mesh : mMeshes) {
+            numVertices += mesh.GetNumVertices();
+            numIndices += mesh.GetNumIndices();
+        }
+        std::printf("[DEBUG] Loaded %s (%d vertices and %d indices)\n", mPath.c_str(), numVertices, numIndices);
+#endif
     }
 
     ////////////////////////////////////////
@@ -896,7 +896,7 @@ namespace Poe
         glBindTexture(GL_TEXTURE_2D, 0);
 
 #ifdef _DEBUG
-        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %u\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mId);
+        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %s\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mUrl.c_str());
 #endif
     }
 
@@ -1018,10 +1018,6 @@ namespace Poe
         glBindRenderbuffer(GL_RENDERBUFFER, mId);
             glRenderbufferStorage(GL_RENDERBUFFER, type, width, height);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-#ifdef _DEBUG
-        std::printf("[DEBUG] Created renderbuffer %u\n", mId);
-#endif
     }
 
     ////////////////////////////////////////
@@ -1066,10 +1062,6 @@ namespace Poe
         glGenFramebuffers(1, &mId);
         assert(mId != 0);
 
-#ifdef _DEBUG
-        std::printf("[DEBUG] Created framebuffer %u\n", mId);
-#endif
-
         glBindFramebuffer(GL_FRAMEBUFFER, mId);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1082,10 +1074,6 @@ namespace Poe
     {
         glGenFramebuffers(1, &mId);
         assert(mId != 0);
-
-#ifdef _DEBUG
-        std::printf("[DEBUG] Created framebuffer %u\n", mId);
-#endif
 
         glBindFramebuffer(GL_FRAMEBUFFER, mId);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
