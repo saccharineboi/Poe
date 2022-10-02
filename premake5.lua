@@ -51,7 +51,9 @@ project "poe"
                        "-Wnon-virtual-dtor",
                        "-Woverloaded-virtual",
                        "-Wold-style-cast",
-                       "-Wno-unused-parameter" }
+                       "-Wno-unused-parameter",
+                       "-fno-rtti",
+                       "-fno-exceptions" }
 
     filter { "system:linux", "action:gmake2", "configurations:Debug" }
         buildoptions { "-Wno-unused-but-set-variable",
