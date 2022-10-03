@@ -868,7 +868,7 @@ namespace Poe
         if (iter == mShaders.end()) {
             std::string contents = IO::ReadTextFile(shaderUrl.data());
             Shader shader(type, contents);
-            auto s = mShaders.insert(std::pair(shaderUrl, std::move(shader)));
+            auto s = mShaders.insert(std::make_pair(shaderUrl, std::move(shader)));
             return s.first->second;
         }
         return iter->second;
@@ -1002,7 +1002,7 @@ namespace Poe
         auto iter = mTextures.find(url);
         if (iter == mTextures.end()) {
             Texture2D texture(url, params);
-            auto t = mTextures.insert(std::pair(url, std::move(texture)));
+            auto t = mTextures.insert(std::make_pair(url, std::move(texture)));
             return t.first->second;
         }
         return iter->second;

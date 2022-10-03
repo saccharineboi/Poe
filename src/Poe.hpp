@@ -191,7 +191,7 @@ namespace Poe
 #endif
                 }
                 else
-                    mUniforms.insert(std::pair(name, loc));
+                    mUniforms.insert(std::make_pair(name, loc));
                 return loc;
             }
             return iter->second;
