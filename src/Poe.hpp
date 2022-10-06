@@ -87,9 +87,9 @@ namespace Poe
         int GetMode() const { return mMode; }
         int GetNumElements() const { return mNumElements; }
 
-        float* GetWritePtr()
+        float* GetWritePtr() const
         { return reinterpret_cast<float*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); }
-        void Unmap() const { glUnmapBuffer(GL_ARRAY_BUFFER); }
+        int Unmap() const { return glUnmapBuffer(GL_ARRAY_BUFFER); }
     };
 
     ////////////////////////////////////////
@@ -119,9 +119,9 @@ namespace Poe
         int GetMode() const { return mMode; }
         int GetNumElements() const { return mNumElements; }
 
-        unsigned* GetWritePtr()
+        unsigned* GetWritePtr() const
         { return reinterpret_cast<unsigned*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)); }
-        void Unmap() const { glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER); }
+        int Unmap() const { return glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER); }
     };
 
     ////////////////////////////////////////
@@ -513,10 +513,27 @@ namespace Poe
               mVao(mVbo, mEbo, infos),
               mTextures{textures} {}
 
+        StaticMesh(int numVertices,
+                   int numIndices,
+                   const std::vector<VertexInfo>& infos)
+            : mVbo(numVertices, GL_STATIC_DRAW),
+              mEbo(numIndices, GL_STATIC_DRAW),
+              mVao(mVbo, mEbo, infos) {}
+
+        StaticMesh(int numVertices,
+                   int numIndices,
+                   const std::vector<VertexInfo>& infos,
+                   const std::vector<std::reference_wrapper<const Texture2D>>& textures)
+            : mVbo(numVertices, GL_STATIC_DRAW),
+              mEbo(numIndices, GL_STATIC_DRAW),
+              mVao(mVbo, mEbo, infos),
+              mTextures{textures} {}
+
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
         void Draw(int mode = GL_TRIANGLES) const { mVao.Draw(mode); }
         void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
+        void AddTextures(const std::vector<std::reference_wrapper<const Texture2D>>& textures) { std::ranges::copy(textures, std::back_inserter(mTextures)); }
 
         void BindTextures() const
         { int i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
@@ -525,6 +542,18 @@ namespace Poe
 
         int GetNumVertices() const { return mVbo.GetNumElements(); }
         int GetNumIndices() const { return mEbo.GetNumElements(); }
+
+        float* GetVboWritePtr() const { return mVbo.GetWritePtr(); }
+        unsigned* GetEboWritePtr() const { return mEbo.GetWritePtr(); }
+
+        int UnmapVbo() const { return mVbo.Unmap(); }
+        int UnmapEbo() const { return mEbo.Unmap(); }
+
+        void BindVbo() const { mVbo.Bind(); }
+        void UnBindVbo() const { mVbo.UnBind(); }
+
+        void BindEbo() const { mEbo.Bind(); }
+        void UnBindEbo() const { mEbo.UnBind(); }
     };
 
     ////////////////////////////////////////

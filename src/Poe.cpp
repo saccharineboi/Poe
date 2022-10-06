@@ -735,35 +735,48 @@ namespace Poe
     {
         assert(mesh != nullptr && scene != nullptr);
 
-        std::vector<float> vertices;
-        std::vector<unsigned> indices;
-        std::vector<std::reference_wrapper<const Texture2D>> textures;
-
-        for (int i = 0; i < static_cast<int>(mesh->mNumVertices); ++i) {
-            vertices.push_back(mesh->mVertices[i].x);
-            vertices.push_back(mesh->mVertices[i].y);
-            vertices.push_back(mesh->mVertices[i].z);
-
-            vertices.push_back(mesh->mTextureCoords[0][i].x);
-            vertices.push_back(mesh->mTextureCoords[0][i].y);
-        }
-
-        for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i) {
-            const aiFace& face = mesh->mFaces[i];
-            for (int j = 0; j < static_cast<int>(face.mNumIndices); ++j)
-                indices.push_back(face.mIndices[j]);
-        }
-
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        if (material != nullptr)
-            textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-
         static std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
             { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
         };
 
-        return StaticMesh(vertices, indices, infos, textures);
+        std::vector<std::reference_wrapper<const Texture2D>> textures;
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        if (material != nullptr)
+            textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+
+        int numIndices{};
+        for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i)
+            for (int j = 0; j < static_cast<int>(mesh->mFaces[i].mNumIndices); ++j)
+                ++numIndices;
+
+        StaticMesh staticMesh(static_cast<int>(mesh->mNumVertices) * 5,
+                              numIndices, infos, textures);
+
+        staticMesh.BindVbo();
+        float* vboPtr = staticMesh.GetVboWritePtr();
+
+        for (int i = 0; i < static_cast<int>(mesh->mNumVertices); ++i) {
+            *vboPtr++ = mesh->mVertices[i].x;
+            *vboPtr++ = mesh->mVertices[i].y;
+            *vboPtr++ = mesh->mVertices[i].z;
+
+            *vboPtr++ = mesh->mTextureCoords[0][i].x;
+            *vboPtr++ = mesh->mTextureCoords[0][i].y;
+        }
+        assert(staticMesh.UnmapVbo() == GL_TRUE);
+        staticMesh.UnBindVbo();
+
+        staticMesh.BindEbo();
+        unsigned* eboPtr = staticMesh.GetEboWritePtr();
+        for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i) {
+            const aiFace& face = mesh->mFaces[i];
+            for (int j = 0; j < static_cast<int>(face.mNumIndices); ++j)
+                *eboPtr++ = face.mIndices[j];
+        }
+        assert(staticMesh.UnmapEbo() == GL_TRUE);
+        staticMesh.UnBindEbo();
+        return staticMesh;
     }
 
     // ////////////////////////////////////////
