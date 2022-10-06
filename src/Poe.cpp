@@ -1071,6 +1071,27 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Cubemap::Cubemap(Cubemap&& other)
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Cubemap& Cubemap::operator=(Cubemap&& other)
+    {
+        glDeleteTextures(1, &mId);
+
+        mId = other.mId;
+        mWidth = other.mWidth;
+        mHeight = other.mHeight;
+        mNumChannels = other.mNumChannels;
+
+        other.mId = 0;
+        return *this;
+    }
+
+    ////////////////////////////////////////
     Renderbuffer::Renderbuffer(int type, int width, int height)
         : mType{type}, mWidth{width}, mHeight{height}
     {
