@@ -86,6 +86,10 @@ namespace Poe
         unsigned GetId() const { return mId; }
         int GetMode() const { return mMode; }
         int GetNumElements() const { return mNumElements; }
+
+        float* GetWritePtr()
+        { return reinterpret_cast<float*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); }
+        void Unmap() const { glUnmapBuffer(GL_ARRAY_BUFFER); }
     };
 
     ////////////////////////////////////////
@@ -114,6 +118,10 @@ namespace Poe
         unsigned GetId() const { return mId; }
         int GetMode() const { return mMode; }
         int GetNumElements() const { return mNumElements; }
+
+        unsigned* GetWritePtr()
+        { return reinterpret_cast<unsigned*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)); }
+        void Unmap() const { glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER); }
     };
 
     ////////////////////////////////////////
