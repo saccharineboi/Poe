@@ -169,6 +169,7 @@ namespace Poe
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
         glEnable(GL_CULL_FACE);
+        glDepthFunc(GL_LEQUAL);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -177,11 +178,11 @@ namespace Poe
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
         auto grid = CreateGrid(100, 100);
-        auto quad = CreateQuad();
 
         ShaderLoader shaderLoader;
         auto emissiveColorProgram = CreateEmissiveColorProgram("..", shaderLoader);
         auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
+        auto skyboxProgram = CreateTextureSkyboxProgram("..", shaderLoader);
 
         mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
         mainCamera.mTargetPosition = mainCamera.mPosition;
@@ -189,14 +190,20 @@ namespace Poe
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
-        Texture2D& quadTexture = texture2DLoader.Load("../textures/blending_transparent_window.png", Texture2DParams{});
-        quad.AddTexture(quadTexture);
-
         auto fboTexture = CreateFramebufferTexture2D(fbWidth, fbHeight);
         Renderbuffer rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight);
         Framebuffer fbo(fboTexture, rbo);
 
         PostProcessProgram postProcessProgram("..", shaderLoader);
+
+        Cubemap cubemap{
+            std::make_pair(CubemapFace::Front, "../skyboxes/ulukai/corona_ft.png"),
+            std::make_pair(CubemapFace::Back, "../skyboxes/ulukai/corona_bk.png"),
+            std::make_pair(CubemapFace::Left, "../skyboxes/ulukai/corona_lf.png"),
+            std::make_pair(CubemapFace::Right, "../skyboxes/ulukai/corona_rt.png"),
+            std::make_pair(CubemapFace::Top, "../skyboxes/ulukai/corona_up.png"),
+            std::make_pair(CubemapFace::Bottom, "../skyboxes/ulukai/corona_dn.png")
+        };
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -217,42 +224,35 @@ namespace Poe
             emissiveTextureProgram.Uniform("uPVM", projView * model);
             emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
             emissiveTextureProgram.Uniform("uFogColor", clearColor);
-            emissiveTextureProgram.Uniform("uFogDistance", 25.0f);
+            emissiveTextureProgram.Uniform("uFogDistance", 1000.0f);
             emissiveTextureProgram.Uniform("uFogExp", 3.0f);
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
             staticModel.Draw();
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 10.0f, 0.0f));
-            model = glm::rotate(model, rads, glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(5.0f));
-
-            glDisable(GL_CULL_FACE);
-
-            emissiveTextureProgram.Uniform("uPVM", projView * model);
-            emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
-            quad.BindTextures();
-            quad.Bind();
-            quad.Draw();
-
-            glEnable(GL_CULL_FACE);
 
             emissiveColorProgram.Use();
             emissiveColorProgram.Uniform("uPVM", projView);
             emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
             emissiveColorProgram.Uniform("uFogColor", clearColor);
-            emissiveColorProgram.Uniform("uFogDistance", 25.0f);
+            emissiveColorProgram.Uniform("uFogDistance", 1000.0f);
             emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);
+
+            skyboxProgram.Use();
+            skyboxProgram.Uniform("uProjView", mainCamera.mProjection * glm::mat4(glm::mat3(mainCamera.mView)));
+            cubemap.Bind();
+            glDrawArrays(GL_TRIANGLES, 0, 36);
 
             fbo.UnBind();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             fboTexture.Bind();
             postProcessProgram.Use();
+            postProcessProgram.SetGrayscaleWeight(0.0f);
+            postProcessProgram.SetKernelWeight(0.0f);
+            postProcessProgram.SetIdentityKernel();
             postProcessProgram.Draw();
 
             glfwSwapBuffers(window);

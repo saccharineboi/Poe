@@ -268,6 +268,7 @@ namespace Poe
     Program CreateBasicProgram(const std::string& rootPath, ShaderLoader&);
     Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
     Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
+    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
     struct PostProcessProgram
@@ -281,6 +282,22 @@ namespace Poe
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
         void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
+
+        void SetGrayscaleWeight(float w) { mProgram.Uniform("uGrayscaleWeight", w); }
+        void SetKernelWeight(float w) { mProgram.Uniform("uKernelWeight", w); }
+        void SetKernel(const glm::mat3& kernel) { mProgram.Uniform("uKernel", kernel); }
+        void SetIdentityKernel() { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
+                                                       0.0f, 1.0f, 0.0f,
+                                                       0.0f, 0.0f, 0.0f}); }
+        void SetSharpenKernel() { SetKernel(glm::mat3{-1.0f, -1.0f, -1.0f,
+                                                      -1.0f,  9.0f, -1.0f,
+                                                      -1.0f, -1.0f, -1.0f}); }
+        void SetBlurKernel() { SetKernel(glm::mat3{1.0f, 2.0f, 1.0f,
+                                                   2.0f, 4.0f, 2.0f,
+                                                   1.0f, 2.0f, 1.0f} / 16.0f); }
+        void SetEdgeDetectKernel() { SetKernel(glm::mat3{1.0f,  1.0f, 1.0f,
+                                                         1.0f, -8.0f, 1.0f,
+                                                         1.0f,  1.0f, 1.0f}); }
     };
 
     ////////////////////////////////////////
@@ -369,6 +386,38 @@ namespace Poe
 
     public:
         Texture2D& Load(const std::string& url, const Texture2DParams&);
+    };
+
+    ////////////////////////////////////////
+    enum class CubemapFace { Front, Back, Left, Right, Top, Bottom };
+
+    ////////////////////////////////////////
+    struct Cubemap
+    {
+    private:
+        unsigned mId;
+        int mWidth;
+        int mHeight;
+        int mNumChannels;
+
+    public:
+        Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
+
+        ~Cubemap() { glDeleteTextures(1, &mId); }
+
+        Cubemap(const Cubemap&) = delete;
+        Cubemap& operator=(const Cubemap&) = delete;
+
+        Cubemap(Cubemap&&);
+        Cubemap& operator=(Cubemap&&);
+
+        void Bind() const { glBindTexture(GL_TEXTURE_CUBE_MAP, mId); }
+        void Unbind() const { glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }
+
+        unsigned GetId() const { return mId; }
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetNumChannels() const { return mNumChannels; }
     };
 
     ////////////////////////////////////////

@@ -334,6 +334,19 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader& loader)
+    {
+        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/texture_skybox.vert");
+        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/texture_skybox.frag");
+        Program program{ vshader, fshader };
+
+        program.Use();
+            program.Uniform("uSkybox", 0);
+        program.Halt();
+        return program;
+    }
+
+    ////////////////////////////////////////
     PostProcessProgram::PostProcessProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/post_process.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/post_process.frag") }
@@ -991,6 +1004,7 @@ namespace Poe
     {
         Texture2DParams params{};
         params.minF = params.magF = GL_LINEAR;
+        params.wrapS = params.wrapT = GL_CLAMP_TO_EDGE;
         params.generateMipmaps = false;
         unsigned char* data = nullptr;
         return Texture2D(data, width, height, 3, params);
@@ -1006,6 +1020,54 @@ namespace Poe
             return t.first->second;
         }
         return iter->second;
+    }
+
+    ////////////////////////////////////////
+    Cubemap::Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces)
+    {
+        assert(faces.size() == 6);
+        glGenTextures(1, &mId);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, mId);
+        for (const auto& face : faces) {
+            unsigned char* data = stbi_load(face.second.data(), &mWidth, &mHeight, &mNumChannels, 0);
+            if (!data) {
+#ifdef _DEBUG
+                std::fprintf(stderr, "[DEBUG] ERROR: couldn't load %s\n", face.second.data());
+                return;
+#endif
+            }
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+            int texType = [](CubemapFace chosenFace){
+                switch (chosenFace) {
+                    case CubemapFace::Front:
+                        return GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+                    case CubemapFace::Back:
+                        return GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+                    case CubemapFace::Left:
+                        return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+                    case CubemapFace::Right:
+                        return GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+                    case CubemapFace::Top:
+                        return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+                    case CubemapFace::Bottom:
+                        return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+                    default:
+#ifdef _DEBUG
+                        std::fprintf(stderr, "[ERROR] Invalid cubemap face\n");
+#endif
+                        return 0;
+                }
+            }(face.first);
+
+            glTexImage2D(texType, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
 
     ////////////////////////////////////////
