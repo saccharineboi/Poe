@@ -1,0 +1,63 @@
+#version 450 core
+
+// assume CCW
+const vec3 positions[36] = vec3[](
+    // front face
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+
+    // back face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3(-1.0f, -1.0f, -1.0f),
+
+    // left face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3(-1.0f, -1.0f, -1.0f),
+
+    // right face
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+
+    // top face
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+
+    // bottom face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3(-1.0f, -1.0f, -1.0f)
+);
+
+out vec3 vTexCoord;
+
+uniform mat4 uProjView;
+
+void main()
+{
+    vec4 vertexPos = uProjView * vec4(positions[gl_VertexID], 1.0f);
+    gl_Position = vertexPos.xyww;
+    vTexCoord = positions[gl_VertexID];
+}
