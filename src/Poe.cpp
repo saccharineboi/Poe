@@ -118,6 +118,18 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    VertexBuffer::VertexBuffer(int numElements, int mode)
+        : mMode{mode}, mNumElements{numElements}
+    {
+        glGenBuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, mId);
+            glBufferData(GL_ARRAY_BUFFER, numElements * sizeof(float), nullptr, mode);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    ////////////////////////////////////////
     VertexBuffer::VertexBuffer(VertexBuffer&& other)
         : mId{other.mId}, mMode{other.mMode}, mNumElements{other.mNumElements}
     {
@@ -150,6 +162,18 @@ namespace Poe
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    ////////////////////////////////////////
+    IndexBuffer::IndexBuffer(int numElements, int mode)
+        : mMode{mode}, mNumElements{numElements}
+    {
+        glGenBuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, numElements * sizeof(unsigned), nullptr, mode);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
@@ -1027,6 +1051,7 @@ namespace Poe
     {
         assert(faces.size() == 6);
         glGenTextures(1, &mId);
+        assert(mId != 0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, mId);
         for (const auto& face : faces) {
             unsigned char* data = stbi_load(face.second.data(), &mWidth, &mHeight, &mNumChannels, 0);

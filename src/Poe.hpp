@@ -69,6 +69,7 @@ namespace Poe
         int mNumElements;
 
     public:
+        VertexBuffer(int numElements, int mode);
         VertexBuffer(const std::vector<float>& vertices, int mode);
 
         ~VertexBuffer() { glDeleteBuffers(1, &mId); }
@@ -96,6 +97,7 @@ namespace Poe
         int mNumElements;
 
     public:
+        IndexBuffer(int numElements, int mode);
         IndexBuffer(const std::vector<unsigned>& indices, int mode);
 
         ~IndexBuffer() { glDeleteBuffers(1, &mId); }
