@@ -7,9 +7,12 @@ layout (location = 2) uniform sampler2D uEmissiveTexture;
 layout (location = 3) uniform vec2 uTileMultiplier;
 layout (location = 4) uniform vec2 uTileOffset;
 
-layout (location = 5) uniform vec4 uFogColor;
-layout (location = 6) uniform float uFogDistance;
-layout (location = 7) uniform float uFogExp;
+layout (std140, binding = 0) uniform FogBlock
+{
+    vec4 uFogColor;
+    float uFogDistance;
+    float uFogExp;
+};
 
 out vec4 color;
 void main(void)

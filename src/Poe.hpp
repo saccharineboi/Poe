@@ -125,6 +125,68 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct UniformBuffer
+    {
+    private:
+        unsigned mId;
+        int mSize;
+        int mMode;
+        int mBindLoc;
+
+    public:
+        UniformBuffer(int size, int mode, int bindLoc);
+
+        ~UniformBuffer() { glDeleteBuffers(1, &mId); }
+
+        UniformBuffer(const UniformBuffer&) = delete;
+        UniformBuffer& operator=(const UniformBuffer&) = delete;
+
+        UniformBuffer(UniformBuffer&&);
+        UniformBuffer& operator=(UniformBuffer&&);
+
+        void Bind() const { glBindBuffer(GL_UNIFORM_BUFFER, mId); }
+        void UnBind() const { glBindBuffer(GL_UNIFORM_BUFFER, 0); }
+
+        void TurnOn() const { glBindBufferBase(GL_UNIFORM_BUFFER, mBindLoc, mId); }
+        void TurnOff() const { glBindBufferBase(GL_UNIFORM_BUFFER, mBindLoc, 0); }
+
+        void Modify(int offset, int size, const void* data) const
+        { glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data); }
+
+        unsigned GetId() const { return mId; }
+        int GetSize() const { return mSize; }
+        int GetMode() const { return mMode; }
+        int GetBindLoc() const { return mBindLoc; }
+    };
+
+    ////////////////////////////////////////
+    struct FogUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        glm::vec3 mColor;
+        float mDistance;
+        float mExponent;
+
+    public:
+        FogUB(const glm::vec3& color, float distance, float exponent);
+
+        void Bind() const { mBuffer.Bind(); }
+        void UnBind() const { mBuffer.UnBind(); }
+
+        void TurnOn() const { mBuffer.TurnOn(); }
+        void TurnOff() const { mBuffer.TurnOff(); }
+
+        glm::vec3 GetColor() const { return mColor; }
+        float GetDistance() const { return mDistance; }
+        float GetExponent() const { return mExponent; }
+
+        void SetColor(const glm::vec3& color);
+        void SetDistance(float distance);
+        void SetExponent(float exponent);
+    };
+
+    ////////////////////////////////////////
     struct VertexInfo
     {
         int loc;

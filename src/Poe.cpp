@@ -202,6 +202,80 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    UniformBuffer::UniformBuffer(int size, int mode, int bindLoc)
+        : mSize{size}, mMode{mode}, mBindLoc{bindLoc}
+    {
+        glGenBuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, mId);
+            glBufferData(GL_UNIFORM_BUFFER, size, nullptr, mode);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
+    ////////////////////////////////////////
+    UniformBuffer::UniformBuffer(UniformBuffer&& other)
+        : mId{other.mId}, mSize{other.mSize}, mMode{other.mMode}, mBindLoc{other.mBindLoc}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other)
+    {
+        if (this != &other) {
+            glDeleteBuffers(1, &mId);
+
+            mId = other.mId;
+            mSize = other.mSize;
+            mMode = other.mMode;
+            mBindLoc = other.mBindLoc;
+
+            other.mId = 0;
+        }
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    FogUB::FogUB(const glm::vec3& color, float distance, float exponent)
+        : mBuffer(24, GL_DYNAMIC_DRAW, 0),
+          mColor{color}, mDistance{distance}, mExponent{exponent}
+    {
+        mBuffer.Bind();
+            mBuffer.Modify(0, 16, glm::value_ptr(mColor));
+            mBuffer.Modify(16, 4, &mDistance);
+            mBuffer.Modify(20, 4, &mExponent);
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
+    void FogUB::SetColor(const glm::vec3& color)
+    {
+        mColor = color;
+        mBuffer.Bind();
+            mBuffer.Modify(0, 16, glm::value_ptr(mColor));
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
+    void FogUB::SetDistance(float distance)
+    {
+        mDistance = distance;
+        mBuffer.Bind();
+            mBuffer.Modify(16, 4, &mDistance);
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
+    void FogUB::SetExponent(float exponent)
+    {
+        mExponent = exponent;
+        mBuffer.Bind();
+            mBuffer.Modify(20, 4, &mExponent);
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
         : mNumIndices{ebo.GetNumElements()}
     {
@@ -1130,14 +1204,16 @@ namespace Poe
     ////////////////////////////////////////
     Cubemap& Cubemap::operator=(Cubemap&& other)
     {
-        glDeleteTextures(1, &mId);
+        if (this != &other) {
+            glDeleteTextures(1, &mId);
 
-        mId = other.mId;
-        mWidth = other.mWidth;
-        mHeight = other.mHeight;
-        mNumChannels = other.mNumChannels;
+            mId = other.mId;
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+            mNumChannels = other.mNumChannels;
 
-        other.mId = 0;
+            other.mId = 0;
+        }
         return *this;
     }
 
@@ -1266,13 +1342,15 @@ namespace Poe
     ////////////////////////////////////////
     Framebuffer& Framebuffer::operator=(Framebuffer&& other)
     {
-        glDeleteFramebuffers(1, &mId);
+        if (this != &other) {
+            glDeleteFramebuffers(1, &mId);
 
-        mId = other.mId;
-        mColorAttachments = other.mColorAttachments;
-        mRenderbuffers = other.mRenderbuffers;
+            mId = other.mId;
+            mColorAttachments = other.mColorAttachments;
+            mRenderbuffers = other.mRenderbuffers;
 
-        other.mId = 0;
+            other.mId = 0;
+        }
         return *this;
     }
 }

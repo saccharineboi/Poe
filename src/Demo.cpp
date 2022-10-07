@@ -218,6 +218,9 @@ namespace Poe
 
         auto cubemap = CreateCloudySkybox("..");
 
+        FogUB fog(clearColor, 1000.0f, 2.0f);
+        fog.TurnOn();
+
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
             fbo.Bind();
@@ -236,9 +239,6 @@ namespace Poe
             emissiveTextureProgram.Use();
             emissiveTextureProgram.Uniform("uPVM", projView * model);
             emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
-            emissiveTextureProgram.Uniform("uFogColor", clearColor);
-            emissiveTextureProgram.Uniform("uFogDistance", 1000.0f);
-            emissiveTextureProgram.Uniform("uFogExp", 3.0f);
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
             staticModel.Draw();
@@ -247,9 +247,6 @@ namespace Poe
             emissiveColorProgram.Uniform("uPVM", projView);
             emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
-            emissiveColorProgram.Uniform("uFogColor", clearColor);
-            emissiveColorProgram.Uniform("uFogDistance", 1000.0f);
-            emissiveColorProgram.Uniform("uFogExp", 3.0f);
             grid.Bind();
             grid.Draw(GL_LINES);
 

@@ -3,9 +3,13 @@
 in vec3 vEyeSpace;
 
 layout (location = 2) uniform vec4 uColor;
-layout (location = 3) uniform vec4 uFogColor;
-layout (location = 4) uniform float uFogDistance;
-layout (location = 5) uniform float uFogExp;
+
+layout (std140, binding = 0) uniform FogBlock
+{
+    vec4 uFogColor;
+    float uFogDistance;
+    float uFogExp;
+};
 
 out vec4 color;
 void main(void)
