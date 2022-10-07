@@ -302,7 +302,7 @@ namespace Poe
         void SetKernelWeight(float w) { glUniform1f(KERNEL_WEIGHT_LOC, w); }
 
         void SetKernel(const glm::mat3& kernel)
-        { glUniformMatrix4fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(kernel)); }
+        { glUniformMatrix3fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(kernel)); }
 
         void SetIdentityKernel() { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
                                                        0.0f, 1.0f, 0.0f,
