@@ -2,7 +2,7 @@
 
 in vec3 vTexCoord;
 
-uniform samplerCube uSkybox;
+layout (location = 1) uniform samplerCube uSkybox;
 
 out vec4 color;
 void main()

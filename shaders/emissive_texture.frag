@@ -3,13 +3,13 @@
 in vec3 vEyeSpace;
 in vec2 vTexCoord;
 
-uniform sampler2D uEmissiveTexture;
-uniform vec2 uTileMultiplier;
-uniform vec2 uTileOffset;
+layout (location = 2) uniform sampler2D uEmissiveTexture;
+layout (location = 3) uniform vec2 uTileMultiplier;
+layout (location = 4) uniform vec2 uTileOffset;
 
-uniform vec4 uFogColor;
-uniform float uFogDistance;
-uniform float uFogExp;
+layout (location = 5) uniform vec4 uFogColor;
+layout (location = 6) uniform float uFogDistance;
+layout (location = 7) uniform float uFogExp;
 
 out vec4 color;
 void main(void)

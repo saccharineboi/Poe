@@ -2,8 +2,8 @@
 
 layout (location = 0) in vec3 aPos;
 
-uniform mat4 uPVM;
-uniform mat4 uModelView;
+layout (location = 0) uniform mat4 uPVM;
+layout (location = 1) uniform mat4 uModelView;
 
 out vec3 vEyeSpace;
 

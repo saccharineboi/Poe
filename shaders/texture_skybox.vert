@@ -53,7 +53,7 @@ const vec3 positions[36] = vec3[](
 
 out vec3 vTexCoord;
 
-uniform mat4 uProjView;
+layout (location = 0) uniform mat4 uProjView;
 
 void main()
 {

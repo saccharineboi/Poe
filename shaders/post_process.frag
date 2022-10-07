@@ -2,10 +2,10 @@
 
 in vec2 vTexCoord;
 
-uniform float uGrayscaleWeight;
-uniform float uKernelWeight;
-uniform mat3 uKernel;
-uniform sampler2D uScreenTexture;
+layout (location = 0) uniform float uGrayscaleWeight;
+layout (location = 1) uniform float uKernelWeight;
+layout (location = 2) uniform mat3 uKernel;
+layout (location = 3) uniform sampler2D uScreenTexture;
 
 ////////////////////////////////////////
 vec3 makeGrayscale(vec3 col)
