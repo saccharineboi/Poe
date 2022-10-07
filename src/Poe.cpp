@@ -1142,6 +1142,45 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Cubemap CreateUlukaiCoronaSkybox(const std::string& root)
+    {
+        return Cubemap{
+            std::make_pair(CubemapFace::Front,  root + "/skyboxes/ulukai/corona_ft.png"),
+            std::make_pair(CubemapFace::Back,   root + "/skyboxes/ulukai/corona_bk.png"),
+            std::make_pair(CubemapFace::Left,   root + "/skyboxes/ulukai/corona_lf.png"),
+            std::make_pair(CubemapFace::Right,  root + "/skyboxes/ulukai/corona_rt.png"),
+            std::make_pair(CubemapFace::Top,    root + "/skyboxes/ulukai/corona_up.png"),
+            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/ulukai/corona_dn.png")
+        };
+    }
+
+    ////////////////////////////////////////
+    Cubemap CreateUlukaiRedEclipseSkybox(const std::string& root)
+    {
+        return Cubemap{
+            std::make_pair(CubemapFace::Front,  root + "/skyboxes/ulukai/redeclipse_ft.png"),
+            std::make_pair(CubemapFace::Back,   root + "/skyboxes/ulukai/redeclipse_bk.png"),
+            std::make_pair(CubemapFace::Left,   root + "/skyboxes/ulukai/redeclipse_lf.png"),
+            std::make_pair(CubemapFace::Right,  root + "/skyboxes/ulukai/redeclipse_rt.png"),
+            std::make_pair(CubemapFace::Top,    root + "/skyboxes/ulukai/redeclipse_up.png"),
+            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/ulukai/redeclipse_dn.png")
+        };
+    }
+
+    ////////////////////////////////////////
+    Cubemap CreateCloudySkybox(const std::string& root)
+    {
+        return Cubemap{
+            std::make_pair(CubemapFace::Front,  root + "/skyboxes/clouds1/clouds1_south.bmp"),
+            std::make_pair(CubemapFace::Back,   root + "/skyboxes/clouds1/clouds1_north.bmp"),
+            std::make_pair(CubemapFace::Left,   root + "/skyboxes/clouds1/clouds1_west.bmp"),
+            std::make_pair(CubemapFace::Right,  root + "/skyboxes/clouds1/clouds1_east.bmp"),
+            std::make_pair(CubemapFace::Top,    root + "/skyboxes/clouds1/clouds1_up.bmp"),
+            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/clouds1/clouds1_down.bmp")
+        };
+    }
+
+    ////////////////////////////////////////
     Renderbuffer::Renderbuffer(int type, int width, int height)
         : mType{type}, mWidth{width}, mHeight{height}
     {

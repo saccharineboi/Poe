@@ -216,14 +216,7 @@ namespace Poe
 
         PostProcessProgram postProcessProgram("..", shaderLoader);
 
-        Cubemap cubemap{
-            std::make_pair(CubemapFace::Front, "../skyboxes/ulukai/corona_ft.png"),
-            std::make_pair(CubemapFace::Back, "../skyboxes/ulukai/corona_bk.png"),
-            std::make_pair(CubemapFace::Left, "../skyboxes/ulukai/corona_lf.png"),
-            std::make_pair(CubemapFace::Right, "../skyboxes/ulukai/corona_rt.png"),
-            std::make_pair(CubemapFace::Top, "../skyboxes/ulukai/corona_up.png"),
-            std::make_pair(CubemapFace::Bottom, "../skyboxes/ulukai/corona_dn.png")
-        };
+        auto cubemap = CreateCloudySkybox("..");
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {

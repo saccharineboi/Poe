@@ -293,18 +293,29 @@ namespace Poe
         void Halt() const { mProgram.Halt(); }
         void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
 
-        void SetGrayscaleWeight(float w) { mProgram.Uniform("uGrayscaleWeight", w); }
-        void SetKernelWeight(float w) { mProgram.Uniform("uKernelWeight", w); }
-        void SetKernel(const glm::mat3& kernel) { mProgram.Uniform("uKernel", kernel); }
+        static inline constexpr int GRAYSCALE_WEIGHT_LOC = 0;
+        static inline constexpr int KERNEL_WEIGHT_LOC = 1;
+        static inline constexpr int KERNEL_LOC = 2;
+        static inline constexpr int SCREEN_TEXTURE_LOC = 3;
+
+        void SetGrayscaleWeight(float w) { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
+        void SetKernelWeight(float w) { glUniform1f(KERNEL_WEIGHT_LOC, w); }
+
+        void SetKernel(const glm::mat3& kernel)
+        { glUniformMatrix4fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(kernel)); }
+
         void SetIdentityKernel() { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
                                                        0.0f, 1.0f, 0.0f,
                                                        0.0f, 0.0f, 0.0f}); }
+
         void SetSharpenKernel() { SetKernel(glm::mat3{-1.0f, -1.0f, -1.0f,
                                                       -1.0f,  9.0f, -1.0f,
                                                       -1.0f, -1.0f, -1.0f}); }
+
         void SetBlurKernel() { SetKernel(glm::mat3{1.0f, 2.0f, 1.0f,
                                                    2.0f, 4.0f, 2.0f,
                                                    1.0f, 2.0f, 1.0f} / 16.0f); }
+
         void SetEdgeDetectKernel() { SetKernel(glm::mat3{1.0f,  1.0f, 1.0f,
                                                          1.0f, -8.0f, 1.0f,
                                                          1.0f,  1.0f, 1.0f}); }
@@ -429,6 +440,11 @@ namespace Poe
         int GetHeight() const { return mHeight; }
         int GetNumChannels() const { return mNumChannels; }
     };
+
+    ////////////////////////////////////////
+    Cubemap CreateUlukaiCoronaSkybox(const std::string& root);
+    Cubemap CreateUlukaiRedEclipseSkybox(const std::string& root);
+    Cubemap CreateCloudySkybox(const std::string& root);
 
     ////////////////////////////////////////
     struct Renderbuffer
