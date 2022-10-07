@@ -1115,8 +1115,12 @@ namespace Poe
             }(face.first);
 
             glTexImage2D(texType, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+#ifdef _DEBUG
+            std::printf("[DEBUG] Allocated %d bytes for %s\n", mWidth * mHeight * 3, face.second.data());
+#endif
             stbi_image_free(data);
         }
+
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
 
