@@ -912,6 +912,18 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    void FirstPersonCamera::SetAspectRatio(int width, int height)
+    {
+        mAspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    }
+
+    ////////////////////////////////////////
+    void FirstPersonCamera::SetPosition(const glm::vec3& position)
+    {
+        mPosition = mTargetPosition = position;
+    }
+
+    ////////////////////////////////////////
     Shader& ShaderLoader::Load(int type, std::string_view shaderUrl)
     {
         auto iter = mShaders.find(shaderUrl.data());

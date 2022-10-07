@@ -21,6 +21,7 @@
 #include <utility>
 #include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
 
 namespace Poe
 {
@@ -79,7 +80,26 @@ namespace Poe
     ////////////////////////////////////////
     static GLFWwindow* CreateWindow()
     {
-        GLFWwindow* window = glfwCreateWindow(1600, 900, "Poe", nullptr, nullptr);
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if (!monitor) {
+            std::fprintf(stderr, "ERROR: couldn't get primary monitor\n");
+            glfwTerminate();
+            std::exit(EXIT_FAILURE);
+        }
+
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        if (!mode) {
+            std::fprintf(stderr, "ERROR: couldn't get video mode\n");
+            glfwTerminate();
+            std::exit(EXIT_FAILURE);
+        }
+
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+        GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Poe", monitor, nullptr);
         if (!window) {
             std::fprintf(stderr, "ERROR: couldn't create window\n");
             glfwTerminate();
@@ -162,9 +182,10 @@ namespace Poe
         EnableDebugContext();
         SetCallbacks(window);
 
-        int fbWidth, fbHeight;
-        glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+        int fbWidth = 1920, fbHeight = 1080;
+        // glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
         glViewport(0, 0, fbWidth, fbHeight);
+        mainCamera.SetAspectRatio(fbWidth, fbHeight);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
@@ -184,8 +205,7 @@ namespace Poe
         auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
         auto skyboxProgram = CreateTextureSkyboxProgram("..", shaderLoader);
 
-        mainCamera.mPosition = glm::vec3(0.0f, 3.0f, 3.0f);
-        mainCamera.mTargetPosition = mainCamera.mPosition;
+        mainCamera.SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
 
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
