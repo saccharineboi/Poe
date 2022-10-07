@@ -1106,12 +1106,8 @@ namespace Poe
                         return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
                     case CubemapFace::Bottom:
                         return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-                    default:
-#ifdef _DEBUG
-                        std::fprintf(stderr, "[ERROR] Invalid cubemap face\n");
-#endif
-                        return 0;
                 }
+                return 0;
             }(face.first);
 
             glTexImage2D(texType, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
