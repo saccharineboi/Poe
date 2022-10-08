@@ -198,6 +198,9 @@ namespace Poe
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
+        auto cube = CreateCube();
+        cube.CreateInstances(1000);
+
         auto grid = CreateGrid(100, 100);
 
         ShaderLoader shaderLoader;
@@ -218,8 +221,11 @@ namespace Poe
 
         auto cubemap = CreateCloudySkybox("..");
 
-        FogUB fog(clearColor, 1000.0f, 2.0f);
-        fog.TurnOn();
+        FogUB fogBlock(clearColor, 100.0f, 2.0f);
+        fogBlock.Buffer().TurnOn();
+
+        TransformUB transformBlock(mainCamera.mProjection, mainCamera.mView);
+        transformBlock.Buffer().TurnOn();
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -228,6 +234,10 @@ namespace Poe
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
+
+            transformBlock.SetProjectionMatrix(mainCamera.mProjection);
+            transformBlock.SetViewMatrix(mainCamera.mView);
+
             auto projView = mainCamera.mProjection * mainCamera.mView;
 
             rads += dt;
@@ -244,11 +254,24 @@ namespace Poe
             staticModel.Draw();
 
             emissiveColorProgram.Use();
-            emissiveColorProgram.Uniform("uPVM", projView);
-            emissiveColorProgram.Uniform("uModelView", mainCamera.mView);
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
             grid.Bind();
             grid.Draw(GL_LINES);
+
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 12.0f, -10.0f));
+            model = glm::rotate(model, rads, glm::vec3(0.0f, 1.0f, 0.0f));
+
+            emissiveColorProgram.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
+            cube.Bind();
+
+            cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,
+            [=](int i, int j, int k, int numInstances) {
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -50.0f));
+                t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
+                return t;
+            });
+
+            cube.Draw();
 
             skyboxProgram.Use();
             skyboxProgram.Uniform("uProjView", mainCamera.mProjection * glm::mat4(glm::mat3(mainCamera.mView)));

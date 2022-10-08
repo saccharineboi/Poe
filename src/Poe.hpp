@@ -47,6 +47,10 @@
 #include <string>
 #include <string_view>
 #include <functional>
+#include <utility>
+#include <memory>
+
+#include <cstring>
 
 namespace Poe
 {
@@ -90,6 +94,9 @@ namespace Poe
         float* GetWritePtr() const
         { return reinterpret_cast<float*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); }
         int Unmap() const { return glUnmapBuffer(GL_ARRAY_BUFFER); }
+
+        void Modify(int offset, int size, const void* data) const
+        { glBufferSubData(GL_ARRAY_BUFFER, offset, size, data); }
     };
 
     ////////////////////////////////////////
@@ -122,6 +129,9 @@ namespace Poe
         unsigned* GetWritePtr() const
         { return reinterpret_cast<unsigned*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)); }
         int Unmap() const { return glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER); }
+
+        void Modify(int offset, int size, const void* data) const
+        { glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, data); }
     };
 
     ////////////////////////////////////////
@@ -171,11 +181,7 @@ namespace Poe
     public:
         FogUB(const glm::vec3& color, float distance, float exponent);
 
-        void Bind() const { mBuffer.Bind(); }
-        void UnBind() const { mBuffer.UnBind(); }
-
-        void TurnOn() const { mBuffer.TurnOn(); }
-        void TurnOff() const { mBuffer.TurnOff(); }
+        const UniformBuffer& Buffer() const { return mBuffer; }
 
         glm::vec3 GetColor() const { return mColor; }
         float GetDistance() const { return mDistance; }
@@ -184,6 +190,26 @@ namespace Poe
         void SetColor(const glm::vec3& color);
         void SetDistance(float distance);
         void SetExponent(float exponent);
+    };
+
+    ////////////////////////////////////////
+    struct TransformUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        glm::mat4 mProjectionMatrix;
+        glm::mat4 mViewMatrix;
+
+    public:
+        TransformUB(const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix);
+
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        glm::mat4 GetProjectionMatrix() const { return mProjectionMatrix; }
+        glm::mat4 GetViewMatrix() const { return mViewMatrix; }
+
+        void SetProjectionMatrix(const glm::mat4& projectionMatrix);
+        void SetViewMatrix(const glm::mat4& viewMatrix);
     };
 
     ////////////////////////////////////////
@@ -217,7 +243,11 @@ namespace Poe
         void Bind() const { glBindVertexArray(mId); }
         void UnBind() const { glBindVertexArray(0); }
 
-        void Draw(int mode = GL_TRIANGLES) const { glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr); }
+        void Draw(int mode = GL_TRIANGLES) const
+        { glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr); }
+
+        void DrawInstanced(int mode = GL_TRIANGLES, int numInstances = 1) const
+        { glDrawElementsInstanced(mode, mNumIndices, GL_UNSIGNED_INT, nullptr, numInstances); }
 
         unsigned GetId() const { return mId; }
         int GetNumIndices() const { return mNumIndices; }
@@ -573,6 +603,11 @@ namespace Poe
         IndexBuffer mEbo;
         VAO mVao;
         std::vector<std::reference_wrapper<const Texture2D>> mTextures;
+        std::unique_ptr<VertexBuffer> mModelMatrixBuffer;
+        int mNumInstances;
+
+        void CreateFirstInstance();
+        void ReconfigureMatrixBuffer();
 
     public:
         StaticMesh(const std::vector<float>& vertices,
@@ -580,7 +615,10 @@ namespace Poe
                    const std::vector<VertexInfo>& infos)
             : mVbo(vertices, GL_STATIC_DRAW),
               mEbo(indices, GL_STATIC_DRAW),
-              mVao(mVbo, mEbo, infos) {}
+              mVao(mVbo, mEbo, infos),
+              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
+              mNumInstances{1}
+        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
 
         StaticMesh(const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
@@ -589,14 +627,20 @@ namespace Poe
             : mVbo(vertices, GL_STATIC_DRAW),
               mEbo(indices, GL_STATIC_DRAW),
               mVao(mVbo, mEbo, infos),
-              mTextures{textures} {}
+              mTextures{textures},
+              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
+              mNumInstances{1}
+        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
 
         StaticMesh(int numVertices,
                    int numIndices,
                    const std::vector<VertexInfo>& infos)
             : mVbo(numVertices, GL_STATIC_DRAW),
               mEbo(numIndices, GL_STATIC_DRAW),
-              mVao(mVbo, mEbo, infos) {}
+              mVao(mVbo, mEbo, infos),
+              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
+              mNumInstances{1}
+        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
 
         StaticMesh(int numVertices,
                    int numIndices,
@@ -605,11 +649,17 @@ namespace Poe
             : mVbo(numVertices, GL_STATIC_DRAW),
               mEbo(numIndices, GL_STATIC_DRAW),
               mVao(mVbo, mEbo, infos),
-              mTextures{textures} {}
+              mTextures{textures},
+              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
+              mNumInstances{1}
+        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
 
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
-        void Draw(int mode = GL_TRIANGLES) const { mVao.Draw(mode); }
+
+        void Draw(int mode = GL_TRIANGLES) const
+        { mVao.DrawInstanced(mode, mNumInstances); }
+
         void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
         void AddTextures(const std::vector<std::reference_wrapper<const Texture2D>>& textures) { std::ranges::copy(textures, std::back_inserter(mTextures)); }
 
@@ -632,6 +682,80 @@ namespace Poe
 
         void BindEbo() const { mEbo.Bind(); }
         void UnBindEbo() const { mEbo.UnBind(); }
+
+        void BindMatrixBuffer() const { mModelMatrixBuffer->Bind(); }
+        void UnBindMatrixBuffer() const { mModelMatrixBuffer->UnBind(); }
+
+        void SetInstanceMatrixFast(const glm::mat4& modelMatrix, int instance = 0)
+        { mModelMatrixBuffer->Modify(instance * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(modelMatrix)); }
+
+        int GetNumInstances() const { return mNumInstances; }
+        void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0);
+        void CreateInstances(std::initializer_list<glm::mat4> modelMatrices);
+        void CreateInstances(const std::vector<glm::mat4>& modelMatrices);
+        void CreateInstances(int numInstances);
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstances(Func func)
+        {
+            mModelMatrixBuffer->Bind();
+            for (int i = 0; i < mNumInstances; ++i)
+                mModelMatrixBuffer->Modify(i * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(func(i, mNumInstances)));
+            mModelMatrixBuffer->UnBind();
+        }
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstancesGrid2D(int numXMeshes, int numZMeshes, float xOffset, float zOffset, float yPos, Func func)
+        {
+            assert(numXMeshes * numZMeshes == mNumInstances);
+            const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
+            const float negNumZMeshesHalf = (zOffset) * static_cast<float>(-numZMeshes) * 0.5f;
+            mModelMatrixBuffer->Bind();
+            float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
+
+            int cnt{};
+            for (int i = 0; i < numXMeshes; ++i) {
+                float xPos = negNumXMeshesHalf + static_cast<float>(i) * xOffset;
+                for (int j = 0; j < numZMeshes; ++j) {
+                    float zPos = negNumZMeshesHalf + static_cast<float>(j) * zOffset;
+                    auto defaultTransform = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos));
+                    std::memcpy(modelMatrixPtr + cnt * sizeof(glm::vec4), glm::value_ptr(defaultTransform * func(i, j, mNumInstances)), sizeof(glm::mat4));
+                    ++cnt;
+                }
+            }
+            assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
+            mModelMatrixBuffer->UnBind();
+        }
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstancesGrid3D(int numXMeshes, int numYMeshes, int numZMeshes, float xOffset, float yOffset, float zOffset, Func func)
+        {
+            assert(numXMeshes * numYMeshes * numZMeshes == mNumInstances);
+            const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
+            const float negNumYMeshesHalf = (yOffset) * static_cast<float>(-numYMeshes) * 0.5f;
+            const float negNumZMeshesHalf = (zOffset) * static_cast<float>(-numZMeshes) * 0.5f;
+            mModelMatrixBuffer->Bind();
+            float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
+
+            int cnt{};
+            for (int i = 0; i < numXMeshes; ++i) {
+                float xPos = negNumXMeshesHalf + static_cast<float>(i) * xOffset;
+                for (int j = 0; j < numYMeshes; ++j) {
+                    float yPos = negNumYMeshesHalf + static_cast<float>(j) * yOffset;
+                    for (int k = 0; k < numZMeshes; ++k) {
+                        float zPos = negNumZMeshesHalf + static_cast<float>(k) * zOffset;
+                        auto defaultTransform = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos));
+                        std::memcpy(modelMatrixPtr + cnt * sizeof(glm::vec4), glm::value_ptr(defaultTransform * func(i, j, k, mNumInstances)), sizeof(glm::mat4));
+                        ++cnt;
+                    }
+                }
+            }
+            assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
+            mModelMatrixBuffer->UnBind();
+        }
     };
 
     ////////////////////////////////////////

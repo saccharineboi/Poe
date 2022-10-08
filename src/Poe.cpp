@@ -23,6 +23,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 namespace Poe
 {
@@ -276,6 +277,35 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    TransformUB::TransformUB(const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix)
+        : mBuffer(128, GL_DYNAMIC_DRAW, 1),
+          mProjectionMatrix{projectionMatrix}, mViewMatrix{viewMatrix}
+    {
+        mBuffer.Bind();
+            mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
+            mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
+    void TransformUB::SetProjectionMatrix(const glm::mat4& projectionMatrix)
+    {
+        mProjectionMatrix = projectionMatrix;
+        mBuffer.Bind();
+            mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
+    void TransformUB::SetViewMatrix(const glm::mat4& viewMatrix)
+    {
+        mViewMatrix = viewMatrix;
+        mBuffer.Bind();
+            mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+        mBuffer.UnBind();
+    }
+
+    ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
         : mNumIndices{ebo.GetNumElements()}
     {
@@ -452,6 +482,98 @@ namespace Poe
         mProgram.Use();
             mProgram.Uniform("uScreenTexture", 0);
         mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::ReconfigureMatrixBuffer()
+    {
+        mModelMatrixBuffer->Bind();
+        mVao.Bind();
+            glEnableVertexAttribArray(8);
+            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(0));
+            glVertexAttribDivisor(8, 1);
+
+            glEnableVertexAttribArray(9);
+            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(sizeof(glm::vec4)));
+            glVertexAttribDivisor(9, 1);
+
+            glEnableVertexAttribArray(10);
+            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(2 * sizeof(glm::vec4)));
+            glVertexAttribDivisor(10, 1);
+
+            glEnableVertexAttribArray(11);
+            glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(3 * sizeof(glm::vec4)));
+            glVertexAttribDivisor(11, 1);
+        mVao.UnBind();
+        mModelMatrixBuffer->UnBind();
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::CreateFirstInstance()
+    {
+        mModelMatrixBuffer->Bind();
+        mModelMatrixBuffer->Modify(0, sizeof(glm::mat4), glm::value_ptr(glm::mat4(1.0f)));
+        mModelMatrixBuffer->UnBind();
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::SetInstanceMatrix(const glm::mat4& modelMatrix, int instance)
+    {
+        if (instance >= 0 && instance < mNumInstances) {
+            mModelMatrixBuffer->Bind();
+            mModelMatrixBuffer->Modify(instance * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(modelMatrix));
+            mModelMatrixBuffer->UnBind();
+        }
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::CreateInstances(std::initializer_list<glm::mat4> modelMatrices)
+    {
+        int numMatrices = static_cast<int>(modelMatrices.size());
+        if (numMatrices > 0) {
+            VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
+            delete oldBuffer;
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
+            mModelMatrixBuffer->Bind();
+            int i{};
+            for (const glm::mat4& model : modelMatrices) {
+                mModelMatrixBuffer->Modify(i * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(model));
+                ++i;
+            }
+            mModelMatrixBuffer->UnBind();
+            mNumInstances = numMatrices;
+            ReconfigureMatrixBuffer();
+        }
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::CreateInstances(const std::vector<glm::mat4>& modelMatrices)
+    {
+        int numMatrices = static_cast<int>(modelMatrices.size());
+        if (numMatrices > 0) {
+            VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
+            delete oldBuffer;
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
+            mModelMatrixBuffer->Bind();
+            float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
+            std::memcpy(modelMatrixPtr, modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
+            assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
+            mModelMatrixBuffer->UnBind();
+            mNumInstances = numMatrices;
+            ReconfigureMatrixBuffer();
+        }
+    }
+
+    ////////////////////////////////////////
+    void StaticMesh::CreateInstances(int numInstances)
+    {
+        if (numInstances > 0) {
+            VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
+            delete oldBuffer;
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * numInstances, GL_DYNAMIC_DRAW));
+            mNumInstances = numInstances;
+            ReconfigureMatrixBuffer();
+        }
     }
 
     ////////////////////////////////////////
