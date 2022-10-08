@@ -2,7 +2,7 @@
 
 in vec3 vEyeSpace;
 
-layout (location = 2) uniform vec4 uColor;
+layout (location = 0) uniform vec4 uColor;
 
 layout (std140, binding = 0) uniform FogBlock
 {
