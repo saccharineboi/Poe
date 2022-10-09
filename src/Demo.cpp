@@ -31,17 +31,23 @@ namespace Poe
     ////////////////////////////////////////
     static void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
     {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
-        else if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-            static bool isWireframe;
-            isWireframe = !isWireframe;
-            if (isWireframe)
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            else
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (action == GLFW_PRESS) {
+            switch (key) {
+                case GLFW_KEY_ESCAPE:
+                    glfwSetWindowShouldClose(window, GLFW_TRUE);
+                    break;
+                case GLFW_KEY_I:
+                    mainCamera.mFovy -= glm::radians(5.0f);
+                    if (mainCamera.mFovy < glm::radians(10.0f))
+                        mainCamera.mFovy = glm::radians(10.0f);
+                    break;
+                case GLFW_KEY_O:
+                    mainCamera.mFovy += glm::radians(5.0f);
+                    if (mainCamera.mFovy > glm::radians(180.0f))
+                        mainCamera.mFovy = glm::radians(180.0f);
+                    break;
+            }
         }
-
         mainCamera.UpdateInputConfig(key, action);
     }
 
@@ -66,6 +72,13 @@ namespace Poe
     static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
     {
         mainCamera.UpdateDirection(static_cast<float>(xpos), static_cast<float>(ypos));
+    }
+
+    ////////////////////////////////////////
+    static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+    {
+        mainCamera.mSpeed += static_cast<float>(yoffset);
+        mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 1000.0f);
     }
 
     ////////////////////////////////////////
@@ -167,6 +180,7 @@ namespace Poe
         glfwSetKeyCallback(window, keyCallback);
         glfwSetMouseButtonCallback(window, mouseButtonCallback);
         glfwSetCursorPosCallback(window, cursorPositionCallback);
+        glfwSetScrollCallback(window, scrollCallback);
         if (glfwRawMouseMotionSupported())
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
@@ -202,6 +216,7 @@ namespace Poe
         cube.CreateInstances(1000);
 
         auto grid = CreateGrid(100, 100);
+        grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(5.0f)));
 
         ShaderLoader shaderLoader;
         auto emissiveColorProgram = CreateEmissiveColorProgram("..", shaderLoader);
@@ -266,7 +281,7 @@ namespace Poe
 
             cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,
             [=](int i, int j, int k, int numInstances) {
-                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -50.0f));
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 30.0f, -50.0f));
                 t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
                 return t;
             });
