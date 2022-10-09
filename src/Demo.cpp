@@ -206,8 +206,8 @@ namespace Poe
         glEnable(GL_CULL_FACE);
         glDepthFunc(GL_LEQUAL);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // glEnable(GL_BLEND);
+        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
@@ -228,14 +228,7 @@ namespace Poe
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
-        RenderbufferMultiSample rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight, 8);
-        Texture2DMultiSample color0MS(fbWidth, fbHeight, GL_RGB, 8);
-        Framebuffer fboMS(color0MS, rbo);
-
-        auto color0 = CreateFramebufferTexture2D(fbWidth, fbHeight);
-        Framebuffer fbo(color0);
-
-        PostProcessProgram postProcessProgram("..", shaderLoader);
+        PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
         auto cubemap = CreateCloudySkybox("..");
 
@@ -247,7 +240,7 @@ namespace Poe
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
-            fboMS.Bind();
+            ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
@@ -296,15 +289,16 @@ namespace Poe
             cubemap.Bind();
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
-            fboMS.Blit(fbo, fbWidth, fbHeight);
-            fbo.UnBind();
+            ppStack.SecondPass();
+            ppStack.BindColor0();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            color0.Bind();
-            postProcessProgram.Use();
-            postProcessProgram.SetGrayscaleWeight(0.0f);
-            postProcessProgram.SetKernelWeight(0.0f);
-            postProcessProgram.Draw();
+            ppStack.Program().Use();
+            ppStack.Program().SetGrayscaleWeight(0.0f);
+            ppStack.Program().SetKernelWeight(0.0f);
+            ppStack.Program().SetGamma(2.2f);
+            ppStack.Program().SetExposure(1.0f);
+            ppStack.Program().Draw();
 
             glfwSwapBuffers(window);
             glfwPollEvents();

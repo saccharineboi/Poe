@@ -388,13 +388,17 @@ namespace Poe
         static inline constexpr int GRAYSCALE_WEIGHT_LOC = 0;
         static inline constexpr int KERNEL_WEIGHT_LOC = 1;
         static inline constexpr int SCREEN_TEXTURE_LOC = 2;
-        static inline constexpr int KERNEL_LOC = 3;
+        static inline constexpr int GAMMA_LOC = 3;
+        static inline constexpr int EXPOSURE_LOC = 4;
+        static inline constexpr int KERNEL_LOC = 5;
 
         static inline constexpr int KERNEL_ROW_SIZE = 7;
         static inline constexpr int KERNEL_SIZE = KERNEL_ROW_SIZE * KERNEL_ROW_SIZE;
 
-        void SetGrayscaleWeight(float w) { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
-        void SetKernelWeight(float w) { glUniform1f(KERNEL_WEIGHT_LOC, w); }
+        void SetGrayscaleWeight(float w) const { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
+        void SetKernelWeight(float w) const { glUniform1f(KERNEL_WEIGHT_LOC, w); }
+        void SetGamma(float g) const { glUniform1f(GAMMA_LOC, g); }
+        void SetExposure(float e) const { glUniform1f(EXPOSURE_LOC, e); }
 
         void SetIdentityKernel() const;
         void SetSharpenKernel() const;
@@ -905,5 +909,33 @@ namespace Poe
 
         void SetAspectRatio(int width, int height);
         void SetPosition(const glm::vec3& position);
+    };
+
+    ////////////////////////////////////////
+    struct PostProcessStack
+    {
+    private:
+        int mWidth;
+        int mHeight;
+        int mNumSamples;
+
+        PostProcessProgram mProgram;
+
+        RenderbufferMultiSample mRboMS;
+        Texture2DMultiSample mColor0MS;
+        Framebuffer mFboMS;
+
+        Texture2D mColor0;
+        Framebuffer mFbo;
+
+    public:
+        PostProcessStack(const std::string& shaderRootPath, int width, int height, int numSamples, ShaderLoader&);
+
+        void FirstPass() const { mFboMS.Bind(); }
+        void SecondPass() const { mFboMS.Blit(mFbo, mWidth, mHeight); mFbo.UnBind(); }
+        void BindColor0() const { mColor0.Bind(); }
+
+        PostProcessProgram& Program() { return mProgram; }
+        const PostProcessProgram& Program() const { return mProgram; }
     };
 }

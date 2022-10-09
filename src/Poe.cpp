@@ -1207,10 +1207,12 @@ namespace Poe
                 mParams.textureFormat = mParams.internalFormat = GL_RG;
                 break;
             case 3:
-                mParams.textureFormat = mParams.internalFormat = GL_RGB;
+                mParams.textureFormat = GL_RGB;
+                mParams.internalFormat = GL_SRGB;
                 break;
             case 4:
-                mParams.textureFormat = mParams.internalFormat = GL_RGBA;
+                mParams.textureFormat = GL_RGBA;
+                mParams.internalFormat = GL_SRGB_ALPHA;
                 break;
         }
 
@@ -1278,6 +1280,8 @@ namespace Poe
         params.minF = params.magF = GL_LINEAR;
         params.wrapS = params.wrapT = GL_CLAMP_TO_EDGE;
         params.generateMipmaps = false;
+        params.internalFormat = GL_RGBA32F;
+        params.textureFormat = GL_RGBA;
         unsigned char* data = nullptr;
         return Texture2D(data, width, height, 3, params);
     }
@@ -1333,7 +1337,7 @@ namespace Poe
                 return 0;
             }(face.first);
 
-            glTexImage2D(texType, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(texType, 0, GL_SRGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 #ifdef _DEBUG
             std::printf("[DEBUG] Allocated %d bytes for %s\n", mWidth * mHeight * 3, face.second.data());
 #endif
@@ -1531,6 +1535,8 @@ namespace Poe
         glGenTextures(1, &mId);
         assert(mId != 0);
 
+        assert(mNumSamples > 0);
+
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, type, width, height, GL_TRUE);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
@@ -1567,6 +1573,8 @@ namespace Poe
         glGenRenderbuffers(1, &mId);
         assert(mId != 0);
 
+        assert(mNumSamples > 0);
+
         glBindRenderbuffer(GL_RENDERBUFFER, mId);
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, type, width, height);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -1595,4 +1603,14 @@ namespace Poe
         }
         return *this;
     }
+
+    ////////////////////////////////////////
+    PostProcessStack::PostProcessStack(const std::string& shaderRootPath, int width, int height, int numSamples, ShaderLoader& loader)
+        : mWidth{width}, mHeight{height}, mNumSamples{numSamples},
+          mProgram(shaderRootPath, loader),
+          mRboMS(GL_DEPTH24_STENCIL8, mWidth, mHeight, mNumSamples),
+          mColor0MS(mWidth, mHeight, GL_RGBA32F, mNumSamples),
+          mFboMS(mColor0MS, mRboMS),
+          mColor0{CreateFramebufferTexture2D(mWidth, mHeight)},
+          mFbo(mColor0) {}
 }
