@@ -387,30 +387,18 @@ namespace Poe
 
         static inline constexpr int GRAYSCALE_WEIGHT_LOC = 0;
         static inline constexpr int KERNEL_WEIGHT_LOC = 1;
-        static inline constexpr int KERNEL_LOC = 2;
-        static inline constexpr int SCREEN_TEXTURE_LOC = 3;
+        static inline constexpr int SCREEN_TEXTURE_LOC = 2;
+        static inline constexpr int KERNEL_LOC = 3;
+
+        static inline constexpr int KERNEL_ROW_SIZE = 7;
+        static inline constexpr int KERNEL_SIZE = KERNEL_ROW_SIZE * KERNEL_ROW_SIZE;
 
         void SetGrayscaleWeight(float w) { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
         void SetKernelWeight(float w) { glUniform1f(KERNEL_WEIGHT_LOC, w); }
 
-        void SetKernel(const glm::mat3& kernel)
-        { glUniformMatrix3fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(kernel)); }
-
-        void SetIdentityKernel() { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
-                                                       0.0f, 1.0f, 0.0f,
-                                                       0.0f, 0.0f, 0.0f}); }
-
-        void SetSharpenKernel() { SetKernel(glm::mat3{-1.0f, -1.0f, -1.0f,
-                                                      -1.0f,  9.0f, -1.0f,
-                                                      -1.0f, -1.0f, -1.0f}); }
-
-        void SetBlurKernel() { SetKernel(glm::mat3{1.0f, 2.0f, 1.0f,
-                                                   2.0f, 4.0f, 2.0f,
-                                                   1.0f, 2.0f, 1.0f} / 16.0f); }
-
-        void SetEdgeDetectKernel() { SetKernel(glm::mat3{1.0f,  1.0f, 1.0f,
-                                                         1.0f, -8.0f, 1.0f,
-                                                         1.0f,  1.0f, 1.0f}); }
+        void SetIdentityKernel() const;
+        void SetSharpenKernel() const;
+        void SetEdgeDetectKernel() const;
     };
 
     ////////////////////////////////////////
@@ -567,16 +555,77 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct RenderbufferMultiSample
+    {
+    private:
+        unsigned mId;
+        int mType;
+        int mWidth;
+        int mHeight;
+        int mNumSamples;
+
+    public:
+        RenderbufferMultiSample(int type, int width, int height, int numSamples);
+
+        ~RenderbufferMultiSample() { glDeleteRenderbuffers(1, &mId); }
+
+        RenderbufferMultiSample(const RenderbufferMultiSample&) = delete;
+        RenderbufferMultiSample& operator=(const RenderbufferMultiSample&) = delete;
+
+        RenderbufferMultiSample(RenderbufferMultiSample&&);
+        RenderbufferMultiSample& operator=(RenderbufferMultiSample&&);
+
+        unsigned GetId() const { return mId; }
+        int GetType() const { return mType; }
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetNumSamples() const { return mNumSamples;  }
+
+        void Bind() const { glBindRenderbuffer(GL_RENDERBUFFER, mId); }
+        void UnBind() const { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+    };
+
+    ////////////////////////////////////////
+    struct Texture2DMultiSample
+    {
+    private:
+        unsigned mId;
+        int mWidth;
+        int mHeight;
+        int mType;
+        int mNumSamples;
+
+    public:
+        Texture2DMultiSample(int width, int height, int type, int numSamples);
+
+        ~Texture2DMultiSample() { glDeleteTextures(1, &mId); }
+
+        Texture2DMultiSample(const Texture2DMultiSample&) = delete;
+        Texture2DMultiSample& operator=(const Texture2DMultiSample&) = delete;
+
+        Texture2DMultiSample(Texture2DMultiSample&&);
+        Texture2DMultiSample& operator=(Texture2DMultiSample&&);
+
+        unsigned GetId() const { return mId; }
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetType() const { return mType; }
+        int GetNumSamples() const { return mNumSamples; }
+
+        void Bind() const { glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId); }
+        void UnBind() const { glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0); }
+    };
+
+    ////////////////////////////////////////
     struct Framebuffer
     {
     private:
         unsigned mId;
-        std::vector<std::reference_wrapper<const Texture2D>> mColorAttachments;
-        std::vector<std::reference_wrapper<const Renderbuffer>> mRenderbuffers;
 
     public:
-        explicit Framebuffer(const Texture2D& colorAttachment);
-        Framebuffer(const Texture2D& colorAttachment, const Renderbuffer& rbo);
+        explicit Framebuffer(const Texture2D&);
+        Framebuffer(const Texture2D&, const Renderbuffer&);
+        Framebuffer(const Texture2DMultiSample&, const RenderbufferMultiSample&);
 
         ~Framebuffer() { glDeleteFramebuffers(1, &mId); }
 
@@ -589,10 +638,10 @@ namespace Poe
         void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, mId); }
         void UnBind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
         bool Check() const;
+        void Blit(int width, int height) const;
+        void Blit(const Framebuffer&, int width, int height) const;
 
         unsigned GetId() const { return mId; }
-        std::size_t GetColorAttachmentsCount() const { return mColorAttachments.size(); }
-        std::size_t GetRenderbuffersCount() const { return mRenderbuffers.size(); }
     };
 
     ////////////////////////////////////////

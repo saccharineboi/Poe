@@ -228,9 +228,12 @@ namespace Poe
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
-        auto fboTexture = CreateFramebufferTexture2D(fbWidth, fbHeight);
-        Renderbuffer rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight);
-        Framebuffer fbo(fboTexture, rbo);
+        RenderbufferMultiSample rbo(GL_DEPTH24_STENCIL8, fbWidth, fbHeight, 8);
+        Texture2DMultiSample color0MS(fbWidth, fbHeight, GL_RGB, 8);
+        Framebuffer fboMS(color0MS, rbo);
+
+        auto color0 = CreateFramebufferTexture2D(fbWidth, fbHeight);
+        Framebuffer fbo(color0);
 
         PostProcessProgram postProcessProgram("..", shaderLoader);
 
@@ -244,7 +247,7 @@ namespace Poe
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
-            fbo.Bind();
+            fboMS.Bind();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             float dt = Utility::ComputeDeltaTime();
@@ -293,14 +296,14 @@ namespace Poe
             cubemap.Bind();
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
+            fboMS.Blit(fbo, fbWidth, fbHeight);
             fbo.UnBind();
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            fboTexture.Bind();
+            color0.Bind();
             postProcessProgram.Use();
             postProcessProgram.SetGrayscaleWeight(0.0f);
             postProcessProgram.SetKernelWeight(0.0f);
-            postProcessProgram.SetIdentityKernel();
             postProcessProgram.Draw();
 
             glfwSwapBuffers(window);

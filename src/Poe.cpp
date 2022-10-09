@@ -485,6 +485,33 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    void PostProcessProgram::SetIdentityKernel() const
+    {
+        float kernel[KERNEL_SIZE];
+        for (int i = 0; i < KERNEL_SIZE; ++i)
+            kernel[i] = (i == KERNEL_SIZE / 2) ? 1.0f : 0.0f;
+        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
+    }
+
+    ////////////////////////////////////////
+    void PostProcessProgram::SetSharpenKernel() const
+    {
+        float kernel[KERNEL_SIZE];
+        for (int i = 0; i < KERNEL_SIZE; ++i)
+            kernel[i] = (i == KERNEL_SIZE / 2) ? KERNEL_SIZE : -1.0f;
+        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
+    }
+
+    ////////////////////////////////////////
+    void PostProcessProgram::SetEdgeDetectKernel() const
+    {
+        float kernel[KERNEL_SIZE];
+        for (int i = 0; i < KERNEL_SIZE; ++i)
+            kernel[i] = (i == KERNEL_SIZE / 2) ? -(KERNEL_SIZE - 1) : 1.0f;
+        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
+    }
+
+    ////////////////////////////////////////
     void StaticMesh::ReconfigureMatrixBuffer()
     {
         mModelMatrixBuffer->Bind();
@@ -1427,6 +1454,22 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    void Framebuffer::Blit(const Framebuffer& fb, int width, int height) const
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, mId);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.GetId());
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+
+    ////////////////////////////////////////
+    void Framebuffer::Blit(int width, int height) const
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, mId);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+
+    ////////////////////////////////////////
     Framebuffer::Framebuffer(const Texture2D& colorAttachment)
     {
         glGenFramebuffers(1, &mId);
@@ -1435,7 +1478,6 @@ namespace Poe
         glBindFramebuffer(GL_FRAMEBUFFER, mId);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        mColorAttachments.push_back(colorAttachment);
         Check();
     }
 
@@ -1449,14 +1491,24 @@ namespace Poe
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        mColorAttachments.push_back(colorAttachment);
-        mRenderbuffers.push_back(rbo);
+        Check();
+    }
+
+    Framebuffer::Framebuffer(const Texture2DMultiSample& colorAttachment, const RenderbufferMultiSample& rbo)
+    {
+        glGenFramebuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, mId);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment.GetId(), 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Check();
     }
 
     ////////////////////////////////////////
     Framebuffer::Framebuffer(Framebuffer&& other)
-        : mId{other.mId}, mColorAttachments{other.mColorAttachments}, mRenderbuffers{other.mRenderbuffers}
+        : mId{other.mId}
     {
         other.mId = 0;
     }
@@ -1466,10 +1518,78 @@ namespace Poe
     {
         if (this != &other) {
             glDeleteFramebuffers(1, &mId);
+            mId = other.mId;
+            other.mId = 0;
+        }
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    Texture2DMultiSample::Texture2DMultiSample(int width, int height, int type, int numSamples)
+        : mWidth{width}, mHeight{height}, mType{type}, mNumSamples{numSamples}
+    {
+        glGenTextures(1, &mId);
+        assert(mId != 0);
+
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, type, width, height, GL_TRUE);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    }
+
+    ////////////////////////////////////////
+    Texture2DMultiSample::Texture2DMultiSample(Texture2DMultiSample&& other)
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mType{other.mType}, mNumSamples{other.mNumSamples}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Texture2DMultiSample& Texture2DMultiSample::operator=(Texture2DMultiSample&& other)
+    {
+        if (this != &other) {
+            glDeleteTextures(1, &mId);
 
             mId = other.mId;
-            mColorAttachments = other.mColorAttachments;
-            mRenderbuffers = other.mRenderbuffers;
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+            mType = other.mType;
+            mNumSamples = other.mNumSamples;
+
+            other.mId = 0;
+        }
+        return *this;
+    }
+
+    ////////////////////////////////////////
+    RenderbufferMultiSample::RenderbufferMultiSample(int type, int width, int height, int numSamples)
+        : mType{type}, mWidth{width}, mHeight{height}, mNumSamples{numSamples}
+    {
+        glGenRenderbuffers(1, &mId);
+        assert(mId != 0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, mId);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, type, width, height);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
+
+    ////////////////////////////////////////
+    RenderbufferMultiSample::RenderbufferMultiSample(RenderbufferMultiSample&& other)
+        : mId{other.mId}, mType{other.mType}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumSamples{other.mNumSamples}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    RenderbufferMultiSample& RenderbufferMultiSample::operator=(RenderbufferMultiSample&& other)
+    {
+        if (this != &other) {
+            glDeleteRenderbuffers(1, &mId);
+
+            mId = other.mId;
+            mType = other.mType;
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+            mNumSamples = other.mNumSamples;
 
             other.mId = 0;
         }
