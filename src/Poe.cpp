@@ -1280,7 +1280,7 @@ namespace Poe
         params.minF = params.magF = GL_LINEAR;
         params.wrapS = params.wrapT = GL_CLAMP_TO_EDGE;
         params.generateMipmaps = false;
-        params.internalFormat = GL_RGBA32F;
+        params.internalFormat = GL_RGBA16F;
         params.textureFormat = GL_RGBA;
         unsigned char* data = nullptr;
         return Texture2D(data, width, height, 3, params);
@@ -1609,7 +1609,7 @@ namespace Poe
         : mWidth{width}, mHeight{height}, mNumSamples{numSamples},
           mProgram(shaderRootPath, loader),
           mRboMS(GL_DEPTH24_STENCIL8, mWidth, mHeight, mNumSamples),
-          mColor0MS(mWidth, mHeight, GL_RGBA32F, mNumSamples),
+          mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mWidth, mHeight)},
           mFbo(mColor0) {}

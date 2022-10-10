@@ -773,8 +773,8 @@ namespace Poe
                 float xPos = negNumXMeshesHalf + static_cast<float>(i) * xOffset;
                 for (int j = 0; j < numZMeshes; ++j) {
                     float zPos = negNumZMeshesHalf + static_cast<float>(j) * zOffset;
-                    auto defaultTransform = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos));
-                    std::memcpy(modelMatrixPtr + cnt * sizeof(glm::vec4), glm::value_ptr(defaultTransform * func(i, j, mNumInstances)), sizeof(glm::mat4));
+                    auto transform = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos)) * func(i, j, mNumInstances);
+                    std::memcpy(modelMatrixPtr + cnt * sizeof(glm::vec4), glm::value_ptr(transform), sizeof(glm::mat4));
                     ++cnt;
                 }
             }
