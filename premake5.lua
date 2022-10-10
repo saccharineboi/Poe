@@ -29,6 +29,7 @@ project "poe"
     filter "configurations:release"
         defines { "NDEBUG" }
         optimize "On"
+        symbols "On"
 
     filter { "system:linux", "action:gmake2" }
         buildoptions { "-std=c++20",
