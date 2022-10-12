@@ -11,13 +11,23 @@ project "poe"
     targetdir "build/%{cfg.buildcfg}"
 
     files {
-        "src/main.cpp",
+        "tp/imgui/imgui.cpp",
+        "tp/imgui/imgui_demo.cpp",
+        "tp/imgui/imgui_draw.cpp",
+        "tp/imgui/imgui_impl_glfw.cpp",
+        "tp/imgui/imgui_impl_opengl3.cpp",
+        "tp/imgui/imgui_tables.cpp",
+        "tp/imgui/imgui_widgets.cpp",
+
         "tp/glad/glad.cpp",
+
+        "src/main.cpp",
         "src/Poe.cpp",
-        "src/Demo.cpp"
+        "src/Demo.cpp",
+        "src/UI.cpp"
     }
 
-    includedirs { "include", "source" }
+    includedirs { "include", "source", "include/imgui" }
 
     filter "system:linux"
         links { "m", "glfw", "pthread", "GL", "assimp" }
