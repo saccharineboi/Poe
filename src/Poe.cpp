@@ -278,12 +278,13 @@ namespace Poe
 
     ////////////////////////////////////////
     TransformUB::TransformUB(const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix)
-        : mBuffer(128, GL_DYNAMIC_DRAW, 1),
+        : mBuffer(192, GL_DYNAMIC_DRAW, 1),
           mProjectionMatrix{projectionMatrix}, mViewMatrix{viewMatrix}
     {
         mBuffer.Bind();
             mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
             mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
         mBuffer.UnBind();
     }
 
@@ -293,6 +294,7 @@ namespace Poe
         mProjectionMatrix = projectionMatrix;
         mBuffer.Bind();
             mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
+            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
         mBuffer.UnBind();
     }
 
@@ -302,6 +304,7 @@ namespace Poe
         mViewMatrix = viewMatrix;
         mBuffer.Bind();
             mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
         mBuffer.UnBind();
     }
 

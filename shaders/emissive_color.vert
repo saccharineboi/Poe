@@ -7,12 +7,13 @@ layout (std140, binding = 1) uniform TransformBlock
 {
     mat4 uProjection;
     mat4 uView;
+    mat4 uProjView;
 };
 
 out vec3 vEyeSpace;
 
 void main(void)
 {
-    gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0f);
+    gl_Position = uProjView * uModel * vec4(aPos, 1.0f);
     vEyeSpace = vec3(uView * uModel * vec4(aPos, 1.0f));
 }
