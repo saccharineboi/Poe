@@ -18,6 +18,7 @@
 #include "IO.hpp"
 #include "UI.hpp"
 #include "Utility.hpp"
+#include "Cameras.hpp"
 
 #include <utility>
 #include <cstdio>
@@ -222,9 +223,8 @@ namespace Poe
 
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
-
-        auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
-        auto skyboxProgram = CreateTextureSkyboxProgram("..", shaderLoader);
+        EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
+        TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
 
         mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
 
@@ -237,8 +237,6 @@ namespace Poe
         staticModel.SetInstanceMatrix(model);
 
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
-
-        auto cubemap = CreateCloudySkybox("..");
 
         FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
@@ -267,8 +265,6 @@ namespace Poe
             rads += dt;
 
             emissiveTextureProgram.Use();
-            emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
-            emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
             staticModel.Draw();
 
             emissiveColorProgram.Use();
@@ -287,11 +283,8 @@ namespace Poe
             });
             cube.Draw();
 
-            if (DebugUI::mEnableSkybox) {
-                skyboxProgram.Use();
-                cubemap.Bind();
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-            }
+            if (DebugUI::mEnableSkybox)
+                skybox.Draw();
 
             if (DebugUI::mEnableWireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
