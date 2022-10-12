@@ -444,32 +444,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
-    {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag");
-        Program program{ vshader, fshader };
-
-        program.Use();
-            program.Uniform("uEmissiveTexture", 0);
-        program.Halt();
-        return program;
-    }
-
-    ////////////////////////////////////////
-    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader& loader)
-    {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/texture_skybox.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/texture_skybox.frag");
-        Program program{ vshader, fshader };
-
-        program.Use();
-            program.Uniform("uSkybox", 0);
-        program.Halt();
-        return program;
-    }
-
-    ////////////////////////////////////////
     PostProcessProgram::PostProcessProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/post_process.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/post_process.frag") }
@@ -1014,134 +988,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void FirstPersonCamera::UpdateInputConfig(int key, int action)
-    {
-        if (key == mInputConfig.moveForwardKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingForward = true;
-                mState.movingBackward = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingForward = false;
-        }
-        else if (key == mInputConfig.moveBackwardKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingBackward = true;
-                mState.movingForward = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingBackward = false;
-        }
-
-        if (key == mInputConfig.moveLeftKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingLeft = true;
-                mState.movingRight = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingLeft = false;
-        }
-        else if (key == mInputConfig.moveRightKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingRight = true;
-                mState.movingLeft = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingRight = false;
-        }
-
-        if (key == mInputConfig.moveUpKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingUp = true;
-                mState.movingDown = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingUp = false;
-        }
-        else if (key == mInputConfig.moveDownKey) {
-            if (action == GLFW_PRESS) {
-                mState.movingDown = true;
-                mState.movingUp = false;
-            }
-            else if (action == GLFW_RELEASE)
-                mState.movingDown = false;
-        }
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::Update(float dt)
-    {
-        if (mState.movingForward)
-            mTargetPosition += mDirection * mSpeed * dt;
-        else if (mState.movingBackward)
-            mTargetPosition -= mDirection * mSpeed * dt;
-
-        if (mState.movingLeft)
-            mTargetPosition -= glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
-        else if (mState.movingRight)
-            mTargetPosition += glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
-
-        if (mState.movingUp)
-            mTargetPosition += mUp * mSpeed * dt;
-        else if (mState.movingDown)
-            mTargetPosition -= mUp * mSpeed * dt;
-
-        mPosition = Utility::Lerp(mPosition, mTargetPosition, mSmoothness * dt);
-
-        mView = glm::lookAt(mPosition, mPosition + mDirection, mUp);
-        mProjection = glm::perspective(mFovy, mAspectRatio, mNear, mFar);
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::UpdateDirection(float mouseX, float mouseY)
-    {
-#define PITCH_LIMIT (89.0f * D2R)
-
-        static float lastX = mouseX;
-        static float lastY = mouseY;
-
-        float dx = mSensitivity * (mouseX - lastX);
-        float dy = mSensitivity * (mouseY - lastY);
-
-        lastX = mouseX;
-        lastY = mouseY;
-
-        static float pitch;
-        static float yaw = -PIH;
-
-        if (mIsMouseCaptured) {
-            yaw += dx;
-            pitch -= dy;
-            if (pitch < -PITCH_LIMIT)
-                pitch = -PITCH_LIMIT;
-            else if (pitch > PITCH_LIMIT)
-                pitch = PITCH_LIMIT;
-
-            float sin_pitch = glm::sin(pitch);
-            float cos_pitch = glm::cos(pitch);
-
-            float sin_yaw = glm::sin(yaw);
-            float cos_yaw = glm::cos(yaw);
-
-            mDirection.x = cos_yaw * cos_pitch;
-            mDirection.y = sin_pitch;
-            mDirection.z = sin_yaw * cos_pitch;
-        }
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::SetAspectRatio(int width, int height)
-    {
-        mAspectRatio = static_cast<float>(width) / static_cast<float>(height);
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::SetPosition(const glm::vec3& position)
-    {
-        mPosition = mTargetPosition = position;
-    }
-
-    ////////////////////////////////////////
     Shader& ShaderLoader::Load(int type, std::string_view shaderUrl)
     {
         auto iter = mShaders.find(shaderUrl.data());
@@ -1610,14 +1456,20 @@ namespace Poe
           mFbo(mColor0) {}
 
     ////////////////////////////////////////
+    void EmissiveColorProgram::Init()
+    {
+        mProgram.Use();
+        glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor));
+        mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
     EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const glm::vec4& defaultColor)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") },
           mColor{defaultColor}
     {
-        mProgram.Use();
-        glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor));
-        mProgram.Halt();
+        Init();
     }
 
     ////////////////////////////////////////
@@ -1626,8 +1478,77 @@ namespace Poe
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") },
           mColor{glm::vec4(1.0f, 0.5f, 0.25f, 1.0f)}
     {
+        Init();
+    }
+
+    ////////////////////////////////////////
+    void EmissiveTextureProgram::Init()
+    {
         mProgram.Use();
-        glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor));
+        glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
+        glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(mTileMultiplier));
+        glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(mTileOffset));
         mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
+    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") },
+          mTileMultiplier{glm::vec2(1.0f)},
+          mTileOffset{glm::vec2(0.0f)}
+    {
+        Init();
+    }
+
+    ////////////////////////////////////////
+    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader, const glm::vec2& multiplier, const glm::vec2& offset)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") },
+          mTileMultiplier{multiplier},
+          mTileOffset{offset}
+    {
+        Init();
+    }
+
+    ////////////////////////////////////////
+    void TexturedSkyboxProgram::Init()
+    {
+        mProgram.Use();
+        glUniform1i(SKYBOX_LOC, 0);
+        mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
+    Cubemap TexturedSkyboxProgram::ChooseCubemap(DefaultSkyboxTexture defaultSkybox, const std::string& rootPath)
+    {
+        switch (defaultSkybox) {
+            case DefaultSkyboxTexture::UlukaiCorona:
+                return CreateUlukaiCoronaSkybox(rootPath);
+            case DefaultSkyboxTexture::UlukaiRedEclipse:
+                return CreateUlukaiRedEclipseSkybox(rootPath);
+            case DefaultSkyboxTexture::Cloudy:
+                return CreateCloudySkybox(rootPath);
+            default:
+                return CreateCloudySkybox(rootPath);
+        }
+    }
+
+    ////////////////////////////////////////
+    TexturedSkyboxProgram::TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader& loader, std::initializer_list<std::pair<CubemapFace, std::string_view>> faces)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/texture_skybox.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/texture_skybox.frag") },
+         mCubemap{faces}
+    {
+        Init();
+    }
+
+    ////////////////////////////////////////
+    TexturedSkyboxProgram::TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader& loader, DefaultSkyboxTexture defaultSkybox)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/texture_skybox.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/texture_skybox.frag") },
+         mCubemap{ChooseCubemap(defaultSkybox, rootPath)}
+    {
+        Init();
     }
 }

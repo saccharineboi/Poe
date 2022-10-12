@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "Constants.hpp"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -54,13 +56,6 @@
 
 namespace Poe
 {
-    ////////////////////////////////////////
-    inline constexpr float PI = 3.1415926f;
-    inline constexpr float PI2 = 6.2831853f;
-    inline constexpr float PIH = 1.5707963f;
-    inline constexpr float R2D = 57.295779f;
-    inline constexpr float D2R = 0.017453293f;
-
     ////////////////////////////////////////
     void APIENTRY GraphicsDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
@@ -856,62 +851,6 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct FirstPersonCameraState
-    {
-        bool movingForward = false;
-        bool movingBackward = false;
-        bool movingLeft = false;
-        bool movingRight = false;
-        bool movingUp = false;
-        bool movingDown = false;
-    };
-
-    ////////////////////////////////////////
-    struct FirstPersonCameraInputConfig
-    {
-        int moveForwardKey = GLFW_KEY_W;
-        int moveBackwardKey = GLFW_KEY_S;
-        int moveLeftKey = GLFW_KEY_A;
-        int moveRightKey = GLFW_KEY_D;
-        int moveUpKey = GLFW_KEY_Q;
-        int moveDownKey = GLFW_KEY_E;
-    };
-
-    ////////////////////////////////////////
-    struct FirstPersonCamera
-    {
-        FirstPersonCameraState mState;
-        FirstPersonCameraInputConfig mInputConfig;
-
-        bool mIsMouseCaptured = false;
-
-        float mFovy = PIH;
-        float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 0.3f;
-        float mFar = 1000.0f;
-
-        float mSpeed = 100.0f;
-        float mSensitivity = 0.0025f;
-        float mSmoothness = 10.0f;
-
-        glm::mat4 mProjection = glm::mat4(1.0f);
-        glm::mat4 mView = glm::mat4(1.0f);
-
-        glm::vec3 mPosition = glm::vec3(0.0f, 1.0f, 10.0f);
-        glm::vec3 mDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 mUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-        glm::vec3 mTargetPosition = mPosition;
-
-        void UpdateInputConfig(int key, int action);
-        void UpdateDirection(float mouseX, float mouseY);
-        void Update(float dt);
-
-        void SetAspectRatio(int width, int height);
-        void SetPosition(const glm::vec3& position);
-    };
-
-    ////////////////////////////////////////
     struct PostProcessStack
     {
     private:
@@ -939,15 +878,14 @@ namespace Poe
         const PostProcessProgram& Program() const { return mProgram; }
     };
 
-    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
-    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader&);
-
     ////////////////////////////////////////
     struct EmissiveColorProgram
     {
     private:
         Program mProgram;
         glm::vec4 mColor;
+
+        void Init();
 
     public:
         EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
@@ -960,5 +898,61 @@ namespace Poe
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
+    struct EmissiveTextureProgram
+    {
+    private:
+        Program mProgram;
+        glm::vec2 mTileMultiplier;
+        glm::vec2 mTileOffset;
+
+        void Init();
+
+    public:
+        EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
+        EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&, const glm::vec2&, const glm::vec2&);
+
+        static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
+        static inline constexpr int TILE_MULTIPLIER_LOC = 1;
+        static inline constexpr int TILE_OFFSET_LOC = 2;
+
+        glm::vec2 GetTileMultiplier() const { return mTileMultiplier; }
+        glm::vec2 GetTileOffset() const { return mTileOffset; }
+
+        void SetTileMultiplier(const glm::vec2& v) { mTileMultiplier = v; glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(mTileMultiplier)); }
+        void SetTileOffset(const glm::vec2& v) { mTileOffset = v; glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(mTileOffset)); }
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
+    enum class DefaultSkyboxTexture{ UlukaiCorona, UlukaiRedEclipse, Cloudy };
+
+    ////////////////////////////////////////
+    struct TexturedSkyboxProgram
+    {
+    private:
+        Program mProgram;
+        Cubemap mCubemap;
+
+        void Init();
+        Cubemap ChooseCubemap(DefaultSkyboxTexture, const std::string&);
+
+    public:
+        TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader&, std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
+        TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader&, DefaultSkyboxTexture);
+
+        static inline constexpr int SKYBOX_LOC = 0;
+
+        const Cubemap& GetCubemap() const { return mCubemap; }
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+
+        void Draw() const
+        { mProgram.Use(); mCubemap.Bind(); glDrawArrays(GL_TRIANGLES, 0, 36); }
     };
 }
