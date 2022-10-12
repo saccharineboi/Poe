@@ -53,11 +53,16 @@ const vec3 positions[36] = vec3[](
 
 out vec3 vTexCoord;
 
-layout (location = 0) uniform mat4 uProjView;
+layout (std140, binding = 1) uniform TransformBlock
+{
+    mat4 uProjection;
+    mat4 uView;
+    mat4 uProjView;
+};
 
 void main()
 {
-    vec4 vertexPos = uProjView * vec4(positions[gl_VertexID], 1.0f);
+    vec4 vertexPos = uProjection * mat4(mat3(uView)) * vec4(positions[gl_VertexID], 1.0f);
     gl_Position = vertexPos.xyww;
     vTexCoord = positions[gl_VertexID];
 }

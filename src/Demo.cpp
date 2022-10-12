@@ -288,7 +288,6 @@ namespace Poe
 
             if (DebugUI::mEnableSkybox) {
                 skyboxProgram.Use();
-                skyboxProgram.Uniform("uProjView", mainCamera.mProjection * glm::mat4(glm::mat3(mainCamera.mView)));
                 cubemap.Bind();
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
