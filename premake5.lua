@@ -24,7 +24,8 @@ project "poe"
         "src/main.cpp",
         "src/Poe.cpp",
         "src/Demo.cpp",
-        "src/UI.cpp"
+        "src/UI.cpp",
+        "src/Cameras.cpp"
     }
 
     includedirs { "include", "source", "include/imgui" }
