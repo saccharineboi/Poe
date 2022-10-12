@@ -893,7 +893,7 @@ namespace Poe
         float mNear = 0.3f;
         float mFar = 1000.0f;
 
-        float mSpeed = 10.0f;
+        float mSpeed = 100.0f;
         float mSensitivity = 0.0025f;
         float mSmoothness = 10.0f;
 

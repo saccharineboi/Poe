@@ -83,7 +83,7 @@ namespace Poe
         ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Camera]");
         ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.mPosition.x, camera.mPosition.y, camera.mPosition.z);
         ImGui::Text("Direction: (%.2f, %.2f, %.2f)", camera.mDirection.x, camera.mDirection.y, camera.mDirection.z);
-        ImGui::SliderFloat("Speed", &camera.mSpeed, 1.0f, 200.0f);
+        ImGui::SliderFloat("Speed", &camera.mSpeed, 1.0f, 500.0f);
         float degrees = glm::degrees(camera.mFovy);
         ImGui::SliderFloat("FovY", &degrees, 1.0f, 180.0f);
         camera.mFovy = glm::radians(degrees);
@@ -125,7 +125,7 @@ namespace Poe
     {
         ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Fog Settings]");
         float fogDistance = fogBlock.GetDistance();
-        ImGui::SliderFloat("Distance", &fogDistance, 1.0f, 500.0f);
+        ImGui::SliderFloat("Distance", &fogDistance, 1.0f, 1000.0f);
         if (fogDistance != fogBlock.GetDistance())
             fogBlock.SetDistance(fogDistance);
         float fogExponent = fogBlock.GetExponent();

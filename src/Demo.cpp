@@ -78,7 +78,7 @@ namespace Poe
     ////////////////////////////////////////
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
-        mainCamera.mSpeed += static_cast<float>(yoffset);
+        mainCamera.mSpeed += static_cast<float>(yoffset) * 10.0f;
         mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 1000.0f);
     }
 
@@ -225,21 +225,21 @@ namespace Poe
         auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
         auto skyboxProgram = CreateTextureSkyboxProgram("..", shaderLoader);
 
-        mainCamera.SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+        mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
 
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.01f));
+        model = glm::scale(model, glm::vec3(0.1f));
         staticModel.SetInstanceMatrix(model);
 
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
         auto cubemap = CreateCloudySkybox("..");
 
-        FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 100.0f, 2.0f);
+        FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
         TransformUB transformBlock(mainCamera.mProjection, mainCamera.mView);
@@ -280,7 +280,7 @@ namespace Poe
             cube.Bind();
             cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,
             [=](int i, int j, int k, int numInstances) {
-                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 30.0f, -50.0f));
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 100.0f, -50.0f));
                 t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
                 return t;
             });
