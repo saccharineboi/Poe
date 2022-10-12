@@ -17,6 +17,7 @@
 #pragma once
 
 #include "Poe.hpp"
+#include "Cameras.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
