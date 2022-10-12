@@ -368,9 +368,6 @@ namespace Poe
 
     ////////////////////////////////////////
     Program CreateBasicProgram(const std::string& rootPath, ShaderLoader&);
-    Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
-    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
-    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
     struct PostProcessProgram
@@ -940,5 +937,28 @@ namespace Poe
 
         PostProcessProgram& Program() { return mProgram; }
         const PostProcessProgram& Program() const { return mProgram; }
+    };
+
+    Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
+    Program CreateTextureSkyboxProgram(const std::string& rootPath, ShaderLoader&);
+
+    ////////////////////////////////////////
+    struct EmissiveColorProgram
+    {
+    private:
+        Program mProgram;
+        glm::vec4 mColor;
+
+    public:
+        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&, const glm::vec4&);
+
+        static inline constexpr int COLOR_LOC = 0;
+
+        glm::vec4 GetColor() const { return mColor; }
+        void SetColor(const glm::vec4& color) { mColor = color; glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor)); }
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
     };
 }

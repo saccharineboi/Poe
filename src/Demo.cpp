@@ -221,7 +221,8 @@ namespace Poe
         grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(5.0f)));
 
         ShaderLoader shaderLoader;
-        auto emissiveColorProgram = CreateEmissiveColorProgram("..", shaderLoader);
+        EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
+
         auto emissiveTextureProgram = CreateEmissiveTextureProgram("..", shaderLoader);
         auto skyboxProgram = CreateTextureSkyboxProgram("..", shaderLoader);
 
@@ -271,11 +272,11 @@ namespace Poe
             staticModel.Draw();
 
             emissiveColorProgram.Use();
-            emissiveColorProgram.Uniform("uColor", glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+            emissiveColorProgram.SetColor(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
             grid.Bind();
             grid.Draw(GL_LINES);
 
-            emissiveColorProgram.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
+            emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
 
             cube.Bind();
             cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,

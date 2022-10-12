@@ -444,14 +444,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Program CreateEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
-    {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag");
-        return Program{ vshader, fshader };
-    }
-
-    ////////////////////////////////////////
     Program CreateEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
     {
         Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert");
@@ -1616,4 +1608,26 @@ namespace Poe
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mWidth, mHeight)},
           mFbo(mColor0) {}
+
+    ////////////////////////////////////////
+    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const glm::vec4& defaultColor)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") },
+          mColor{defaultColor}
+    {
+        mProgram.Use();
+        glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor));
+        mProgram.Halt();
+    }
+
+    ////////////////////////////////////////
+    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") },
+          mColor{glm::vec4(1.0f, 0.5f, 0.25f, 1.0f)}
+    {
+        mProgram.Use();
+        glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor));
+        mProgram.Halt();
+    }
 }
