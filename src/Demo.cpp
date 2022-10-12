@@ -16,6 +16,7 @@
 
 #include "Poe.hpp"
 #include "IO.hpp"
+#include "UI.hpp"
 #include "Utility.hpp"
 
 #include <utility>
@@ -54,7 +55,7 @@ namespace Poe
     ////////////////////////////////////////
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     {
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
             static bool isCaptured;
             isCaptured = !isCaptured;
             if (isCaptured) {
@@ -196,6 +197,10 @@ namespace Poe
         EnableDebugContext();
         SetCallbacks(window);
 
+        glfwSwapInterval(1);
+
+        DebugUI::Init(window);
+
         int fbWidth = 1920, fbHeight = 1080;
         // glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
         glViewport(0, 0, fbWidth, fbHeight);
@@ -208,9 +213,6 @@ namespace Poe
 
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        constexpr glm::vec4 clearColor{ 0.2f, 0.3f, 0.3f, 1.0f };
-        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 
         auto cube = CreateCube();
         cube.CreateInstances(1000);
@@ -228,11 +230,16 @@ namespace Poe
         Texture2DLoader texture2DLoader;
         StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
 
+        auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.01f));
+        staticModel.SetInstanceMatrix(model);
+
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
         auto cubemap = CreateCloudySkybox("..");
 
-        FogUB fogBlock(clearColor, 100.0f, 2.0f);
+        FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 100.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
         TransformUB transformBlock(mainCamera.mProjection, mainCamera.mView);
@@ -242,6 +249,11 @@ namespace Poe
         while (!glfwWindowShouldClose(window)) {
             ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            if (DebugUI::mEnableWireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                glDisable(GL_CULL_FACE);
+            }
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
@@ -253,13 +265,7 @@ namespace Poe
 
             rads += dt;
 
-            auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(0.01f));
-
             emissiveTextureProgram.Use();
-            emissiveTextureProgram.Uniform("uPVM", projView * model);
-            emissiveTextureProgram.Uniform("uModelView", mainCamera.mView * model);
             emissiveTextureProgram.Uniform("uTileMultiplier", glm::vec2(1.0f));
             emissiveTextureProgram.Uniform("uTileOffset", glm::vec2(0.0f));
             staticModel.Draw();
@@ -269,41 +275,55 @@ namespace Poe
             grid.Bind();
             grid.Draw(GL_LINES);
 
-            model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 12.0f, -10.0f));
-            model = glm::rotate(model, rads, glm::vec3(0.0f, 1.0f, 0.0f));
-
             emissiveColorProgram.Uniform("uColor", glm::vec4(0.25f, 0.5f, 1.0f, 1.0f));
-            cube.Bind();
 
+            cube.Bind();
             cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,
             [=](int i, int j, int k, int numInstances) {
                 auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 30.0f, -50.0f));
                 t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
                 return t;
             });
-
             cube.Draw();
 
-            skyboxProgram.Use();
-            skyboxProgram.Uniform("uProjView", mainCamera.mProjection * glm::mat4(glm::mat3(mainCamera.mView)));
-            cubemap.Bind();
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            if (DebugUI::mEnableSkybox) {
+                skyboxProgram.Use();
+                skyboxProgram.Uniform("uProjView", mainCamera.mProjection * glm::mat4(glm::mat3(mainCamera.mView)));
+                cubemap.Bind();
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+
+            if (DebugUI::mEnableWireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glEnable(GL_CULL_FACE);
+            }
 
             ppStack.SecondPass();
             ppStack.BindColor0();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             ppStack.Program().Use();
-            ppStack.Program().SetGrayscaleWeight(0.0f);
-            ppStack.Program().SetKernelWeight(0.0f);
-            ppStack.Program().SetGamma(2.2f);
-            ppStack.Program().SetExposure(1.0f);
+            ppStack.Program().SetGrayscaleWeight(DebugUI::mGrayscaleWeight);
+            ppStack.Program().SetKernelWeight(DebugUI::mKernelWeight);
+            ppStack.Program().SetGamma(DebugUI::mGamma);
+            ppStack.Program().SetExposure(DebugUI::mExposure);
+            ppStack.Program().SetEdgeDetectKernel();
             ppStack.Program().Draw();
+
+            DebugUI::NewFrame();
+            DebugUI::Begin_GlobalInfo();
+                DebugUI::Draw_GlobalInfo_General();
+                DebugUI::Draw_GlobalInfo_Camera(mainCamera);
+                DebugUI::Draw_GlobalInfo_PostProcess();
+                DebugUI::Draw_GlobalInfo_Fog(fogBlock);
+            DebugUI::End_GlobalInfo();
+            DebugUI::EndFrame();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
 
+        DebugUI::Destroy();
         glfwTerminate();
         return EXIT_SUCCESS;
     }
