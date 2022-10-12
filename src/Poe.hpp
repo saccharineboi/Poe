@@ -853,6 +853,9 @@ namespace Poe
 
         std::string GetPath() const { return mPath; }
         std::string GetDirectory() const { return mDirectory; }
+
+        void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0)
+        { std::ranges::for_each(mMeshes, [&](auto& m){ m.SetInstanceMatrix(modelMatrix, instance); }); }
     };
 
     ////////////////////////////////////////

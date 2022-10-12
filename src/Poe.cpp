@@ -937,7 +937,7 @@ namespace Poe
             numVertices += mesh.GetNumVertices();
             numIndices += mesh.GetNumIndices();
         }
-        std::printf("[DEBUG] Loaded %s (%d vertices and %d indices)\n", mPath.c_str(), numVertices, numIndices);
+        std::printf("[DEBUG] Loaded %s (%d vertices, %d indices, %d meshes)\n", mPath.c_str(), numVertices, numIndices, static_cast<int>(mMeshes.size()));
 #endif
     }
 
