@@ -17,6 +17,7 @@
 #pragma once
 
 #include "Constants.hpp"
+#include "UI.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -284,7 +285,7 @@ namespace Poe
                 int loc = glGetUniformLocation(mId, name.data());
                 if (-1 == loc) {
 #ifdef _DEBUG
-                    std::fprintf(stderr, "[DEBUG] ERROR: %s not found\n", name.data());
+                    DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s not found\n", name.data());
 #endif
                 }
                 else
@@ -824,6 +825,7 @@ namespace Poe
         std::string mDirectory;
         std::vector<StaticMesh> mMeshes;
         Texture2DLoader& mTexture2DLoader;
+        int mNumTextures;
 
         void Load();
         void LoadNode(aiNode* node, const aiScene* scene);
@@ -832,7 +834,9 @@ namespace Poe
 
     public:
         StaticModel(const std::string& modelPath, Texture2DLoader& texture2DLoader)
-            : mPath{modelPath}, mTexture2DLoader{texture2DLoader} { Load(); }
+            : mPath{modelPath},
+              mTexture2DLoader{texture2DLoader},
+              mNumTextures{} { Load(); }
 
         void Draw(int mode = GL_TRIANGLES) const
         {
@@ -845,6 +849,7 @@ namespace Poe
 
         std::string GetPath() const { return mPath; }
         std::string GetDirectory() const { return mDirectory; }
+        int GetNumTextures() const { return mNumTextures; }
 
         void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0)
         { std::ranges::for_each(mMeshes, [&](auto& m){ m.SetInstanceMatrix(modelMatrix, instance); }); }

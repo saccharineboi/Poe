@@ -33,77 +33,76 @@ namespace Poe
         // ignore non-significant error/warning codes
         if(id == 1 || id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
-        std::fprintf(stderr, "\nOpenGL Debug message (%d) : %s\n", id, message);
+        DebugUI::PushLog(stderr, "\nOpenGL Debug message (%d) : %s", id, message);
 
         switch (source)
         {
             case GL_DEBUG_SOURCE_API:
-                std::fprintf(stderr, "Source: API\n");
+                DebugUI::PushLog(stderr, "Source: API");
                 break;
             case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-                std::fprintf(stderr, "Source: Window System\n");
+                DebugUI::PushLog(stderr, "Source: Window System");
                 break;
             case GL_DEBUG_SOURCE_SHADER_COMPILER:
-                std::fprintf(stderr, "Source: Shader Compiler\n");
+                DebugUI::PushLog(stderr, "Source: Shader Compiler");
                 break;
             case GL_DEBUG_SOURCE_THIRD_PARTY:
-                std::fprintf(stderr, "Source: Third Party\n");
+                DebugUI::PushLog(stderr, "Source: Third Party");
                 break;
             case GL_DEBUG_SOURCE_APPLICATION:
-                std::fprintf(stderr, "Source: Application\n");
+                DebugUI::PushLog(stderr, "Source: Application");
                 break;
             case GL_DEBUG_SOURCE_OTHER:
-                std::fprintf(stderr, "Source: Other\n");
+                DebugUI::PushLog(stderr, "Source: Other");
                 break;
         };
 
         switch (type)
         {
             case GL_DEBUG_TYPE_ERROR:
-                std::fprintf(stderr, "Type: Error\n");
+                DebugUI::PushLog(stderr, "Type: Error");
                 break;
             case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-                std::fprintf(stderr, "Type: Deprecated Behaviour\n");
+                DebugUI::PushLog(stderr, "Type: Deprecated Behaviour");
                 break;
             case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-                std::fprintf(stderr, "Type: Undefined Behaviour\n");
+                DebugUI::PushLog(stderr, "Type: Undefined Behaviour");
                 break;
             case GL_DEBUG_TYPE_PORTABILITY:
-                std::fprintf(stderr, "Type: Portability\n");
+                DebugUI::PushLog(stderr, "Type: Portability");
                 break;
             case GL_DEBUG_TYPE_PERFORMANCE:
-                std::fprintf(stderr, "Type: Performance\n");
+                DebugUI::PushLog(stderr, "Type: Performance");
                 break;
             case GL_DEBUG_TYPE_MARKER:
-                std::fprintf(stderr, "Type: Marker\n");
+                DebugUI::PushLog(stderr, "Type: Marker");
                 break;
             case GL_DEBUG_TYPE_PUSH_GROUP:
-                std::fprintf(stderr, "Type: Push Group\n");
+                DebugUI::PushLog(stderr, "Type: Push Group");
                 break;
             case GL_DEBUG_TYPE_POP_GROUP:
-                std::fprintf(stderr, "Type: Pop Group\n");
+                DebugUI::PushLog(stderr, "Type: Pop Group");
                 break;
             case GL_DEBUG_TYPE_OTHER:
-                std::fprintf(stderr, "Type: Other\n");
+                DebugUI::PushLog(stderr, "Type: Other");
                 break;
         }
 
         switch (severity)
         {
             case GL_DEBUG_SEVERITY_HIGH:
-                std::fprintf(stderr, "Severity: high\n");
+                DebugUI::PushLog(stderr, "Severity: high");
                 break;
             case GL_DEBUG_SEVERITY_MEDIUM:
-                std::fprintf(stderr, "Severity: medium\n");
+                DebugUI::PushLog(stderr, "Severity: medium");
                 break;
             case GL_DEBUG_SEVERITY_LOW:
-                std::fprintf(stderr, "Severity: low\n");
+                DebugUI::PushLog(stderr, "Severity: low");
                 break;
             case GL_DEBUG_SEVERITY_NOTIFICATION:
-                std::fprintf(stderr, "Severity: notification\n");
+                DebugUI::PushLog(stderr, "Severity: notification");
                 break;
         }
-        std::fprintf(stderr, "\n");
     }
 
     ////////////////////////////////////////
@@ -366,7 +365,7 @@ namespace Poe
             char infolog[512];
             glGetShaderInfoLog(mId, 512, nullptr, infolog);
 #ifdef _DEBUG
-            std::fprintf(stderr, "[DEBUG] ERROR: %s\n", infolog);
+            DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s\n", infolog);
 #endif
         }
     }
@@ -408,7 +407,7 @@ namespace Poe
             char infolog[512];
             glGetProgramInfoLog(mId, 512, nullptr, infolog);
 #ifdef _DEBUG
-            std::fprintf(stderr, "[DEBUG] ERROR: %s\n", infolog);
+            DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s\n", infolog);
 #endif
         }
 
@@ -895,7 +894,7 @@ namespace Poe
                                                  aiProcess_OptimizeGraph |
                                                  aiProcess_FlipUVs);
         if (!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
-            std::fprintf(stderr, "[ERROR] ASSIMP: %s\n", importer.GetErrorString());
+            DebugUI::PushLog(stderr, "[ERROR] ASSIMP: %s\n", importer.GetErrorString());
             return;
         }
         mDirectory = mPath.substr(0, mPath.find_last_of('/'));
@@ -906,7 +905,7 @@ namespace Poe
             numVertices += mesh.GetNumVertices();
             numIndices += mesh.GetNumIndices();
         }
-        std::printf("[DEBUG] Loaded %s (%d vertices, %d indices, %d meshes)\n", mPath.c_str(), numVertices, numIndices, static_cast<int>(mMeshes.size()));
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d vertices, %d indices, %d meshes, %d textures)\n", mPath.c_str(), numVertices, numIndices, static_cast<int>(mMeshes.size()), mNumTextures);
 #endif
     }
 
@@ -983,6 +982,7 @@ namespace Poe
             Texture2DParams params{};
             const Texture2D& tex = mTexture2DLoader.Load(mDirectory + '/' + str, params);
             textures.push_back(tex);
+            ++mNumTextures;
         }
         return textures;
     }
@@ -1022,7 +1022,7 @@ namespace Poe
         glBindTexture(GL_TEXTURE_2D, 0);
 
 #ifdef _DEBUG
-        std::printf("[DEBUG] Allocated %ld bytes for 2D texture %s\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mUrl.c_str());
+        DebugUI::PushLog(stdout, "[DEBUG] Allocated %ld bytes for 2D texture %s\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mUrl.c_str());
 #endif
     }
 
@@ -1035,7 +1035,7 @@ namespace Poe
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
         if (!data) {
 #ifdef _DEBUG
-            std::fprintf(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
+            DebugUI::PushLog(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
 #endif
             return;
         }
@@ -1150,7 +1150,7 @@ namespace Poe
             unsigned char* data = stbi_load(face.second.data(), &mWidth, &mHeight, &mNumChannels, 0);
             if (!data) {
 #ifdef _DEBUG
-                std::fprintf(stderr, "[DEBUG] ERROR: couldn't load %s\n", face.second.data());
+                DebugUI::PushLog(stderr, "[DEBUG] ERROR: couldn't load %s\n", face.second.data());
                 return;
 #endif
             }
@@ -1180,7 +1180,7 @@ namespace Poe
 
             glTexImage2D(texType, 0, GL_SRGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 #ifdef _DEBUG
-            std::printf("[DEBUG] Allocated %d bytes for %s\n", mWidth * mHeight * 3, face.second.data());
+            DebugUI::PushLog(stdout, "[DEBUG] Allocated %d bytes for %s\n", mWidth * mHeight * 3, face.second.data());
 #endif
             stbi_image_free(data);
         }
@@ -1293,7 +1293,7 @@ namespace Poe
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #ifdef _DEBUG
         if (status != GL_FRAMEBUFFER_COMPLETE)
-            std::fprintf(stderr, "ERROR: framebuffer %u is not complete", mId);
+            DebugUI::PushLog(stderr, "ERROR: framebuffer %u is not complete", mId);
 #endif
         return status == GL_FRAMEBUFFER_COMPLETE;
     }
