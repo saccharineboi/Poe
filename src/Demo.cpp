@@ -38,16 +38,6 @@ namespace Poe
                 case GLFW_KEY_ESCAPE:
                     glfwSetWindowShouldClose(window, GLFW_TRUE);
                     break;
-                case GLFW_KEY_I:
-                    mainCamera.mFovy -= glm::radians(5.0f);
-                    if (mainCamera.mFovy < glm::radians(10.0f))
-                        mainCamera.mFovy = glm::radians(10.0f);
-                    break;
-                case GLFW_KEY_O:
-                    mainCamera.mFovy += glm::radians(5.0f);
-                    if (mainCamera.mFovy > glm::radians(180.0f))
-                        mainCamera.mFovy = glm::radians(180.0f);
-                    break;
             }
         }
         mainCamera.UpdateInputConfig(key, action);
@@ -79,8 +69,8 @@ namespace Poe
     ////////////////////////////////////////
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
-        mainCamera.mSpeed += static_cast<float>(yoffset) * 10.0f;
-        mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 1000.0f);
+        // mainCamera.mSpeed += static_cast<float>(yoffset) * 10.0f;
+        // mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 500.0f);
     }
 
     ////////////////////////////////////////
@@ -150,12 +140,10 @@ namespace Poe
     ////////////////////////////////////////
     static void DebugOutput()
     {
-#ifdef _DEBUG
-        std::printf("[DEBUG] GL version: %s\n", glGetString(GL_VERSION));
-        std::printf("[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-        std::printf("[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
-        std::printf("[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
-#endif
+        DebugUI::PushLog(stdout, "[DEBUG] GL version: %s\n", glGetString(GL_VERSION));
+        DebugUI::PushLog(stdout, "[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+        DebugUI::PushLog(stdout, "[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
+        DebugUI::PushLog(stdout, "[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
     }
 
     ////////////////////////////////////////
@@ -169,10 +157,10 @@ namespace Poe
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(GraphicsDebugOutput, nullptr);
             glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-            std::printf("[DEBUG] GL debug output is ON\n");
+            DebugUI::PushLog(stdout, "[DEBUG] GL debug output is ON\n");
         }
         else
-            std::printf("[DEBUG] GL debug output is OFF\n");
+            DebugUI::PushLog(stdout, "[DEBUG] GL debug output is OFF\n");
 #endif
     }
 
@@ -300,7 +288,7 @@ namespace Poe
             ppStack.Program().SetKernelWeight(DebugUI::mKernelWeight);
             ppStack.Program().SetGamma(DebugUI::mGamma);
             ppStack.Program().SetExposure(DebugUI::mExposure);
-            ppStack.Program().SetEdgeDetectKernel();
+            ppStack.Program().SetSharpenKernel();
             ppStack.Program().Draw();
 
             DebugUI::NewFrame();
@@ -310,6 +298,8 @@ namespace Poe
                 DebugUI::Draw_GlobalInfo_PostProcess();
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
             DebugUI::End_GlobalInfo();
+            DebugUI::Render_LogInfo();
+
             DebugUI::EndFrame();
 
             glfwSwapBuffers(window);
