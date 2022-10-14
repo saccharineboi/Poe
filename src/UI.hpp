@@ -16,15 +16,29 @@
 
 #pragma once
 
-#include "Poe.hpp"
-#include "Cameras.hpp"
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <cstdio>
+#include <cstdarg>
+#include <vector>
+#include <string>
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
+#include <glm/common.hpp>
+#include <glm/exponential.hpp>
+#include <glm/matrix.hpp>
+#include <glm/trigonometric.hpp>
+
 namespace Poe
 {
+    ////////////////////////////////////////
+    struct FirstPersonCamera;
+    struct FogUB;
+
     ////////////////////////////////////////
     struct DebugUI
     {
@@ -49,5 +63,15 @@ namespace Poe
         static void Draw_GlobalInfo_PostProcess();
 
         static void Draw_GlobalInfo_Fog(FogUB&);
+
+        static inline constexpr int MAX_COUT_LOGS = 500;
+        static inline constexpr int MAX_CERR_LOGS = 500;
+
+        static std::vector<std::string> mCoutLogs;
+        static std::vector<std::string> mCerrLogs;
+
+        static void PushLog(FILE* file, const char* format, ...);
+
+        static void Render_LogInfo();
     };
 }

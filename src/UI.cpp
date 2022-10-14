@@ -15,6 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "UI.hpp"
+#include "Cameras.hpp"
+#include "Poe.hpp"
 
 namespace Poe
 {
@@ -25,6 +27,8 @@ namespace Poe
     float DebugUI::mExposure{1.0f};
     float DebugUI::mGrayscaleWeight{0.0f};
     float DebugUI::mKernelWeight{0.0f};
+    std::vector<std::string> DebugUI::mCoutLogs{};
+    std::vector<std::string> DebugUI::mCerrLogs{};
 
     ////////////////////////////////////////
     void DebugUI::Init(GLFWwindow* window)
@@ -139,5 +143,48 @@ namespace Poe
         if (color != fogBlock.GetColor())
             fogBlock.SetColor(color);
         ImGui::NewLine();
+    }
+
+    ////////////////////////////////////////
+    void DebugUI::Render_LogInfo()
+    {
+        ImGui::SetNextWindowSize({ 1200, 0 });
+        ImGui::SetNextWindowBgAlpha(0.5f);
+
+        ImGui::Begin("stdout");
+        ImGui::BeginChild("stdout logs", { -1, 600 });
+        for (int i = 0; i < MAX_COUT_LOGS && i < static_cast<int>(mCoutLogs.size()); ++i)
+            ImGui::TextWrapped(mCoutLogs[i].c_str());
+        ImGui::EndChild();
+        ImGui::End();
+
+        ImGui::SetNextWindowSize({ 1200, 0 });
+        ImGui::SetNextWindowBgAlpha(0.5f);
+
+        ImGui::Begin("stderr");
+        ImGui::BeginChild("stderr logs", { -1, 600 });
+        for (int i = 0; i < MAX_CERR_LOGS && i < static_cast<int>(mCerrLogs.size()); ++i)
+            ImGui::TextWrapped(mCerrLogs[i].c_str());
+        ImGui::EndChild();
+        ImGui::End();
+    }
+
+    ////////////////////////////////////////
+    void DebugUI::PushLog(FILE* file, const char* format, ...)
+    {
+        if ((file == stdout && mCoutLogs.size() > MAX_COUT_LOGS) ||
+            (file == stderr && mCerrLogs.size() > MAX_CERR_LOGS))
+            return;
+
+        std::va_list args;
+        va_start(args, format);
+#define BUFFER_MAX 1024
+        char buffer[BUFFER_MAX];
+        std::vsnprintf(buffer, BUFFER_MAX, format, args);
+        va_end(args);
+        if (file == stdout)
+            mCoutLogs.push_back(buffer);
+        else if (file == stderr)
+            mCerrLogs.push_back(buffer);
     }
 }
