@@ -42,6 +42,8 @@ namespace Poe
     ////////////////////////////////////////
     struct DebugUI
     {
+        DebugUI() = delete;
+
         static void Init(GLFWwindow* window);
         static void Destroy();
         static void NewFrame();
