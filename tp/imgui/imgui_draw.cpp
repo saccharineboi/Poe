@@ -16,6 +16,7 @@
 #pragma GCC diagnostic ignored "-Wmissing-include-dirs"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 // dear imgui, v1.89 WIP
 // (drawing and font code)
 

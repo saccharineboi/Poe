@@ -207,7 +207,7 @@ namespace Poe
         cube.CreateInstances(1000);
 
         auto grid = CreateGrid(100, 100);
-        grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(5.0f)));
+        grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
@@ -248,17 +248,18 @@ namespace Poe
             transformBlock.SetProjectionMatrix(mainCamera.mProjection);
             transformBlock.SetViewMatrix(mainCamera.mView);
 
-            auto projView = mainCamera.mProjection * mainCamera.mView;
-
             rads += dt;
 
             emissiveTextureProgram.Use();
             staticModel.Draw();
 
             emissiveColorProgram.Use();
-            emissiveColorProgram.SetColor(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
-            grid.Bind();
-            grid.Draw(GL_LINES);
+
+            if (DebugUI::mEnableGrid) {
+                emissiveColorProgram.SetColor(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+                grid.Bind();
+                grid.Draw(GL_LINES);
+            }
 
             emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
 

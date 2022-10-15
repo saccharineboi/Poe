@@ -52,6 +52,7 @@ namespace Poe
 
         static bool mEnableWireframe;
         static bool mEnableSkybox;
+        static bool mEnableGrid;
         static void Draw_GlobalInfo_General();
 
         static void Draw_GlobalInfo_Camera(FirstPersonCamera&);

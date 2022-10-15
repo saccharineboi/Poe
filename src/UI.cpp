@@ -23,6 +23,7 @@ namespace Poe
     ////////////////////////////////////////
     bool DebugUI::mEnableWireframe{false};
     bool DebugUI::mEnableSkybox{true};
+    bool DebugUI::mEnableGrid{true};
     float DebugUI::mGamma{2.2f};
     float DebugUI::mExposure{1.0f};
     float DebugUI::mGrayscaleWeight{0.0f};
@@ -60,6 +61,7 @@ namespace Poe
         ImGui::Text("%.2f MS, %.2f FPS", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::Checkbox("Wireframe Mode", &mEnableWireframe);
         ImGui::Checkbox("Enable Skybox", &mEnableSkybox);
+        ImGui::Checkbox("Enable Grid", &mEnableGrid);
         static float clearColor[]{ 0.01f, 0.01f, 0.01f };
         ImGui::ColorEdit3("Clear Color", clearColor);
         glClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f);
@@ -101,7 +103,6 @@ namespace Poe
     ////////////////////////////////////////
     void DebugUI::Begin_GlobalInfo()
     {
-        ImGui::SetNextWindowPos({ 50, 50 });
         ImGui::SetNextWindowSize({ 400, 0 });
         ImGui::SetNextWindowBgAlpha(0.5f);
         ImGui::Begin("Poe Global Info (OpenGL 4.5 Core)");
