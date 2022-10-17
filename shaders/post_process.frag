@@ -1,14 +1,13 @@
 #version 450 core
 
+in vec2 vTexCoord;
+
 layout (location = 0) uniform float uGrayscaleWeight;
 layout (location = 1) uniform float uKernelWeight;
 layout (location = 2) uniform sampler2D uScreenTexture;
 layout (location = 3) uniform float uGamma;
 layout (location = 4) uniform float uExposure;
-
-#define KERNEL_ROW_SIZE 7
-#define KERNEL_SIZE (KERNEL_ROW_SIZE * KERNEL_ROW_SIZE)
-layout (location = 5) uniform float uKernel[KERNEL_SIZE];
+layout (location = 5) uniform mat3 uKernel;
 
 ////////////////////////////////////////
 vec3 makeGrayscale(vec3 col)
@@ -20,12 +19,11 @@ vec3 makeGrayscale(vec3 col)
 ////////////////////////////////////////
 vec3 applyKernel()
 {
-    ivec2 texCoord = ivec2(gl_FragCoord.xy);
+    const float OFFSET = 1.0f / 300.0f;
     vec3 res = vec3(0.0f);
-    int cnt = 0;
-    for (int i = -(KERNEL_ROW_SIZE / 2); i <= KERNEL_ROW_SIZE / 2; ++i)
-        for (int j = -(KERNEL_ROW_SIZE / 2); j <= KERNEL_ROW_SIZE / 2; ++j)
-            res += texelFetch(uScreenTexture, texCoord + ivec2(i, j), 0).rgb * uKernel[cnt++];
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            res += texture(uScreenTexture, vTexCoord + vec2(OFFSET * (i - 1), OFFSET * (1 - j)), 0).rgb * uKernel[i][j];
     return res;
 }
 
