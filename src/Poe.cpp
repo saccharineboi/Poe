@@ -453,33 +453,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void PostProcessProgram::SetIdentityKernel() const
-    {
-        float kernel[KERNEL_SIZE];
-        for (int i = 0; i < KERNEL_SIZE; ++i)
-            kernel[i] = (i == KERNEL_SIZE / 2) ? 1.0f : 0.0f;
-        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
-    }
-
-    ////////////////////////////////////////
-    void PostProcessProgram::SetSharpenKernel() const
-    {
-        float kernel[KERNEL_SIZE];
-        for (int i = 0; i < KERNEL_SIZE; ++i)
-            kernel[i] = (i == KERNEL_SIZE / 2) ? KERNEL_SIZE : -1.0f;
-        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
-    }
-
-    ////////////////////////////////////////
-    void PostProcessProgram::SetEdgeDetectKernel() const
-    {
-        float kernel[KERNEL_SIZE];
-        for (int i = 0; i < KERNEL_SIZE; ++i)
-            kernel[i] = (i == KERNEL_SIZE / 2) ? -(KERNEL_SIZE - 1) : 1.0f;
-        glUniform1fv(KERNEL_LOC, KERNEL_SIZE, kernel);
-    }
-
-    ////////////////////////////////////////
     void StaticMesh::ReconfigureMatrixBuffer()
     {
         mModelMatrixBuffer->Bind();
@@ -985,6 +958,27 @@ namespace Poe
             ++mNumTextures;
         }
         return textures;
+    }
+
+    ////////////////////////////////////////
+    void StaticModel::CreateInstances(std::initializer_list<glm::mat4> modelMatrices)
+    {
+        std::ranges::for_each(mMeshes, [&](auto& m){ m.CreateInstances(modelMatrices); });
+        mNumInstances = static_cast<int>(modelMatrices.size());
+    }
+
+    ////////////////////////////////////////
+    void StaticModel::CreateInstances(const std::vector<glm::mat4>& modelMatrices)
+    {
+        std::ranges::for_each(mMeshes, [&](auto& m){ m.CreateInstances(modelMatrices); });
+        mNumInstances = static_cast<int>(modelMatrices.size());
+    }
+
+    ////////////////////////////////////////
+    void StaticModel::CreateInstances(int numInstances)
+    {
+        std::ranges::for_each(mMeshes, [&](auto& m){ m.CreateInstances(numInstances); });
+        mNumInstances = numInstances;
     }
 
     ////////////////////////////////////////

@@ -385,17 +385,28 @@ namespace Poe
         static inline constexpr int EXPOSURE_LOC = 4;
         static inline constexpr int KERNEL_LOC = 5;
 
-        static inline constexpr int KERNEL_ROW_SIZE = 7;
-        static inline constexpr int KERNEL_SIZE = KERNEL_ROW_SIZE * KERNEL_ROW_SIZE;
-
         void SetGrayscaleWeight(float w) const { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
         void SetKernelWeight(float w) const { glUniform1f(KERNEL_WEIGHT_LOC, w); }
         void SetGamma(float g) const { glUniform1f(GAMMA_LOC, g); }
         void SetExposure(float e) const { glUniform1f(EXPOSURE_LOC, e); }
 
-        void SetIdentityKernel() const;
-        void SetSharpenKernel() const;
-        void SetEdgeDetectKernel() const;
+        void SetKernel(const glm::mat3& m) const
+        { glUniformMatrix3fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(m)); }
+
+        void SetIdentityKernel() const
+        { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
+                              0.0f, 1.0f, 0.0f,
+                              0.0f, 0.0f, 0.0f}); }
+
+        void SetSharpenKernel() const
+        { SetKernel(glm::mat3{-1.0f, -1.0f, -1.0f,
+                              -1.0f,  9.0f, -1.0f,
+                              -1.0f, -1.0f, -1.0f}); }
+
+        void SetEdgeDetectKernel() const
+        { SetKernel(glm::mat3{1.0f,  1.0f, 1.0f,
+                              1.0f, -8.0f, 1.0f,
+                              1.0f,  1.0f, 1.0f}); }
     };
 
     ////////////////////////////////////////
@@ -753,7 +764,7 @@ namespace Poe
 
         ////////////////////////////////////////
         template <typename Func>
-        void ApplyToAllInstancesGrid2D(int numXMeshes, int numZMeshes, float xOffset, float zOffset, float yPos, Func func)
+        void ApplyToAllInstances(int numXMeshes, int numZMeshes, float xOffset, float zOffset, float yPos, Func func)
         {
             assert(numXMeshes * numZMeshes == mNumInstances);
             const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
@@ -777,7 +788,7 @@ namespace Poe
 
         ////////////////////////////////////////
         template <typename Func>
-        void ApplyToAllInstancesGrid3D(int numXMeshes, int numYMeshes, int numZMeshes, float xOffset, float yOffset, float zOffset, Func func)
+        void ApplyToAllInstances(int numXMeshes, int numYMeshes, int numZMeshes, float xOffset, float yOffset, float zOffset, Func func)
         {
             assert(numXMeshes * numYMeshes * numZMeshes == mNumInstances);
             const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
@@ -826,6 +837,7 @@ namespace Poe
         std::vector<StaticMesh> mMeshes;
         Texture2DLoader& mTexture2DLoader;
         int mNumTextures;
+        int mNumInstances;
 
         void Load();
         void LoadNode(aiNode* node, const aiScene* scene);
@@ -850,9 +862,29 @@ namespace Poe
         std::string GetPath() const { return mPath; }
         std::string GetDirectory() const { return mDirectory; }
         int GetNumTextures() const { return mNumTextures; }
+        int GetNumInstances() const { return mNumInstances; }
 
         void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0)
         { std::ranges::for_each(mMeshes, [&](auto& m){ m.SetInstanceMatrix(modelMatrix, instance); }); }
+
+        void CreateInstances(std::initializer_list<glm::mat4> modelMatrices);
+        void CreateInstances(const std::vector<glm::mat4>& modelMatrices);
+        void CreateInstances(int numInstances);
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstances(Func func)
+        { std::ranges::for_each(mMeshes, [&](auto& m){ m.ApplyToAllInstances(func); }); }
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstances(int numXMeshes, int numZMeshes, float xOffset, float zOffset, float yPos, Func func)
+        { std::ranges::for_each(mMeshes, [&](auto& m){ m.ApplyToAllInstances(numXMeshes, numZMeshes, xOffset, zOffset, yPos, func); }); }
+
+        ////////////////////////////////////////
+        template <typename Func>
+        void ApplyToAllInstances(int numXMeshes, int numYMeshes, int numZMeshes, float xOffset, float yOffset, float zOffset, Func func)
+        { std::ranges::for_each(mMeshes, [&](auto& m){ m.ApplyToAllInstances(numXMeshes, numYMeshes, numZMeshes, xOffset, yOffset, zOffset, func); }); }
     };
 
     ////////////////////////////////////////

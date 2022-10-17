@@ -264,7 +264,7 @@ namespace Poe
             emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
 
             cube.Bind();
-            cube.ApplyToAllInstancesGrid3D(10, 10, 10, 4.0f, 4.0f, 4.0f,
+            cube.ApplyToAllInstances(10, 10, 10, 4.0f, 4.0f, 4.0f,
             [=](int i, int j, int k, int numInstances) {
                 auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 100.0f, -50.0f));
                 t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
