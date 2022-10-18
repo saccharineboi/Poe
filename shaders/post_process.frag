@@ -23,7 +23,7 @@ vec3 applyKernel()
     vec3 res = vec3(0.0f);
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j)
-            res += texture(uScreenTexture, vTexCoord + vec2(OFFSET * (i - 1), OFFSET * (1 - j)), 0).rgb * uKernel[i][j];
+            res += texture(uScreenTexture, vTexCoord + vec2(OFFSET * (i - 1), OFFSET * (1 - j))).rgb * uKernel[i][j];
     return res;
 }
 
