@@ -24,10 +24,6 @@ namespace Poe
     bool DebugUI::mEnableWireframe{false};
     bool DebugUI::mEnableSkybox{true};
     bool DebugUI::mEnableGrid{true};
-    float DebugUI::mGamma{2.2f};
-    float DebugUI::mExposure{1.0f};
-    float DebugUI::mGrayscaleWeight{0.0f};
-    float DebugUI::mKernelWeight{0.0f};
     std::vector<std::string> DebugUI::mCoutLogs{};
     std::vector<std::string> DebugUI::mCerrLogs{};
 
@@ -115,13 +111,13 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void DebugUI::Draw_GlobalInfo_PostProcess()
+    void DebugUI::Draw_GlobalInfo_PostProcess(PostProcessProgram& program)
     {
         ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Post-Process]");
-        ImGui::SliderFloat("Gamma", &mGamma, 0.1f, 5.0f);
-        ImGui::SliderFloat("Exposure", &mExposure, 0.1f, 5.0f);
-        ImGui::SliderFloat("Grayscale", &mGrayscaleWeight, 0.0f, 1.0f);
-        ImGui::SliderFloat("Kernel", &mKernelWeight, 0.0f, 1.0f);
+        ImGui::SliderFloat("Gamma", &program.mGamma, 0.1f, 5.0f);
+        ImGui::SliderFloat("Exposure", &program.mExposure, 0.1f, 5.0f);
+        ImGui::SliderFloat("Grayscale", &program.mGrayscaleWeight, 0.0f, 1.0f);
+        ImGui::SliderFloat("Kernel", &program.mKernelWeight, 0.0f, 1.0f);
         ImGui::NewLine();
     }
 

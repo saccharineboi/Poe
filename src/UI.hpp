@@ -37,6 +37,7 @@ namespace Poe
 {
     ////////////////////////////////////////
     struct FirstPersonCamera;
+    struct PostProcessProgram;
     struct FogUB;
 
     ////////////////////////////////////////
@@ -59,11 +60,7 @@ namespace Poe
 
         static void Draw_GlobalInfo_Camera(FirstPersonCamera&);
 
-        static float mGamma;
-        static float mExposure;
-        static float mGrayscaleWeight;
-        static float mKernelWeight;
-        static void Draw_GlobalInfo_PostProcess();
+        static void Draw_GlobalInfo_PostProcess(PostProcessProgram&);
 
         static void Draw_GlobalInfo_Fog(FogUB&);
 
