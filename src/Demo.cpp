@@ -285,18 +285,18 @@ namespace Poe
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             ppStack.Program().Use();
-            ppStack.Program().SetGrayscaleWeight(DebugUI::mGrayscaleWeight);
-            ppStack.Program().SetKernelWeight(DebugUI::mKernelWeight);
-            ppStack.Program().SetGamma(DebugUI::mGamma);
-            ppStack.Program().SetExposure(DebugUI::mExposure);
-            ppStack.Program().SetSharpenKernel();
+            ppStack.Program().UpdateGrayscaleWeight();
+            ppStack.Program().UpdateKernelWeight();
+            ppStack.Program().UpdateGamma();
+            ppStack.Program().UpdateExposure();
+            ppStack.Program().SetEdgeDetectKernel();
             ppStack.Program().Draw();
 
             DebugUI::NewFrame();
             DebugUI::Begin_GlobalInfo();
                 DebugUI::Draw_GlobalInfo_General();
                 DebugUI::Draw_GlobalInfo_Camera(mainCamera);
-                DebugUI::Draw_GlobalInfo_PostProcess();
+                DebugUI::Draw_GlobalInfo_PostProcess(ppStack.Program());
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
             DebugUI::End_GlobalInfo();
             DebugUI::Render_LogInfo();
