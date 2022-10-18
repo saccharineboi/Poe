@@ -372,6 +372,11 @@ namespace Poe
         Program mProgram;
 
     public:
+        float mGamma{2.2f};
+        float mExposure{1.0f};
+        float mGrayscaleWeight{0.0f};
+        float mKernelWeight{0.0f};
+
         PostProcessProgram(const std::string& rootPath, ShaderLoader&);
 
         void Use() const { mProgram.Use(); }
@@ -385,10 +390,10 @@ namespace Poe
         static inline constexpr int EXPOSURE_LOC = 4;
         static inline constexpr int KERNEL_LOC = 5;
 
-        void SetGrayscaleWeight(float w) const { glUniform1f(GRAYSCALE_WEIGHT_LOC, w); }
-        void SetKernelWeight(float w) const { glUniform1f(KERNEL_WEIGHT_LOC, w); }
-        void SetGamma(float g) const { glUniform1f(GAMMA_LOC, g); }
-        void SetExposure(float e) const { glUniform1f(EXPOSURE_LOC, e); }
+        void UpdateGrayscaleWeight() const { glUniform1f(GRAYSCALE_WEIGHT_LOC, mGrayscaleWeight); }
+        void UpdateKernelWeight() const { glUniform1f(KERNEL_WEIGHT_LOC, mKernelWeight); }
+        void UpdateGamma() const { glUniform1f(GAMMA_LOC, mGamma); }
+        void UpdateExposure() const { glUniform1f(EXPOSURE_LOC, mExposure); }
 
         void SetKernel(const glm::mat3& m) const
         { glUniformMatrix3fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(m)); }
