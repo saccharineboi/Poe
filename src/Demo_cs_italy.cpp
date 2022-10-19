@@ -21,10 +21,11 @@
 #include "Utility.hpp"
 #include "Cameras.hpp"
 
+#include <chrono>
+#include <thread>
 #include <utility>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
 
 namespace Poe
 {
@@ -111,6 +112,9 @@ namespace Poe
             glfwTerminate();
             std::exit(EXIT_FAILURE);
         }
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(100ms);
         return window;
     }
 
@@ -191,8 +195,8 @@ namespace Poe
 
         DebugUI::Init(window);
 
-        int fbWidth = 1920, fbHeight = 1080;
-        // glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+        int fbWidth, fbHeight;
+        glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
         glViewport(0, 0, fbWidth, fbHeight);
         mainCamera.SetAspectRatio(fbWidth, fbHeight);
 
