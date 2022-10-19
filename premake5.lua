@@ -1,13 +1,15 @@
 -- Copyright (C) 2022 saccharineboi --
 
+--------------------------------------------------
 workspace "poe"
     configurations { "debug", "release" }
     location "build"
 
-project "poe"
-    kind "ConsoleApp"
+--------------------------------------------------
+project "poe_imgui"
+    kind "StaticLib"
     language "C++"
-    location "build/poe"
+    location "build/imgui"
     targetdir "build/%{cfg.buildcfg}"
 
     files {
@@ -18,9 +20,51 @@ project "poe"
         "tp/imgui/imgui_impl_opengl3.cpp",
         "tp/imgui/imgui_tables.cpp",
         "tp/imgui/imgui_widgets.cpp",
+    }
 
-        "tp/glad/glad.cpp",
+    includedirs { "include", "include/imgui" }
 
+    filter "system:linux"
+        links { "m", "glfw", "pthread", "GL" }
+
+    filter "configurations:debug"
+        defines { "_DEBUG", "DEBUG" }
+        symbols "On"
+
+    filter "configurations:release"
+        defines { "NDEBUG" }
+        optimize "On"
+
+--------------------------------------------------
+project "poe_glad"
+    kind "StaticLib"
+    language "C"
+    location "build/glad"
+    targetdir "build/%{cfg.buildcfg}"
+
+    files { "tp/glad/glad.cpp" }
+
+    includedirs { "include" }
+
+    filter "system:linux"
+        links { "m", "GL" }
+
+    filter "configurations:debug"
+        defines { "_DEBUG", "DEBUG" }
+        symbols "On"
+
+    filter "configurations:release"
+        defines { "NDEBUG" }
+        optimize "On"
+
+--------------------------------------------------
+project "poe"
+    kind "ConsoleApp"
+    language "C++"
+    location "build/poe"
+    targetdir "build/%{cfg.buildcfg}"
+
+    files {
         "src/main.cpp",
         "src/Poe.cpp",
         "src/Demo.cpp",
@@ -28,10 +72,10 @@ project "poe"
         "src/Cameras.cpp"
     }
 
-    includedirs { "include", "source", "include/imgui" }
+    includedirs { "include", "source" }
 
     filter "system:linux"
-        links { "m", "glfw", "pthread", "GL", "assimp" }
+        links { "m", "glfw", "pthread", "GL", "assimp", "poe_imgui", "poe_glad" }
 
     filter "configurations:debug"
         defines { "_DEBUG" }
