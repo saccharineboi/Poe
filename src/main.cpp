@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Demo.hpp"
+#include "Demo_cs_italy.hpp"
 
-////////////////////////////////////////
 int main(int argc, char** argv)
 {
     return Poe::Run(argc, argv);

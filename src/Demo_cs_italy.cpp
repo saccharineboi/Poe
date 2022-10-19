@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "Demo_cs_italy.hpp"
 #include "Poe.hpp"
 #include "IO.hpp"
 #include "UI.hpp"
