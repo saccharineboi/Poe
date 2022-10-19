@@ -24,6 +24,7 @@ namespace Poe
     bool DebugUI::mEnableWireframe{false};
     bool DebugUI::mEnableSkybox{true};
     bool DebugUI::mEnableGrid{true};
+    bool DebugUI::mEnableVsync{true};
     std::vector<std::string> DebugUI::mCoutLogs{};
     std::vector<std::string> DebugUI::mCerrLogs{};
 
@@ -58,6 +59,7 @@ namespace Poe
         ImGui::Checkbox("Wireframe Mode", &mEnableWireframe);
         ImGui::Checkbox("Enable Skybox", &mEnableSkybox);
         ImGui::Checkbox("Enable Grid", &mEnableGrid);
+        ImGui::Checkbox("Enable Vsync", &mEnableVsync);
         static float clearColor[]{ 0.01f, 0.01f, 0.01f };
         ImGui::ColorEdit3("Clear Color", clearColor);
         glClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f);

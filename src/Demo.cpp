@@ -242,6 +242,8 @@ namespace Poe
                 glDisable(GL_CULL_FACE);
             }
 
+            DebugUI::mEnableVsync ? glfwSwapInterval(1) : glfwSwapInterval(0);
+
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
 
