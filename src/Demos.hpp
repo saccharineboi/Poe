@@ -16,8 +16,8 @@
 
 #pragma once
 
-namespace Poe
+namespace Poe::Demos
 {
     ////////////////////////////////////////
-    int Run(int argc, char** argv);
+    int cs_italy(int argc, char** argv);
 }
