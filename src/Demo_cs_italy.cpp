@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Demo_cs_italy.hpp"
+#include "Demos.hpp"
 #include "Poe.hpp"
 #include "IO.hpp"
 #include "UI.hpp"
@@ -27,7 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace Poe
+namespace Poe::Demos
 {
     ////////////////////////////////////////
     static FirstPersonCamera mainCamera;
@@ -181,7 +181,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    int Run(int argc, char** argv)
+    int cs_italy(int argc, char** argv)
     {
         InitGLFW();
         SetHints();
@@ -247,7 +247,10 @@ namespace Poe
                 glDisable(GL_CULL_FACE);
             }
 
-            DebugUI::mEnableVsync ? glfwSwapInterval(1) : glfwSwapInterval(0);
+            if (DebugUI::mEnableVsync)
+                glfwSwapInterval(1);
+            else
+                glfwSwapInterval(0);
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
