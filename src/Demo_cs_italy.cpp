@@ -191,8 +191,6 @@ namespace Poe::Demos
         EnableDebugContext();
         SetCallbacks(window);
 
-        glfwSwapInterval(1);
-
         DebugUI::Init(window);
 
         int fbWidth, fbHeight;
