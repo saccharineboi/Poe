@@ -19,6 +19,10 @@
 namespace Poe
 {
     ////////////////////////////////////////
+    inline constexpr int POE_VERSION_MAJOR = 0;
+    inline constexpr int POE_VERSION_MINOR = 1;
+
+    ////////////////////////////////////////
     inline constexpr float PI = 3.1415926f;
     inline constexpr float PI2 = 6.2831853f;
     inline constexpr float PIH = 1.5707963f;
