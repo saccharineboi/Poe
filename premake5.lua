@@ -72,7 +72,7 @@ workspace "poe"
             "src/UI.cpp",
             "src/Cameras.cpp",
             "src/Demo_cs_italy.cpp",
-            "src/main.cpp"
+            "main.cpp"
         }
 
         includedirs { "include", "src" }
