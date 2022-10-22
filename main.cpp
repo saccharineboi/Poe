@@ -33,7 +33,8 @@ static void printHelp(const char* progName)
     std::printf("\t-l, --license\t\tDisplay license information\n");
     std::printf("\t-d, --demo\t\tName of the demo to play\n\n");
     std::printf("Available demos:\n");
-    std::printf("\tcs_italy\t\tRenders the cs_italy map\n");
+    std::printf("\t[0] cs_italy\t\t\t\tRenders the cs_italy map\n");
+    std::printf("\t[1] emissive_color_material_test\tRenders emissive color material\n");
 }
 
 ////////////////////////////////////////
@@ -61,7 +62,8 @@ static void printLicense()
 }
 
 ////////////////////////////////////////
-enum class Demos { not_found, cs_italy };
+enum ChosenDemo { demo_cs_italy,
+                  demo_emissive_color_material_test };
 
 ////////////////////////////////////////
 int main(int argc, char** argv)
@@ -71,7 +73,7 @@ int main(int argc, char** argv)
         return Poe::Demos::cs_italy(argc, argv);
     }
 
-    Demos chosenDemo = Demos::not_found;
+    ChosenDemo demo = demo_cs_italy;
     constexpr int strMaxSize = 20;
     for (int i = 1; i < argc; ++i) {
         if (!std::strncmp(argv[i], "-h", strMaxSize) ||
@@ -95,8 +97,7 @@ int main(int argc, char** argv)
                 std::fprintf(stderr, "You have to specify the name of the demo!\n");
                 std::exit(EXIT_FAILURE);
             }
-            if (!std::strncmp(argv[i + 1], "cs_italy", strMaxSize))
-                chosenDemo = Demos::cs_italy;
+            demo = static_cast<ChosenDemo>(std::atoi(argv[i + 1]));
             break;
         }
         else {
@@ -105,11 +106,13 @@ int main(int argc, char** argv)
         }
     }
 
-    switch (chosenDemo) {
-        case Demos::cs_italy:
+    switch (demo) {
+        case demo_cs_italy:
             return Poe::Demos::cs_italy(argc, argv);
-        case Demos::not_found:
-            std::printf("No demo found. Please read help to see the list of demos.\n");
-            std::exit(EXIT_FAILURE);
+        case demo_emissive_color_material_test:
+            return Poe::Demos::emissive_color_material_test(argc, argv);
     }
+
+    std::printf("No demo found. Please read help to see the list of demos.\n");
+    return EXIT_FAILURE;
 }
