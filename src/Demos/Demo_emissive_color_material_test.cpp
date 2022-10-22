@@ -181,7 +181,7 @@ namespace Poe::Demos
     }
 
     ////////////////////////////////////////
-    int cs_italy(int argc, char** argv)
+    int emissive_color_material_test(int argc, char** argv)
     {
         InitGLFW();
         SetHints();
@@ -214,18 +214,9 @@ namespace Poe::Demos
 
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
-        EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
 
-        mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
-
-        Texture2DLoader texture2DLoader;
-        StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
-
-        auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.1f));
-        staticModel.SetInstanceMatrix(model);
+        mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 100.0f));
 
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
@@ -258,9 +249,6 @@ namespace Poe::Demos
 
             rads += dt;
 
-            emissiveTextureProgram.Use();
-            staticModel.Draw();
-
             emissiveColorProgram.Use();
 
             if (DebugUI::mEnableGrid) {
@@ -272,10 +260,11 @@ namespace Poe::Demos
             emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
 
             cube.Bind();
-            cube.ApplyToAllInstances(10, 10, 10, 4.0f, 4.0f, 4.0f,
+            cube.ApplyToAllInstances(10, 10, 10, 20.0f, 20.0f, 20.0f,
             [=](int i, int j, int k, int numInstances) {
                 auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 100.0f, -50.0f));
                 t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
+                t = glm::scale(t, glm::vec3(5.0f));
                 return t;
             });
             cube.Draw();
