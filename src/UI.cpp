@@ -132,7 +132,7 @@ namespace Poe
         if (fogDistance != fogBlock.GetDistance())
             fogBlock.SetDistance(fogDistance);
         float fogExponent = fogBlock.GetExponent();
-        ImGui::SliderFloat("Exponent", &fogExponent, 1.0f, 5.0f);
+        ImGui::SliderFloat("Exponent", &fogExponent, 0.01f, 3.0f);
         if (fogExponent != fogBlock.GetExponent())
             fogBlock.SetExponent(fogExponent);
         glm::vec3 color = fogBlock.GetColor();
