@@ -21,6 +21,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+#include <glm/gtc/integer.hpp>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -30,103 +32,86 @@ namespace Poe
     ////////////////////////////////////////
     void APIENTRY GraphicsDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam)
     {
-        // ignore non-significant error/warning codes
-        if(id == 1 || id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+        auto const sourceStr = [source](){
+            switch (source)
+            {
+                case GL_DEBUG_SOURCE_API:
+                    return "API";
+                case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+                    return "WINDOW_SYSTEM";
+                case GL_DEBUG_SOURCE_SHADER_COMPILER:
+                    return "SHADER_COMPILER";
+                case GL_DEBUG_SOURCE_THIRD_PARTY:
+                    return "THIRD_PARTY";
+                case GL_DEBUG_SOURCE_APPLICATION:
+                    return "SOURCE_APPLICATION";
+                case GL_DEBUG_SOURCE_OTHER:
+                    return "OTHER";
+                default:
+                    return "UNKNOWN";
+            }
+        }();
 
-        DebugUI::PushLog(stderr, "\nOpenGL Debug message (%d) : %s", id, message);
+        auto const typeStr = [type](){
+            switch (type)
+            {
+                case GL_DEBUG_TYPE_ERROR:
+                    return "ERROR";
+                case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+                    return "DEPRECATED_BEHAVIOR";
+                case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+                    return "UNDEFINED_BEHAVIOR";
+                case GL_DEBUG_TYPE_PORTABILITY:
+                    return "PORTABILITY";
+                case GL_DEBUG_TYPE_PERFORMANCE:
+                    return "PERFORMANCE";
+                case GL_DEBUG_TYPE_MARKER:
+                    return "MARKER";
+                case GL_DEBUG_TYPE_PUSH_GROUP:
+                    return "PUSH_GROUP";
+                case GL_DEBUG_TYPE_POP_GROUP:
+                    return "POP_GROUP";
+                case GL_DEBUG_TYPE_OTHER:
+                    return "OTHER";
+                default:
+                    return "UNKNOWN";
+            }
+        }();
 
-        switch (source)
-        {
-            case GL_DEBUG_SOURCE_API:
-                DebugUI::PushLog(stderr, "Source: API");
-                break;
-            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-                DebugUI::PushLog(stderr, "Source: Window System");
-                break;
-            case GL_DEBUG_SOURCE_SHADER_COMPILER:
-                DebugUI::PushLog(stderr, "Source: Shader Compiler");
-                break;
-            case GL_DEBUG_SOURCE_THIRD_PARTY:
-                DebugUI::PushLog(stderr, "Source: Third Party");
-                break;
-            case GL_DEBUG_SOURCE_APPLICATION:
-                DebugUI::PushLog(stderr, "Source: Application");
-                break;
-            case GL_DEBUG_SOURCE_OTHER:
-                DebugUI::PushLog(stderr, "Source: Other");
-                break;
-        };
+        auto const severityStr = [severity](){
+            switch (severity)
+            {
+                case GL_DEBUG_SEVERITY_HIGH:
+                    return "HIGH";
+                case GL_DEBUG_SEVERITY_MEDIUM:
+                    return "MEDIUM";
+                case GL_DEBUG_SEVERITY_LOW:
+                    return "LOW";
+                case GL_DEBUG_SEVERITY_NOTIFICATION:
+                    return "NOTIFICATION";
+                default:
+                    return "UNKNOWN";
+            }
+        }();
 
-        switch (type)
-        {
-            case GL_DEBUG_TYPE_ERROR:
-                DebugUI::PushLog(stderr, "Type: Error");
-                break;
-            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-                DebugUI::PushLog(stderr, "Type: Deprecated Behaviour");
-                break;
-            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-                DebugUI::PushLog(stderr, "Type: Undefined Behaviour");
-                break;
-            case GL_DEBUG_TYPE_PORTABILITY:
-                DebugUI::PushLog(stderr, "Type: Portability");
-                break;
-            case GL_DEBUG_TYPE_PERFORMANCE:
-                DebugUI::PushLog(stderr, "Type: Performance");
-                break;
-            case GL_DEBUG_TYPE_MARKER:
-                DebugUI::PushLog(stderr, "Type: Marker");
-                break;
-            case GL_DEBUG_TYPE_PUSH_GROUP:
-                DebugUI::PushLog(stderr, "Type: Push Group");
-                break;
-            case GL_DEBUG_TYPE_POP_GROUP:
-                DebugUI::PushLog(stderr, "Type: Pop Group");
-                break;
-            case GL_DEBUG_TYPE_OTHER:
-                DebugUI::PushLog(stderr, "Type: Other");
-                break;
-        }
-
-        switch (severity)
-        {
-            case GL_DEBUG_SEVERITY_HIGH:
-                DebugUI::PushLog(stderr, "Severity: high");
-                break;
-            case GL_DEBUG_SEVERITY_MEDIUM:
-                DebugUI::PushLog(stderr, "Severity: medium");
-                break;
-            case GL_DEBUG_SEVERITY_LOW:
-                DebugUI::PushLog(stderr, "Severity: low");
-                break;
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                DebugUI::PushLog(stderr, "Severity: notification");
-                break;
-        }
+        DebugUI::PushLog(stderr, "OpenGL Debug [HEADER] (Source: %s) (Type: %s) (Severity: %s)", sourceStr, typeStr, severityStr);
+        DebugUI::PushLog(stderr, "OpenGL Debug [DATA] (%d) : %s", id, message);
     }
 
     ////////////////////////////////////////
     VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
         : mMode{mode}, mNumElements{static_cast<int>(vertices.size())}
     {
-        glGenBuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, mId);
-            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), mode);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCreateBuffers(1, &mId);
+        glNamedBufferData(mId, vertices.size() * sizeof(float), vertices.data(), mode);
     }
 
     ////////////////////////////////////////
     VertexBuffer::VertexBuffer(int numElements, int mode)
         : mMode{mode}, mNumElements{numElements}
     {
-        glGenBuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, mId);
-            glBufferData(GL_ARRAY_BUFFER, numElements * sizeof(float), nullptr, mode);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glCreateBuffers(1, &mId);
+        glNamedBufferData(mId, numElements * sizeof(float), nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -157,24 +142,16 @@ namespace Poe
     IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
         : mMode{mode}, mNumElements{static_cast<int>(indices.size())}
     {
-        glGenBuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), mode);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glCreateBuffers(1, &mId);
+        glNamedBufferData(mId, indices.size() * sizeof(unsigned), indices.data(), mode);
     }
 
     ////////////////////////////////////////
     IndexBuffer::IndexBuffer(int numElements, int mode)
         : mMode{mode}, mNumElements{numElements}
     {
-        glGenBuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mId);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, numElements * sizeof(unsigned), nullptr, mode);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glCreateBuffers(1, &mId);
+        glNamedBufferData(mId, numElements * sizeof(unsigned), nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -205,12 +182,8 @@ namespace Poe
     UniformBuffer::UniformBuffer(int size, int mode, int bindLoc)
         : mSize{size}, mMode{mode}, mBindLoc{bindLoc}
     {
-        glGenBuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, mId);
-            glBufferData(GL_UNIFORM_BUFFER, size, nullptr, mode);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glCreateBuffers(1, &mId);
+        glNamedBufferData(mId, size, nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -241,38 +214,30 @@ namespace Poe
         : mBuffer(24, GL_DYNAMIC_DRAW, 0),
           mColor{color}, mDistance{distance}, mExponent{exponent}
     {
-        mBuffer.Bind();
-            mBuffer.Modify(0, 16, glm::value_ptr(mColor));
-            mBuffer.Modify(16, 4, &mDistance);
-            mBuffer.Modify(20, 4, &mExponent);
-        mBuffer.UnBind();
+        mBuffer.Modify(0, 16, glm::value_ptr(mColor));
+        mBuffer.Modify(16, 4, &mDistance);
+        mBuffer.Modify(20, 4, &mExponent);
     }
 
     ////////////////////////////////////////
     void FogUB::SetColor(const glm::vec3& color)
     {
         mColor = color;
-        mBuffer.Bind();
-            mBuffer.Modify(0, 16, glm::value_ptr(mColor));
-        mBuffer.UnBind();
+        mBuffer.Modify(0, 16, glm::value_ptr(mColor));
     }
 
     ////////////////////////////////////////
     void FogUB::SetDistance(float distance)
     {
         mDistance = distance;
-        mBuffer.Bind();
-            mBuffer.Modify(16, 4, &mDistance);
-        mBuffer.UnBind();
+        mBuffer.Modify(16, 4, &mDistance);
     }
 
     ////////////////////////////////////////
     void FogUB::SetExponent(float exponent)
     {
         mExponent = exponent;
-        mBuffer.Bind();
-            mBuffer.Modify(20, 4, &mExponent);
-        mBuffer.UnBind();
+        mBuffer.Modify(20, 4, &mExponent);
     }
 
     ////////////////////////////////////////
@@ -280,50 +245,44 @@ namespace Poe
         : mBuffer(192, GL_DYNAMIC_DRAW, 1),
           mProjectionMatrix{projectionMatrix}, mViewMatrix{viewMatrix}
     {
-        mBuffer.Bind();
-            mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
-            mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
-            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
-        mBuffer.UnBind();
+        mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
+        mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
     }
 
     ////////////////////////////////////////
     void TransformUB::SetProjectionMatrix(const glm::mat4& projectionMatrix)
     {
         mProjectionMatrix = projectionMatrix;
-        mBuffer.Bind();
-            mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
-            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
-        mBuffer.UnBind();
+        mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
+        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
     }
 
     ////////////////////////////////////////
     void TransformUB::SetViewMatrix(const glm::mat4& viewMatrix)
     {
         mViewMatrix = viewMatrix;
-        mBuffer.Bind();
-            mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
-            mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
-        mBuffer.UnBind();
+        mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
+        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
     }
 
     ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
         : mNumIndices{ebo.GetNumElements()}
     {
-        glGenVertexArrays(1, &mId);
-        assert(mId != 0);
+        assert(infos.size() > 0);
 
-        glBindVertexArray(mId);
-            vbo.Bind();
-            for (const VertexInfo& info : infos) {
-                glEnableVertexAttribArray(info.loc);
-                glVertexAttribPointer(info.loc, info.numElements, info.dataType, GL_FALSE, info.stride, info.offset);
-            }
-            vbo.UnBind();
-            ebo.Bind();
-        glBindVertexArray(0);
-        ebo.UnBind();
+        const VertexInfo& firstInfo = infos[0];
+
+        glCreateVertexArrays(1, &mId);
+        glVertexArrayVertexBuffer(mId, 0, vbo.GetId(), 0, firstInfo.stride);
+        glVertexArrayElementBuffer(mId, ebo.GetId());
+
+        for (const VertexInfo& info : infos) {
+            glEnableVertexArrayAttrib(mId, info.loc);
+            glVertexArrayAttribFormat(mId, info.loc, info.numElements, info.dataType, GL_FALSE, info.offset);
+            glVertexArrayAttribBinding(mId, info.loc, 0);
+        }
     }
 
     ////////////////////////////////////////
@@ -353,7 +312,7 @@ namespace Poe
     Shader::Shader(int type, const std::string& source)
         : mId{glCreateShader(type)}, mType{type}
     {
-        assert(mId != 0 && source.size() > 0);
+        assert(source.size() > 0);
 
         const char* shaderSrc = source.c_str();
         glShaderSource(mId, 1, &shaderSrc, nullptr);
@@ -364,9 +323,7 @@ namespace Poe
         if (!success) {
             char infolog[512];
             glGetShaderInfoLog(mId, 512, nullptr, infolog);
-#ifdef _DEBUG
             DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s\n", infolog);
-#endif
         }
     }
 
@@ -395,8 +352,6 @@ namespace Poe
     Program::Program(std::initializer_list<std::reference_wrapper<const Shader>> shaders)
         : mId{glCreateProgram()}
     {
-        assert(mId != 0);
-
         for (const Shader& shader : shaders)
             glAttachShader(mId, shader.GetId());
         glLinkProgram(mId);
@@ -406,9 +361,7 @@ namespace Poe
         if (!success) {
             char infolog[512];
             glGetProgramInfoLog(mId, 512, nullptr, infolog);
-#ifdef _DEBUG
             DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s\n", infolog);
-#endif
         }
 
         for (const Shader& shader : shaders)
@@ -455,23 +408,23 @@ namespace Poe
     ////////////////////////////////////////
     void StaticMesh::ReconfigureMatrixBuffer()
     {
+#if 0
+        glVertexArrayVertexBuffer(mVao.GetId(), 1, mModelMatrixBuffer->GetId(), 0, sizeof(glm::mat4));
+        for (int i = 8; i < 12; ++i) {
+            glEnableVertexArrayAttrib(mVao.GetId(), i);
+            glVertexArrayAttribFormat(mVao.GetId(), i, 4, GL_FLOAT, GL_FALSE, (i - 8) * sizeof(glm::vec4));
+            glVertexArrayAttribBinding(mVao.GetId(), i, 1);
+            glVertexAttribDivisor(i, 1);
+        }
+#endif
+
         mModelMatrixBuffer->Bind();
         mVao.Bind();
-            glEnableVertexAttribArray(8);
-            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(0));
-            glVertexAttribDivisor(8, 1);
-
-            glEnableVertexAttribArray(9);
-            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(sizeof(glm::vec4)));
-            glVertexAttribDivisor(9, 1);
-
-            glEnableVertexAttribArray(10);
-            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(2 * sizeof(glm::vec4)));
-            glVertexAttribDivisor(10, 1);
-
-            glEnableVertexAttribArray(11);
-            glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>(3 * sizeof(glm::vec4)));
-            glVertexAttribDivisor(11, 1);
+        for (int i = 8; i < 12; ++i) {
+            glEnableVertexAttribArray(i);
+            glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>((i - 8) * sizeof(glm::vec4)));
+            glVertexAttribDivisor(i, 1);
+        }
         mVao.UnBind();
         mModelMatrixBuffer->UnBind();
     }
@@ -479,19 +432,7 @@ namespace Poe
     ////////////////////////////////////////
     void StaticMesh::CreateFirstInstance()
     {
-        mModelMatrixBuffer->Bind();
         mModelMatrixBuffer->Modify(0, sizeof(glm::mat4), glm::value_ptr(glm::mat4(1.0f)));
-        mModelMatrixBuffer->UnBind();
-    }
-
-    ////////////////////////////////////////
-    void StaticMesh::SetInstanceMatrix(const glm::mat4& modelMatrix, int instance)
-    {
-        if (instance >= 0 && instance < mNumInstances) {
-            mModelMatrixBuffer->Bind();
-            mModelMatrixBuffer->Modify(instance * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(modelMatrix));
-            mModelMatrixBuffer->UnBind();
-        }
     }
 
     ////////////////////////////////////////
@@ -502,13 +443,11 @@ namespace Poe
             VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
             delete oldBuffer;
             mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
-            mModelMatrixBuffer->Bind();
             int i{};
             for (const glm::mat4& model : modelMatrices) {
                 mModelMatrixBuffer->Modify(i * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(model));
                 ++i;
             }
-            mModelMatrixBuffer->UnBind();
             mNumInstances = numMatrices;
             ReconfigureMatrixBuffer();
         }
@@ -522,11 +461,9 @@ namespace Poe
             VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
             delete oldBuffer;
             mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
-            mModelMatrixBuffer->Bind();
             float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
             std::memcpy(modelMatrixPtr, modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
             assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
-            mModelMatrixBuffer->UnBind();
             mNumInstances = numMatrices;
             ReconfigureMatrixBuffer();
         }
@@ -555,8 +492,8 @@ namespace Poe
         std::vector<unsigned> indices { 0, 1, 2 };
 
         std::vector<VertexInfo> infos{
-            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -574,8 +511,8 @@ namespace Poe
         std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
 
         std::vector<VertexInfo> infos{
-            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -618,8 +555,8 @@ namespace Poe
         indices.push_back(1);
 
         std::vector<VertexInfo> infos{
-            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(2 * sizeof(float)) }
+            { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -636,8 +573,8 @@ namespace Poe
         std::vector<unsigned> indices { 0, 1, 2 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -655,8 +592,8 @@ namespace Poe
         std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -703,8 +640,8 @@ namespace Poe
         indices.push_back(1);
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -767,8 +704,8 @@ namespace Poe
         };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -812,7 +749,7 @@ namespace Poe
             indices.push_back(i);
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), reinterpret_cast<const void*>(0) }
+            { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), 0 }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -839,8 +776,8 @@ namespace Poe
         };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -879,6 +816,8 @@ namespace Poe
             numIndices += mesh.GetNumIndices();
         }
         DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d vertices, %d indices, %d meshes, %d textures)\n", mPath.c_str(), numVertices, numIndices, static_cast<int>(mMeshes.size()), mNumTextures);
+#else
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d meshes, %d textures)", mPath.c_str(), static_cast<int>(mMeshes.size()), mNumTextures);
 #endif
     }
 
@@ -900,8 +839,8 @@ namespace Poe
         assert(mesh != nullptr && scene != nullptr);
 
         static std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(0) },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), reinterpret_cast<const void*>(3 * sizeof(float)) }
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
         std::vector<std::reference_wrapper<const Texture2D>> textures;
@@ -917,7 +856,6 @@ namespace Poe
         StaticMesh staticMesh(static_cast<int>(mesh->mNumVertices) * 5,
                               numIndices, infos, textures);
 
-        staticMesh.BindVbo();
         float* vboPtr = staticMesh.GetVboWritePtr();
 
         for (int i = 0; i < static_cast<int>(mesh->mNumVertices); ++i) {
@@ -929,9 +867,7 @@ namespace Poe
             *vboPtr++ = mesh->mTextureCoords[0][i].y;
         }
         assert(staticMesh.UnmapVbo() == GL_TRUE);
-        staticMesh.UnBindVbo();
 
-        staticMesh.BindEbo();
         unsigned* eboPtr = staticMesh.GetEboWritePtr();
         for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i) {
             const aiFace& face = mesh->mFaces[i];
@@ -939,7 +875,6 @@ namespace Poe
                 *eboPtr++ = face.mIndices[j];
         }
         assert(staticMesh.UnmapEbo() == GL_TRUE);
-        staticMesh.UnBindEbo();
         return staticMesh;
     }
 
@@ -998,26 +933,31 @@ namespace Poe
     template <typename T>
     void Texture2D::Create(T* data)
     {
-        glGenTextures(1, &mId);
-        assert(mId != 0);
+        glCreateTextures(GL_TEXTURE_2D, 1, &mId);
 
-        glBindTexture(GL_TEXTURE_2D, mId);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mParams.wrapS);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mParams.wrapT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mParams.minF);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mParams.magF);
-            if (GLAD_GL_EXT_texture_filter_anisotropic) {
-                float gpuMaxAnisotropy;
-                glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
-            }
-            glTexImage2D(GL_TEXTURE_2D, 0, mParams.internalFormat, mWidth, mHeight, 0, mParams.textureFormat, mParams.type, data);
-            if (mParams.generateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, mParams.wrapS);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, mParams.wrapT);
+        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, mParams.minF);
+        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, mParams.magF);
 
-#ifdef _DEBUG
-        DebugUI::PushLog(stdout, "[DEBUG] Allocated %ld bytes for 2D texture %s\n", mWidth * mHeight * mNumChannels * sizeof(unsigned char) * (mParams.generateMipmaps ? 2 : 1), mUrl.c_str());
-#endif
+        if (GLAD_GL_EXT_texture_filter_anisotropic) {
+            float gpuMaxAnisotropy;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
+            glTextureParameterf(mId, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
+        }
+
+        if (mParams.generateMipmaps) {
+            mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
+            glTextureStorage2D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight);
+        }
+        else {
+            mNumMipmaps = 0;
+            glTextureStorage2D(mId, 1, mParams.internalFormat, mWidth, mHeight);
+        }
+        glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
+
+        if (mParams.generateMipmaps) glGenerateTextureMipmap(mId);
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded 2D texture %s (%d mipmaps)\n", mUrl.c_str(), mNumMipmaps);
     }
 
     ////////////////////////////////////////
@@ -1028,26 +968,26 @@ namespace Poe
 
         unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
         if (!data) {
-#ifdef _DEBUG
             DebugUI::PushLog(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
-#endif
             return;
         }
 
         switch (mNumChannels) {
             case 1:
-                mParams.textureFormat = mParams.internalFormat = GL_RED;
+                mParams.textureFormat = GL_RED;
+                mParams.internalFormat = GL_R8;
                 break;
             case 2:
-                mParams.textureFormat = mParams.internalFormat = GL_RG;
+                mParams.internalFormat = GL_RG8;
+                mParams.textureFormat = GL_RG;
                 break;
             case 3:
                 mParams.textureFormat = GL_RGB;
-                mParams.internalFormat = GL_SRGB;
+                mParams.internalFormat = GL_SRGB8;
                 break;
             case 4:
                 mParams.textureFormat = GL_RGBA;
-                mParams.internalFormat = GL_SRGB_ALPHA;
+                mParams.internalFormat = GL_SRGB8_ALPHA8;
                 break;
         }
 
@@ -1069,7 +1009,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Texture2D::Texture2D(Texture2D&& other)
-        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mUrl{other.mUrl}, mParams{other.mParams}
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mUrl{other.mUrl}, mParams{other.mParams}, mNumMipmaps{other.mNumMipmaps}
     {
         other.mId = 0;
     }
@@ -1087,6 +1027,7 @@ namespace Poe
             mNumChannels = other.mNumChannels;
             mUrl = other.mUrl;
             mParams = other.mParams;
+            mNumMipmaps = other.mNumMipmaps;
 
             other.mId = 0;
         }
@@ -1137,22 +1078,27 @@ namespace Poe
     Cubemap::Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces)
     {
         assert(faces.size() == 6);
-        glGenTextures(1, &mId);
-        assert(mId != 0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, mId);
+
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mId);
+
+        int faceIndex{};
         for (const auto& face : faces) {
             unsigned char* data = stbi_load(face.second.data(), &mWidth, &mHeight, &mNumChannels, 0);
             if (!data) {
-#ifdef _DEBUG
                 DebugUI::PushLog(stderr, "[DEBUG] ERROR: couldn't load %s\n", face.second.data());
                 return;
-#endif
             }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+            if (!faceIndex) {
+                mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
+                glTextureStorage2D(mId, mNumMipmaps, GL_RGB8, mWidth, mHeight);
+            }
+
+            glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(mId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(mId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(mId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
             int texType = [](CubemapFace chosenFace){
                 switch (chosenFace) {
@@ -1171,20 +1117,19 @@ namespace Poe
                 }
                 return 0;
             }(face.first);
+            assert(texType != 0);
 
-            glTexImage2D(texType, 0, GL_SRGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-#ifdef _DEBUG
-            DebugUI::PushLog(stdout, "[DEBUG] Allocated %d bytes for %s\n", mWidth * mHeight * 3, face.second.data());
-#endif
+            glTextureSubImage3D(mId, 0, 0, 0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z - texType, mWidth, mHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+            DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d mipmaps)\n", face.second.data(), mNumMipmaps);
             stbi_image_free(data);
+            ++faceIndex;
         }
-
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        glGenerateTextureMipmap(mId);
     }
 
     ////////////////////////////////////////
     Cubemap::Cubemap(Cubemap&& other)
-        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mNumMipmaps{other.mNumMipmaps}
     {
         other.mId = 0;
     }
@@ -1199,6 +1144,7 @@ namespace Poe
             mWidth = other.mWidth;
             mHeight = other.mHeight;
             mNumChannels = other.mNumChannels;
+            mNumMipmaps = other.mNumMipmaps;
 
             other.mId = 0;
         }
@@ -1248,12 +1194,8 @@ namespace Poe
     Renderbuffer::Renderbuffer(int type, int width, int height)
         : mType{type}, mWidth{width}, mHeight{height}
     {
-        glGenRenderbuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindRenderbuffer(GL_RENDERBUFFER, mId);
-            glRenderbufferStorage(GL_RENDERBUFFER, type, width, height);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glCreateRenderbuffers(1, &mId);
+        glNamedRenderbufferStorage(mId, type, width, height);
     }
 
     ////////////////////////////////////////
@@ -1282,66 +1224,34 @@ namespace Poe
     ////////////////////////////////////////
     bool Framebuffer::Check() const
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, mId);
-        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#ifdef _DEBUG
+        int status = glCheckNamedFramebufferStatus(mId, GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE)
             DebugUI::PushLog(stderr, "ERROR: framebuffer %u is not complete", mId);
-#endif
         return status == GL_FRAMEBUFFER_COMPLETE;
-    }
-
-    ////////////////////////////////////////
-    void Framebuffer::Blit(const Framebuffer& fb, int width, int height) const
-    {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mId);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.GetId());
-        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-
-    ////////////////////////////////////////
-    void Framebuffer::Blit(int width, int height) const
-    {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, mId);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
     ////////////////////////////////////////
     Framebuffer::Framebuffer(const Texture2D& colorAttachment)
     {
-        glGenFramebuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, mId);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTexture(mId, GL_COLOR_ATTACHMENT0, colorAttachment.GetId(), 0);
         Check();
     }
 
     ////////////////////////////////////////
     Framebuffer::Framebuffer(const Texture2D& colorAttachment, const Renderbuffer& rbo)
     {
-        glGenFramebuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, mId);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment.GetId(), 0);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTexture(mId, GL_COLOR_ATTACHMENT0, colorAttachment.GetId(), 0);
+        glNamedFramebufferRenderbuffer(mId, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
         Check();
     }
 
     Framebuffer::Framebuffer(const Texture2DMultiSample& colorAttachment, const RenderbufferMultiSample& rbo)
     {
-        glGenFramebuffers(1, &mId);
-        assert(mId != 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, mId);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorAttachment.GetId(), 0);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTexture(mId, GL_COLOR_ATTACHMENT0, colorAttachment.GetId(), 0);
+        glNamedFramebufferRenderbuffer(mId, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.GetId());
         Check();
     }
 
@@ -1367,14 +1277,10 @@ namespace Poe
     Texture2DMultiSample::Texture2DMultiSample(int width, int height, int type, int numSamples)
         : mWidth{width}, mHeight{height}, mType{type}, mNumSamples{numSamples}
     {
-        glGenTextures(1, &mId);
-        assert(mId != 0);
-
         assert(mNumSamples > 0);
 
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId);
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numSamples, type, width, height, GL_TRUE);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+        glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &mId);
+        glTextureStorage2DMultisample(mId, numSamples, type, width, height, GL_TRUE);
     }
 
     ////////////////////////////////////////
@@ -1405,14 +1311,10 @@ namespace Poe
     RenderbufferMultiSample::RenderbufferMultiSample(int type, int width, int height, int numSamples)
         : mType{type}, mWidth{width}, mHeight{height}, mNumSamples{numSamples}
     {
-        glGenRenderbuffers(1, &mId);
-        assert(mId != 0);
+        assert(numSamples > 0);
 
-        assert(mNumSamples > 0);
-
-        glBindRenderbuffer(GL_RENDERBUFFER, mId);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, numSamples, type, width, height);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glCreateRenderbuffers(1, &mId);
+        glNamedRenderbufferStorageMultisample(mId, numSamples, type, width, height);
     }
 
     ////////////////////////////////////////

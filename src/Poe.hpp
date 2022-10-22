@@ -88,11 +88,11 @@ namespace Poe
         int GetNumElements() const { return mNumElements; }
 
         float* GetWritePtr() const
-        { return reinterpret_cast<float*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)); }
-        int Unmap() const { return glUnmapBuffer(GL_ARRAY_BUFFER); }
+        { return reinterpret_cast<float*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
+        int Unmap() const { return glUnmapNamedBuffer(mId); }
 
         void Modify(int offset, int size, const void* data) const
-        { glBufferSubData(GL_ARRAY_BUFFER, offset, size, data); }
+        { glNamedBufferSubData(mId, offset, size, data); }
     };
 
     ////////////////////////////////////////
@@ -123,11 +123,11 @@ namespace Poe
         int GetNumElements() const { return mNumElements; }
 
         unsigned* GetWritePtr() const
-        { return reinterpret_cast<unsigned*>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)); }
-        int Unmap() const { return glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER); }
+        { return reinterpret_cast<unsigned*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
+        int Unmap() const { return glUnmapNamedBuffer(mId); }
 
         void Modify(int offset, int size, const void* data) const
-        { glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, data); }
+        { glNamedBufferSubData(mId, offset, size, data); }
     };
 
     ////////////////////////////////////////
@@ -157,7 +157,7 @@ namespace Poe
         void TurnOff() const { glBindBufferBase(GL_UNIFORM_BUFFER, mBindLoc, 0); }
 
         void Modify(int offset, int size, const void* data) const
-        { glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data); }
+        { glNamedBufferSubData(mId, offset, size, data); }
 
         unsigned GetId() const { return mId; }
         int GetSize() const { return mSize; }
@@ -215,7 +215,7 @@ namespace Poe
         int numElements;
         int dataType;
         int stride;
-        const void* offset;
+        int offset;
     };
 
     ////////////////////////////////////////
@@ -283,11 +283,8 @@ namespace Poe
             auto iter = mUniforms.find(name.data());
             if (iter == mUniforms.end()) {
                 int loc = glGetUniformLocation(mId, name.data());
-                if (-1 == loc) {
-#ifdef _DEBUG
+                if (-1 == loc)
                     DebugUI::PushLog(stderr, "[DEBUG] ERROR: %s not found\n", name.data());
-#endif
-                }
                 else
                     mUniforms.insert(std::make_pair(name, loc));
                 return loc;
@@ -418,7 +415,7 @@ namespace Poe
     struct Texture2DParams
     {
         int textureFormat = GL_RGB;
-        int internalFormat = GL_RGB;
+        int internalFormat = GL_RGB8;
         bool generateMipmaps = true;
         float maxAnisotropy = 16.0f;
         int wrapS = GL_REPEAT;
@@ -443,6 +440,8 @@ namespace Poe
 
         template <typename T>
         void Create(T* data);
+
+        int mNumMipmaps;
 
     public:
         Texture2D(const std::string& url, const Texture2DParams&);
@@ -474,17 +473,10 @@ namespace Poe
         int GetMagF() const { return mParams.magF; }
         int GetType() const { return mParams.type; }
 
-        void Bind(int loc = 0) const
-        {
-            glActiveTexture(GL_TEXTURE0 + loc);
-            glBindTexture(GL_TEXTURE_2D, mId);
-        }
+        int GetNumMipmaps() const { return mNumMipmaps; }
 
-        void UnBind(int loc = 0) const
-        {
-            glActiveTexture(GL_TEXTURE0 + loc);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+        void Bind(int loc = 0) const { glBindTextureUnit(loc, mId); }
+        void UnBind(int loc = 0) const { glBindTextureUnit(loc, 0); }
     };
 
     ////////////////////////////////////////
@@ -513,6 +505,7 @@ namespace Poe
         int mWidth;
         int mHeight;
         int mNumChannels;
+        int mNumMipmaps;
 
     public:
         Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
@@ -532,6 +525,7 @@ namespace Poe
         int GetWidth() const { return mWidth; }
         int GetHeight() const { return mHeight; }
         int GetNumChannels() const { return mNumChannels; }
+        int GetNumMipmaps() const { return mNumMipmaps; }
     };
 
     ////////////////////////////////////////
@@ -651,8 +645,12 @@ namespace Poe
         void Bind() const { glBindFramebuffer(GL_FRAMEBUFFER, mId); }
         void UnBind() const { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
         bool Check() const;
-        void Blit(int width, int height) const;
-        void Blit(const Framebuffer&, int width, int height) const;
+
+        void Blit(int width, int height) const
+        { glBlitNamedFramebuffer(mId, 0, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST); }
+
+        void Blit(const Framebuffer& fb, int width, int height) const
+        { glBlitNamedFramebuffer(mId, fb.GetId(), 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST); }
 
         unsigned GetId() const { return mId; }
     };
@@ -748,11 +746,11 @@ namespace Poe
         void BindMatrixBuffer() const { mModelMatrixBuffer->Bind(); }
         void UnBindMatrixBuffer() const { mModelMatrixBuffer->UnBind(); }
 
-        void SetInstanceMatrixFast(const glm::mat4& modelMatrix, int instance = 0)
+        int GetNumInstances() const { return mNumInstances; }
+
+        void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0)
         { mModelMatrixBuffer->Modify(instance * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(modelMatrix)); }
 
-        int GetNumInstances() const { return mNumInstances; }
-        void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0);
         void CreateInstances(std::initializer_list<glm::mat4> modelMatrices);
         void CreateInstances(const std::vector<glm::mat4>& modelMatrices);
         void CreateInstances(int numInstances);
@@ -761,10 +759,8 @@ namespace Poe
         template <typename Func>
         void ApplyToAllInstances(Func func)
         {
-            mModelMatrixBuffer->Bind();
             for (int i = 0; i < mNumInstances; ++i)
                 mModelMatrixBuffer->Modify(i * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(func(i, mNumInstances)));
-            mModelMatrixBuffer->UnBind();
         }
 
         ////////////////////////////////////////
@@ -774,9 +770,7 @@ namespace Poe
             assert(numXMeshes * numZMeshes == mNumInstances);
             const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
             const float negNumZMeshesHalf = (zOffset) * static_cast<float>(-numZMeshes) * 0.5f;
-            mModelMatrixBuffer->Bind();
             float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
-
             int cnt{};
             for (int i = 0; i < numXMeshes; ++i) {
                 float xPos = negNumXMeshesHalf + static_cast<float>(i) * xOffset;
@@ -788,7 +782,6 @@ namespace Poe
                 }
             }
             assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
-            mModelMatrixBuffer->UnBind();
         }
 
         ////////////////////////////////////////
@@ -799,9 +792,7 @@ namespace Poe
             const float negNumXMeshesHalf = (xOffset) * static_cast<float>(-numXMeshes) * 0.5f;
             const float negNumYMeshesHalf = (yOffset) * static_cast<float>(-numYMeshes) * 0.5f;
             const float negNumZMeshesHalf = (zOffset) * static_cast<float>(-numZMeshes) * 0.5f;
-            mModelMatrixBuffer->Bind();
             float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
-
             int cnt{};
             for (int i = 0; i < numXMeshes; ++i) {
                 float xPos = negNumXMeshesHalf + static_cast<float>(i) * xOffset;
@@ -816,7 +807,6 @@ namespace Poe
                 }
             }
             assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
-            mModelMatrixBuffer->UnBind();
         }
     };
 
