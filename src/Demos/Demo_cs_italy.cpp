@@ -217,7 +217,7 @@ namespace Poe::Demos
         mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
 
         Texture2DLoader texture2DLoader;
-        StaticModel staticModel("../../../Desktop/FreeModels/cs_italy/cs_italy.obj", texture2DLoader);
+        StaticModel staticModel("../models/cs_italy/cs_italy.obj", texture2DLoader);
 
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
