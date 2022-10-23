@@ -58,6 +58,7 @@ layout (std140, binding = 1) uniform TransformBlock
     mat4 uProjection;
     mat4 uView;
     mat4 uProjView;
+    vec3 uCameraPos;
 };
 
 void main()
