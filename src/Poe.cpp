@@ -815,9 +815,11 @@ namespace Poe
             numVertices += mesh.GetNumVertices();
             numIndices += mesh.GetNumIndices();
         }
-        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d vertices, %d indices, %d meshes, %d textures)\n", mPath.c_str(), numVertices, numIndices, static_cast<int>(mMeshes.size()), mNumTextures);
+        int numMeshes = static_cast<int>(mMeshes.size());
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d vertices, %d indices, %d mesh%s, %d texture%s)\n", mPath.c_str(), numVertices, numIndices, numMeshes, numMeshes > 1 ? "es" : "", mNumTextures, mNumTextures > 1 ? "s" : "");
 #else
-        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d meshes, %d textures)", mPath.c_str(), static_cast<int>(mMeshes.size()), mNumTextures);
+        int numMeshes = static_cast<int>(mMeshes.size());
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d mesh%s, %d texture%s)", mPath.c_str(), numMeshes, numMeshes > 1 ? "es" : "", mNumTextures, mNumTextures > 1 ? "s" : "");
 #endif
     }
 
@@ -917,6 +919,48 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    StaticModel LoadCsItaly(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/cs_italy/cs_italy.obj", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadDeDust(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/de_dust2/de_dust2.obj", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadBackpack(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/backpack/backpack.obj", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadViceCity(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/GTA1_Vice_City/GTA1 Vice City.dae", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadGTA2Downtown(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/gta2_maps/Downtown.dae", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadGTA2Industrial(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/gta2_maps/Industrial.dae", loader);
+    }
+
+    ////////////////////////////////////////
+    StaticModel LoadGTA2Residential(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(rootPath + "/models/gta2_maps/Residential.dae", loader);
+    }
+
+    ////////////////////////////////////////
     Shader& ShaderLoader::Load(int type, std::string_view shaderUrl)
     {
         auto iter = mShaders.find(shaderUrl.data());
@@ -957,7 +1001,7 @@ namespace Poe
         glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
 
         if (mParams.generateMipmaps) glGenerateTextureMipmap(mId);
-        DebugUI::PushLog(stdout, "[DEBUG] Loaded 2D texture %s (%d mipmaps)\n", mUrl.c_str(), mNumMipmaps);
+        DebugUI::PushLog(stdout, "[DEBUG] Loaded 2D texture %s (%d:%d:%d, %d mipmaps)\n", mUrl.c_str(), mWidth, mHeight, mNumChannels, mNumMipmaps);
     }
 
     ////////////////////////////////////////
@@ -1120,7 +1164,7 @@ namespace Poe
             assert(texType != 0);
 
             glTextureSubImage3D(mId, 0, 0, 0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z - texType, mWidth, mHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-            DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d mipmaps)\n", face.second.data(), mNumMipmaps);
+            DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d:%d:%d, %d mipmaps)\n", face.second.data(), mWidth, mHeight, mNumChannels, mNumMipmaps);
             stbi_image_free(data);
             ++faceIndex;
         }
