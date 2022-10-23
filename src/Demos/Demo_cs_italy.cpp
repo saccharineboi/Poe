@@ -229,7 +229,7 @@ namespace Poe::Demos
         FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
-        TransformUB transformBlock(mainCamera.mProjection, mainCamera.mView);
+        TransformUB transformBlock;
         transformBlock.Buffer().TurnOn();
 
         float rads = 0.0f;
@@ -250,8 +250,7 @@ namespace Poe::Demos
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
 
-            transformBlock.SetProjectionMatrix(mainCamera.mProjection);
-            transformBlock.SetViewMatrix(mainCamera.mView);
+            transformBlock.Set(mainCamera);
 
             rads += dt;
 
