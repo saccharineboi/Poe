@@ -189,23 +189,34 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct FirstPersonCamera;
+
+    ////////////////////////////////////////
+    struct TransformUB__DATA
+    {
+        float projection_data[16];
+        float view_data[16];
+        float projView_data[16];
+        float camPos_data[3];
+    };
+
+    ////////////////////////////////////////
     struct TransformUB
     {
     private:
         UniformBuffer mBuffer;
-        glm::mat4 mProjectionMatrix;
-        glm::mat4 mViewMatrix;
+        TransformUB__DATA mData;
 
     public:
-        TransformUB(const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix);
-
+        TransformUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
-
-        glm::mat4 GetProjectionMatrix() const { return mProjectionMatrix; }
-        glm::mat4 GetViewMatrix() const { return mViewMatrix; }
 
         void SetProjectionMatrix(const glm::mat4& projectionMatrix);
         void SetViewMatrix(const glm::mat4& viewMatrix);
+        void SetProjViewMatrix(const glm::mat4& projViewMatrix);
+        void SetCameraPos(const glm::vec3& cameraPos);
+
+        void Set(const FirstPersonCamera& camera);
     };
 
     ////////////////////////////////////////

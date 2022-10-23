@@ -17,6 +17,7 @@
 #include "Poe.hpp"
 #include "IO.hpp"
 #include "Utility.hpp"
+#include "Cameras.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -241,29 +242,49 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    TransformUB::TransformUB(const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix)
-        : mBuffer(192, GL_DYNAMIC_DRAW, 1),
-          mProjectionMatrix{projectionMatrix}, mViewMatrix{viewMatrix}
+    TransformUB::TransformUB()
+        : mBuffer(204, GL_DYNAMIC_DRAW, 1)
     {
-        mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
-        mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
-        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
+        std::memset(&mData, 0, sizeof(TransformUB__DATA));
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::SetProjectionMatrix(const glm::mat4& projectionMatrix)
     {
-        mProjectionMatrix = projectionMatrix;
-        mBuffer.Modify(0, 64, glm::value_ptr(mProjectionMatrix));
-        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
+        std::memcpy(&mData.projection_data, glm::value_ptr(projectionMatrix), 64);
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::SetViewMatrix(const glm::mat4& viewMatrix)
     {
-        mViewMatrix = viewMatrix;
-        mBuffer.Modify(64, 64, glm::value_ptr(mViewMatrix));
-        mBuffer.Modify(128, 64, glm::value_ptr(mProjectionMatrix * mViewMatrix));
+        std::memcpy(&mData.view_data, glm::value_ptr(viewMatrix), 64);
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
+    void TransformUB::SetProjViewMatrix(const glm::mat4& projViewMatrix)
+    {
+        std::memcpy(&mData.projView_data, glm::value_ptr(projViewMatrix), 64);
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
+    void TransformUB::SetCameraPos(const glm::vec3& cameraPos)
+    {
+        std::memcpy(&mData.camPos_data, glm::value_ptr(cameraPos), 12);
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
+    void TransformUB::Set(const FirstPersonCamera& camera)
+    {
+        std::memcpy(&mData.projection_data, glm::value_ptr(camera.mProjection), 64);
+        std::memcpy(&mData.view_data, glm::value_ptr(camera.mView), 64);
+        std::memcpy(&mData.projView_data, glm::value_ptr(camera.mProjection * camera.mView), 64);
+        std::memcpy(&mData.camPos_data, glm::value_ptr(camera.mPosition), 12);
+        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
@@ -566,15 +587,16 @@ namespace Poe
     StaticMesh CreateTriangle()
     {
         std::vector<float> vertices {
-            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f,     1.0f, 0.0f,
-             0.0f,  0.5f, 0.0f,     0.5f, 1.0f
+            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       1.0f, 0.0f,
+             0.0f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.5f, 1.0f
         };
         std::vector<unsigned> indices { 0, 1, 2 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -584,16 +606,17 @@ namespace Poe
     StaticMesh CreateQuad()
     {
         std::vector<float> vertices {
-            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f,     1.0f, 0.0f,
-            -0.5f,  0.5f, 0.0f,     0.0f, 1.0f,
-             0.5f,  0.5f, 0.0f,     1.0f, 1.0f
+            -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       1.0f, 0.0f,
+            -0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 1.0f,
+             0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       1.0f, 1.0f
         };
         std::vector<unsigned> indices { 0, 1, 2, 2, 1, 3 };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -611,6 +634,10 @@ namespace Poe
 
         vertices.push_back(0.0f);
         vertices.push_back(0.0f);
+        vertices.push_back(1.0f);
+
+        vertices.push_back(0.0f);
+        vertices.push_back(0.0f);
 
         const float angleDelta = PI2 / static_cast<float>(numSegments);
         for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
@@ -621,6 +648,10 @@ namespace Poe
             vertices.push_back(xPos);
             vertices.push_back(yPos);
             vertices.push_back(zPos);
+
+            vertices.push_back(0.0f);
+            vertices.push_back(0.0f);
+            vertices.push_back(1.0f);
 
             vertices.push_back(xPos);
             vertices.push_back(yPos);
@@ -640,8 +671,9 @@ namespace Poe
         indices.push_back(1);
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -652,40 +684,40 @@ namespace Poe
     {
         std::vector<float> vertices{
             // front
-            -0.5f, -0.5f,  0.5f,        0.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,        1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,        1.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,        0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,    0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,     0.0f,  0.0f,  1.0f,    1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,    1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,     0.0f,  0.0f,  1.0f,    0.0f, 1.0f,
 
             // right
-             0.5f, -0.5f,  0.5f,        0.0f, 0.0f,
-             0.5f, -0.5f, -0.5f,        1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,        1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,        0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,     1.0f,  0.0f,  0.0f,    0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,     1.0f,  0.0f,  0.0f,    1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,     1.0f,  0.0f,  0.0f,    1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,     1.0f,  0.0f,  0.0f,    0.0f, 1.0f,
 
              // back
-             -0.5f, -0.5f, -0.5f,       0.0f, 0.0f,
-              0.5f, -0.5f, -0.5f,       1.0f, 0.0f,
-              0.5f,  0.5f, -0.5f,       1.0f, 1.0f,
-             -0.5f,  0.5f, -0.5f,       0.0f, 1.0f,
+             -0.5f, -0.5f, -0.5f,    0.0f,  0.0f, -1.0f,    0.0f, 0.0f,
+              0.5f, -0.5f, -0.5f,    0.0f,  0.0f, -1.0f,    1.0f, 0.0f,
+              0.5f,  0.5f, -0.5f,    0.0f,  0.0f, -1.0f,    1.0f, 1.0f,
+             -0.5f,  0.5f, -0.5f,    0.0f,  0.0f, -1.0f,    0.0f, 1.0f,
 
              // left
-             -0.5f, -0.5f, -0.5f,       0.0f, 0.0f,
-             -0.5f, -0.5f,  0.5f,       1.0f, 0.0f,
-             -0.5f,  0.5f,  0.5f,       1.0f, 1.0f,
-             -0.5f,  0.5f, -0.5f,       0.0f, 1.0f,
+             -0.5f, -0.5f, -0.5f,   -1.0f,  0.0f,  0.0f,    0.0f, 0.0f,
+             -0.5f, -0.5f,  0.5f,   -1.0f,  0.0f,  0.0f,    1.0f, 0.0f,
+             -0.5f,  0.5f,  0.5f,   -1.0f,  0.0f,  0.0f,    1.0f, 1.0f,
+             -0.5f,  0.5f, -0.5f,   -1.0f,  0.0f,  0.0f,    0.0f, 1.0f,
 
              // top
-             -0.5f, 0.5f,  0.5f,        0.0f, 0.0f,
-              0.5f, 0.5f,  0.5f,        1.0f, 0.0f,
-              0.5f, 0.5f, -0.5f,        1.0f, 1.0f,
-             -0.5f, 0.5f, -0.5f,        0.0f, 1.0f,
+             -0.5f, 0.5f,  0.5f,     0.0f,  1.0f,  0.0f,    0.0f, 0.0f,
+              0.5f, 0.5f,  0.5f,     0.0f,  1.0f,  0.0f,    1.0f, 0.0f,
+              0.5f, 0.5f, -0.5f,     0.0f,  1.0f,  0.0f,    1.0f, 1.0f,
+             -0.5f, 0.5f, -0.5f,     0.0f,  1.0f,  0.0f,    0.0f, 1.0f,
 
              // bottom
-             -0.5f, -0.5f,  0.5f,       0.0f, 0.0f,
-              0.5f, -0.5f,  0.5f,       1.0f, 0.0f,
-              0.5f, -0.5f, -0.5f,       1.0f, 1.0f,
-             -0.5f, -0.5f, -0.5f,       0.0f, 1.0f
+             -0.5f, -0.5f,  0.5f,    0.0f, -1.0f,  0.0f,    0.0f, 0.0f,
+              0.5f, -0.5f,  0.5f,    0.0f, -1.0f,  0.0f,    1.0f, 0.0f,
+              0.5f, -0.5f, -0.5f,    0.0f, -1.0f,  0.0f,    1.0f, 1.0f,
+             -0.5f, -0.5f, -0.5f,    0.0f, -1.0f,  0.0f,    0.0f, 1.0f
         };
 
         std::vector<unsigned> indices{
@@ -704,8 +736,9 @@ namespace Poe
         };
 
         std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
         return StaticMesh(vertices, indices, infos);
@@ -841,8 +874,9 @@ namespace Poe
         assert(mesh != nullptr && scene != nullptr);
 
         static std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
         std::vector<std::reference_wrapper<const Texture2D>> textures;
@@ -855,7 +889,7 @@ namespace Poe
             for (int j = 0; j < static_cast<int>(mesh->mFaces[i].mNumIndices); ++j)
                 ++numIndices;
 
-        StaticMesh staticMesh(static_cast<int>(mesh->mNumVertices) * 5,
+        StaticMesh staticMesh(static_cast<int>(mesh->mNumVertices) * 8,
                               numIndices, infos, textures);
 
         float* vboPtr = staticMesh.GetVboWritePtr();
@@ -864,6 +898,10 @@ namespace Poe
             *vboPtr++ = mesh->mVertices[i].x;
             *vboPtr++ = mesh->mVertices[i].y;
             *vboPtr++ = mesh->mVertices[i].z;
+
+            *vboPtr++ = mesh->mNormals[i].x;
+            *vboPtr++ = mesh->mNormals[i].y;
+            *vboPtr++ = mesh->mNormals[i].z;
 
             *vboPtr++ = mesh->mTextureCoords[0][i].x;
             *vboPtr++ = mesh->mTextureCoords[0][i].y;
