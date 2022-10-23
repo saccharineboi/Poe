@@ -73,7 +73,7 @@ workspace "poe"
             "src/Cameras.cpp",
 
             "src/Demos/Demo_cs_italy.cpp",
-            "src/Demos/Demo_emissive_color_material_test.cpp",
+            "src/Demos/Demo_pbr_test.cpp",
 
             "main.cpp"
         }

@@ -207,7 +207,7 @@ namespace Poe::Demos
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         auto cube = CreateCube();
-        cube.CreateInstances(1000);
+        cube.CreateInstances(100);
 
         auto grid = CreateGrid(100, 100);
         grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
@@ -260,11 +260,10 @@ namespace Poe::Demos
             emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
 
             cube.Bind();
-            cube.ApplyToAllInstances(10, 10, 10, 20.0f, 20.0f, 20.0f,
+            cube.ApplyToAllInstances(10, 10, 1, 20.0f, 20.0f, 0.0f,
             [=](int i, int j, int k, int numInstances) {
-                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 100.0f, -50.0f));
-                t = glm::rotate(t, rads, glm::vec3(0.0f, 1.0f, 0.0f));
-                t = glm::scale(t, glm::vec3(5.0f));
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 120.0f, -50.0f));
+                t = glm::scale(t, glm::vec3(10.0f));
                 return t;
             });
             cube.Draw();

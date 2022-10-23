@@ -34,7 +34,7 @@ static void printHelp(const char* progName)
     std::printf("\t-d, --demo\t\tName of the demo to play\n\n");
     std::printf("Available demos:\n");
     std::printf("\t[0] cs_italy\t\t\t\tRenders the cs_italy map\n");
-    std::printf("\t[1] emissive_color_material_test\tRenders emissive color material\n");
+    std::printf("\t[1] pbr_test\tLight-based PBR test\n");
 }
 
 ////////////////////////////////////////
