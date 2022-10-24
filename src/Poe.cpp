@@ -252,39 +252,47 @@ namespace Poe
     ////////////////////////////////////////
     void TransformUB::SetProjectionMatrix(const glm::mat4& projectionMatrix)
     {
-        std::memcpy(&mData.projection_data, glm::value_ptr(projectionMatrix), 64);
+        mData.SetProjectionData(projectionMatrix);
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::SetViewMatrix(const glm::mat4& viewMatrix)
     {
-        std::memcpy(&mData.view_data, glm::value_ptr(viewMatrix), 64);
+        mData.SetViewData(viewMatrix);
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::SetProjViewMatrix(const glm::mat4& projViewMatrix)
     {
-        std::memcpy(&mData.projView_data, glm::value_ptr(projViewMatrix), 64);
+        mData.SetProjViewData(projViewMatrix);
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::SetCameraPos(const glm::vec3& cameraPos)
     {
-        std::memcpy(&mData.camPos_data, glm::value_ptr(cameraPos), 12);
+        mData.SetCamPosData(cameraPos);
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
     void TransformUB::Set(const FirstPersonCamera& camera)
     {
-        std::memcpy(&mData.projection_data, glm::value_ptr(camera.mProjection), 64);
-        std::memcpy(&mData.view_data, glm::value_ptr(camera.mView), 64);
-        std::memcpy(&mData.projView_data, glm::value_ptr(camera.mProjection * camera.mView), 64);
-        std::memcpy(&mData.camPos_data, glm::value_ptr(camera.mPosition), 12);
+        mData.SetProjectionData(camera.mProjection);
+        mData.SetViewData(camera.mView);
+        mData.SetProjViewData(camera.mProjection * camera.mView);
+        mData.SetCamPosData(camera.mPosition);
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
+    PbrLightMaterialUB::PbrLightMaterialUB()
+        : mBuffer(28, GL_DYNAMIC_DRAW, 2)
+    {
+        std::memset(&mData, 0, sizeof(PbrLightMaterial__DATA));
+        mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData);
     }
 
     ////////////////////////////////////////

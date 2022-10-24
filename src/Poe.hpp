@@ -198,6 +198,18 @@ namespace Poe
         float view_data[16];
         float projView_data[16];
         float camPos_data[3];
+
+        void SetProjectionData(const glm::mat4& projectionMatrix)
+        { std::memcpy(projection_data, glm::value_ptr(projectionMatrix), 64); }
+
+        void SetViewData(const glm::mat4& viewMatrix)
+        { std::memcpy(view_data, glm::value_ptr(viewMatrix), 64); }
+
+        void SetProjViewData(const glm::mat4& projViewMatrix)
+        { std::memcpy(projView_data, glm::value_ptr(projViewMatrix), 64); }
+
+        void SetCamPosData(const glm::vec3& camPos)
+        { std::memcpy(camPos_data, glm::value_ptr(camPos), 12); }
     };
 
     ////////////////////////////////////////
@@ -217,6 +229,47 @@ namespace Poe
         void SetCameraPos(const glm::vec3& cameraPos);
 
         void Set(const FirstPersonCamera& camera);
+    };
+
+    ////////////////////////////////////////
+    struct PbrLightMaterial
+    {
+        glm::vec3 mAlbedo;
+        float mMetallic;
+        float mRoughness;
+        float mAo;
+    };
+
+    ////////////////////////////////////////
+    struct PbrLightMaterial__DATA
+    {
+        float albedo[3];
+        float __padding0[1];
+        float metallic;
+        float roughness;
+        float ao;
+
+        void SetAlbedo(const glm::vec3& v)
+        { std::memcpy(albedo, glm::value_ptr(v), 12); }
+    };
+
+    ////////////////////////////////////////
+    struct PbrLightMaterialUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        PbrLightMaterial__DATA mData;
+
+    public:
+        PbrLightMaterialUB();
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        void SetAlbedo(const glm::vec3&);
+        void SetMetallic(float);
+        void SetRoughness(float);
+        void SetAO(float);
+
+        void Set(const PbrLightMaterial&);
     };
 
     ////////////////////////////////////////
@@ -1008,5 +1061,18 @@ namespace Poe
 
         void Draw() const
         { mProgram.Use(); mCubemap.Bind(); glDrawArrays(GL_TRIANGLES, 0, 36); }
+    };
+
+    ////////////////////////////////////////
+    struct PbrLightProgram
+    {
+    private:
+        Program mProgram;
+
+    public:
+        PbrLightProgram(const std::string& rootPath, ShaderLoader&);
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
     };
 }
