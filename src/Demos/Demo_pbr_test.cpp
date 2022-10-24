@@ -246,7 +246,10 @@ namespace Poe::Demos
 
             float dt = Utility::ComputeDeltaTime();
             mainCamera.Update(dt);
+
             transformBlock.Set(mainCamera);
+            transformBlock.Update();
+            fogBlock.Update();
 
             rads += dt;
 

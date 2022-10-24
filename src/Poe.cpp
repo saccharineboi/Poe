@@ -212,33 +212,13 @@ namespace Poe
 
     ////////////////////////////////////////
     FogUB::FogUB(const glm::vec3& color, float distance, float exponent)
-        : mBuffer(24, GL_DYNAMIC_DRAW, 0),
-          mColor{color}, mDistance{distance}, mExponent{exponent}
+        : mBuffer(24, GL_DYNAMIC_DRAW, 0)
     {
-        mBuffer.Modify(0, 16, glm::value_ptr(mColor));
-        mBuffer.Modify(16, 4, &mDistance);
-        mBuffer.Modify(20, 4, &mExponent);
-    }
-
-    ////////////////////////////////////////
-    void FogUB::SetColor(const glm::vec3& color)
-    {
-        mColor = color;
-        mBuffer.Modify(0, 16, glm::value_ptr(mColor));
-    }
-
-    ////////////////////////////////////////
-    void FogUB::SetDistance(float distance)
-    {
-        mDistance = distance;
-        mBuffer.Modify(16, 4, &mDistance);
-    }
-
-    ////////////////////////////////////////
-    void FogUB::SetExponent(float exponent)
-    {
-        mExponent = exponent;
-        mBuffer.Modify(20, 4, &mExponent);
+        std::memset(&mData, 0, sizeof(FogUB__DATA));
+        mData.SetColor(color);
+        mData.distance = distance;
+        mData.exponent = exponent;
+        mBuffer.Modify(0, sizeof(FogUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
@@ -250,41 +230,12 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void TransformUB::SetProjectionMatrix(const glm::mat4& projectionMatrix)
-    {
-        mData.SetProjectionData(projectionMatrix);
-        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
-    }
-
-    ////////////////////////////////////////
-    void TransformUB::SetViewMatrix(const glm::mat4& viewMatrix)
-    {
-        mData.SetViewData(viewMatrix);
-        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
-    }
-
-    ////////////////////////////////////////
-    void TransformUB::SetProjViewMatrix(const glm::mat4& projViewMatrix)
-    {
-        mData.SetProjViewData(projViewMatrix);
-        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
-    }
-
-    ////////////////////////////////////////
-    void TransformUB::SetCameraPos(const glm::vec3& cameraPos)
-    {
-        mData.SetCamPosData(cameraPos);
-        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
-    }
-
-    ////////////////////////////////////////
     void TransformUB::Set(const FirstPersonCamera& camera)
     {
-        mData.SetProjectionData(camera.mProjection);
-        mData.SetViewData(camera.mView);
-        mData.SetProjViewData(camera.mProjection * camera.mView);
-        mData.SetCamPosData(camera.mPosition);
-        mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
+        SetProjectionMatrix(camera.mProjection);
+        SetViewMatrix(camera.mView);
+        SetProjViewMatrix(camera.mProjection * camera.mView);
+        SetCameraPos(camera.mPosition);
     }
 
     ////////////////////////////////////////
@@ -293,6 +244,15 @@ namespace Poe
     {
         std::memset(&mData, 0, sizeof(PbrLightMaterial__DATA));
         mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
+    void PbrLightMaterialUB::Set(const PbrLightMaterial& mat)
+    {
+        SetAlbedo(mat.mAlbedo);
+        SetMetallic(mat.mMetallic);
+        SetRoughness(mat.mRoughness);
+        SetAO(mat.mAo);
     }
 
     ////////////////////////////////////////

@@ -254,6 +254,8 @@ namespace Poe::Demos
             mainCamera.Update(dt);
 
             transformBlock.Set(mainCamera);
+            transformBlock.Update();
+            fogBlock.Update();
 
             rads += dt;
 

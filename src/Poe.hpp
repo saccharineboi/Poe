@@ -166,26 +166,38 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct FogUB__DATA
+    {
+        float color[3];
+        float __padding0[1];
+        float distance;
+        float exponent;
+
+        glm::vec3 GetColor() const { return glm::vec3(color[0], color[1], color[2]); }
+        void SetColor(const glm::vec3& c) { std::memcpy(color, glm::value_ptr(c), 12); }
+    };
+
+    ////////////////////////////////////////
     struct FogUB
     {
     private:
         UniformBuffer mBuffer;
-        glm::vec3 mColor;
-        float mDistance;
-        float mExponent;
+        FogUB__DATA mData;
 
     public:
         FogUB(const glm::vec3& color, float distance, float exponent);
 
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        glm::vec3 GetColor() const { return mColor; }
-        float GetDistance() const { return mDistance; }
-        float GetExponent() const { return mExponent; }
+        glm::vec3 GetColor() const { return mData.GetColor(); }
+        float GetDistance() const { return mData.distance; }
+        float GetExponent() const { return mData.exponent; }
 
-        void SetColor(const glm::vec3& color);
-        void SetDistance(float distance);
-        void SetExponent(float exponent);
+        void SetColor(const glm::vec3& color) { mData.SetColor(color); }
+        void SetDistance(float distance) { mData.distance = distance; }
+        void SetExponent(float exponent) { mData.exponent = exponent; }
+
+        void Update() { mBuffer.Modify(0, sizeof(FogUB__DATA), &mData); }
     };
 
     ////////////////////////////////////////
@@ -223,11 +235,19 @@ namespace Poe
         TransformUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        void SetProjectionMatrix(const glm::mat4& projectionMatrix);
-        void SetViewMatrix(const glm::mat4& viewMatrix);
-        void SetProjViewMatrix(const glm::mat4& projViewMatrix);
-        void SetCameraPos(const glm::vec3& cameraPos);
+        void SetProjectionMatrix(const glm::mat4& projectionMatrix)
+        { mData.SetProjectionData(projectionMatrix); }
 
+        void SetViewMatrix(const glm::mat4& viewMatrix)
+        { mData.SetViewData(viewMatrix); }
+
+        void SetProjViewMatrix(const glm::mat4& projViewMatrix)
+        { mData.SetProjViewData(projViewMatrix); }
+
+        void SetCameraPos(const glm::vec3& cameraPos)
+        { mData.SetCamPosData(cameraPos); }
+
+        void Update() { mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData); }
         void Set(const FirstPersonCamera& camera);
     };
 
@@ -264,11 +284,12 @@ namespace Poe
         PbrLightMaterialUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        void SetAlbedo(const glm::vec3&);
-        void SetMetallic(float);
-        void SetRoughness(float);
-        void SetAO(float);
+        void SetAlbedo(const glm::vec3& albedo) { mData.SetAlbedo(albedo); }
+        void SetMetallic(float metallic) { mData.metallic = metallic; }
+        void SetRoughness(float roughness) { mData.roughness = roughness; }
+        void SetAO(float ao) { mData.ao = ao; }
 
+        void Update() { mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData); }
         void Set(const PbrLightMaterial&);
     };
 
