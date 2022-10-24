@@ -223,7 +223,7 @@ namespace Poe
 
     ////////////////////////////////////////
     TransformUB::TransformUB()
-        : mBuffer(204, GL_DYNAMIC_DRAW, 1)
+        : mBuffer(192, GL_DYNAMIC_DRAW, 1)
     {
         std::memset(&mData, 0, sizeof(TransformUB__DATA));
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
@@ -235,7 +235,6 @@ namespace Poe
         SetProjectionMatrix(camera.mProjection);
         SetViewMatrix(camera.mView);
         SetProjViewMatrix(camera.mProjection * camera.mView);
-        SetCameraPos(camera.mPosition);
     }
 
     ////////////////////////////////////////
@@ -1456,4 +1455,10 @@ namespace Poe
     {
         Init();
     }
+
+    ////////////////////////////////////////
+    PbrLightProgram::PbrLightProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/pbr_light.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/pbr_light.frag") }
+    {}
 }

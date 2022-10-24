@@ -215,6 +215,7 @@ namespace Poe::Demos
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
+        PbrLightProgram pbrLightProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 100.0f));
 
