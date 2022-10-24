@@ -931,13 +931,16 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct EmissiveColorMaterial
+    {
+        glm::vec4 mColor;
+    };
+
+    ////////////////////////////////////////
     struct EmissiveColorProgram
     {
     private:
         Program mProgram;
-        glm::vec4 mColor;
-
-        void Init();
 
     public:
         EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
@@ -945,8 +948,8 @@ namespace Poe
 
         static inline constexpr int COLOR_LOC = 0;
 
-        glm::vec4 GetColor() const { return mColor; }
-        void SetColor(const glm::vec4& color) { mColor = color; glUniform4fv(COLOR_LOC, 1, glm::value_ptr(mColor)); }
+        void SetMaterial(const EmissiveColorMaterial& m) const
+        { glUniform4fv(COLOR_LOC, 1, glm::value_ptr(m.mColor)); }
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }

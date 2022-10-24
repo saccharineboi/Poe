@@ -226,6 +226,9 @@ namespace Poe::Demos
         TransformUB transformBlock;
         transformBlock.Buffer().TurnOn();
 
+        EmissiveColorMaterial objectMaterial{ glm::vec4(1.0f, 0.5f, 0.25f, 1.0f) };
+        EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
+
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
             ppStack.FirstPass();
@@ -250,12 +253,12 @@ namespace Poe::Demos
             emissiveColorProgram.Use();
 
             if (DebugUI::mEnableGrid) {
-                emissiveColorProgram.SetColor(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+                emissiveColorProgram.SetMaterial(gridMaterial);
                 grid.Bind();
                 grid.Draw(GL_LINES);
             }
 
-            emissiveColorProgram.SetColor(glm::vec4(1.0f, 0.5f, 0.25f, 1.0f));
+            emissiveColorProgram.SetMaterial(objectMaterial);
 
             cube.Bind();
             cube.ApplyToAllInstances(10, 10, 1, 20.0f, 20.0f, 0.0f,
