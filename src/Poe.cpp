@@ -1434,43 +1434,18 @@ namespace Poe
           mFbo(mColor0) {}
 
     ////////////////////////////////////////
-    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const glm::vec4& defaultColor)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
-
-    ////////////////////////////////////////
     EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
 
     ////////////////////////////////////////
-    void EmissiveTextureProgram::Init()
-    {
-        mProgram.Use();
-        glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
-        glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(mTileMultiplier));
-        glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(mTileOffset));
-        mProgram.Halt();
-    }
-
-    ////////////////////////////////////////
     EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") },
-          mTileMultiplier{glm::vec2(1.0f)},
-          mTileOffset{glm::vec2(0.0f)}
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") }
     {
-        Init();
-    }
-
-    ////////////////////////////////////////
-    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader, const glm::vec2& multiplier, const glm::vec2& offset)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") },
-          mTileMultiplier{multiplier},
-          mTileOffset{offset}
-    {
-        Init();
+        mProgram.Use();
+            glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
+        mProgram.Halt();
     }
 
     ////////////////////////////////////////

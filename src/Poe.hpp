@@ -944,7 +944,6 @@ namespace Poe
 
     public:
         EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
-        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&, const glm::vec4&);
 
         static inline constexpr int COLOR_LOC = 0;
 
@@ -956,31 +955,31 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct EmissiveTextureMaterial
+    {
+        glm::vec2 mTileMultiplier;
+        glm::vec2 mTileOffset;
+    };
+
+    ////////////////////////////////////////
     struct EmissiveTextureProgram
     {
     private:
         Program mProgram;
-        glm::vec2 mTileMultiplier;
-        glm::vec2 mTileOffset;
-
-        void Init();
 
     public:
         EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
-        EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&, const glm::vec2&, const glm::vec2&);
 
         static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
         static inline constexpr int TILE_MULTIPLIER_LOC = 1;
         static inline constexpr int TILE_OFFSET_LOC = 2;
 
-        glm::vec2 GetTileMultiplier() const { return mTileMultiplier; }
-        glm::vec2 GetTileOffset() const { return mTileOffset; }
-
-        void SetTileMultiplier(const glm::vec2& v) { mTileMultiplier = v; glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(mTileMultiplier)); }
-        void SetTileOffset(const glm::vec2& v) { mTileOffset = v; glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(mTileOffset)); }
-
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+
+        void SetMaterial(const EmissiveTextureMaterial& m) const
+        { glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
+          glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset)); }
     };
 
     ////////////////////////////////////////
