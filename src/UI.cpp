@@ -186,4 +186,15 @@ namespace Poe
         else if (file == stderr)
             mCerrLogs.push_back(buffer);
     }
+
+    ////////////////////////////////////////
+    void DebugUI::Render_EmissiveColorMaterialInfo(EmissiveColorMaterial& mat)
+    {
+        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::Begin("Emissive Color Material");
+        float color4[] { mat.mColor.x, mat.mColor.y, mat.mColor.z, mat.mColor.w };
+        ImGui::ColorEdit3("Color", color4);
+        std::memcpy(glm::value_ptr(mat.mColor), color4, 16);
+        ImGui::End();
+    }
 }

@@ -301,6 +301,7 @@ namespace Poe::Demos
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
             DebugUI::End_GlobalInfo();
             DebugUI::Render_LogInfo();
+            DebugUI::Render_EmissiveColorMaterialInfo(objectMaterial);
 
             DebugUI::EndFrame();
 

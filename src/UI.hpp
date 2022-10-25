@@ -39,6 +39,7 @@ namespace Poe
     struct FirstPersonCamera;
     struct PostProcessProgram;
     struct FogUB;
+    struct EmissiveColorMaterial;
 
     ////////////////////////////////////////
     struct DebugUI
@@ -74,5 +75,7 @@ namespace Poe
         static void PushLog(FILE* file, const char* format, ...);
 
         static void Render_LogInfo();
+
+        static void Render_EmissiveColorMaterialInfo(EmissiveColorMaterial&);
     };
 }
