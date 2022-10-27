@@ -197,7 +197,7 @@ namespace Poe
         void SetDistance(float distance) { mData.distance = distance; }
         void SetExponent(float exponent) { mData.exponent = exponent; }
 
-        void Update() { mBuffer.Modify(0, sizeof(FogUB__DATA), &mData); }
+        void Update() const { mBuffer.Modify(0, sizeof(FogUB__DATA), &mData); }
     };
 
     ////////////////////////////////////////
@@ -247,7 +247,7 @@ namespace Poe
         void SetCamDir(const glm::vec3& camDir)
         { mData.SetCamDirData(camDir); }
 
-        void Update() { mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData); }
+        void Update() const { mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData); }
         void Set(const FirstPersonCamera& camera);
     };
 
@@ -289,8 +289,70 @@ namespace Poe
         void SetRoughness(float roughness) { mData.roughness = roughness; }
         void SetAO(float ao) { mData.ao = ao; }
 
-        void Update() { mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData); }
+        void Update() const { mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData); }
         void Set(const PbrLightMaterial&);
+    };
+
+    ////////////////////////////////////////
+    struct DirLight
+    {
+        glm::vec3 mColor;
+        glm::vec3 mDirection;
+        float mIntensity;
+    };
+
+    ////////////////////////////////////////
+    struct DirLight__DATA
+    {
+        float color[3];
+        float __padding0[1];
+        float direction[3];
+        float intensity;
+    };
+
+    ////////////////////////////////////////
+    inline constexpr int NUM_DIR_LIGHTS = 2;
+    struct DirLightListElem__DATA
+    {
+        DirLight__DATA data;
+        float __padding0[3];
+
+        void SetColor(const glm::vec3& color)
+        { std::memcpy(data.color, glm::value_ptr(color), 12); }
+
+        void SetDirection(const glm::vec3& dir)
+        { std::memcpy(data.direction, glm::value_ptr(dir), 12); }
+
+        void SetIntensity(float intensity)
+        { data.intensity = intensity; }
+    };
+
+    ////////////////////////////////////////
+    struct DirLightUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        DirLightListElem__DATA mLightsData[NUM_DIR_LIGHTS];
+
+    public:
+        DirLightUB();
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        inline static constexpr int DATA_SIZE = sizeof(DirLightListElem__DATA) * NUM_DIR_LIGHTS;
+
+        void SetColor(int ind, const glm::vec3& color)
+        { mLightsData[ind].SetColor(color); }
+
+        void SetDirection(int ind, const glm::vec3& dir)
+        { mLightsData[ind].SetDirection(dir); }
+
+        void SetIntensity(int ind, float intensity)
+        { mLightsData[ind].SetIntensity(intensity); }
+
+        void Update() const
+        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
+
+        void Set(int ind, const DirLight& dirLight);
     };
 
     ////////////////////////////////////////

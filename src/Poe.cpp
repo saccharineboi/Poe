@@ -212,7 +212,7 @@ namespace Poe
 
     ////////////////////////////////////////
     FogUB::FogUB(const glm::vec3& color, float distance, float exponent)
-        : mBuffer(24, GL_DYNAMIC_DRAW, 0)
+        : mBuffer(sizeof(FogUB__DATA), GL_DYNAMIC_DRAW, 0)
     {
         std::memset(&mData, 0, sizeof(FogUB__DATA));
         mData.SetColor(color);
@@ -223,7 +223,7 @@ namespace Poe
 
     ////////////////////////////////////////
     TransformUB::TransformUB()
-        : mBuffer(204, GL_DYNAMIC_DRAW, 1)
+        : mBuffer(sizeof(TransformUB__DATA), GL_DYNAMIC_DRAW, 1)
     {
         std::memset(&mData, 0, sizeof(TransformUB__DATA));
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
@@ -240,7 +240,7 @@ namespace Poe
 
     ////////////////////////////////////////
     PbrLightMaterialUB::PbrLightMaterialUB()
-        : mBuffer(28, GL_DYNAMIC_DRAW, 2)
+        : mBuffer(sizeof(PbrLightMaterial__DATA), GL_DYNAMIC_DRAW, 2)
     {
         std::memset(&mData, 0, sizeof(PbrLightMaterial__DATA));
         mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData);
@@ -253,6 +253,22 @@ namespace Poe
         SetMetallic(mat.mMetallic);
         SetRoughness(mat.mRoughness);
         SetAO(mat.mAo);
+    }
+
+    ////////////////////////////////////////
+    DirLightUB::DirLightUB()
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, 3)
+    {
+        std::memset(&mLightsData, 0, DATA_SIZE);
+        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+    }
+
+    ////////////////////////////////////////
+    void DirLightUB::Set(int ind, const DirLight& dirLight)
+    {
+        SetColor(ind, dirLight.mColor);
+        SetDirection(ind, dirLight.mDirection);
+        SetIntensity(ind, dirLight.mIntensity);
     }
 
     ////////////////////////////////////////
