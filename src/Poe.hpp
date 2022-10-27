@@ -209,6 +209,7 @@ namespace Poe
         float projection_data[16];
         float view_data[16];
         float projView_data[16];
+        float camDir_data[3];
 
         void SetProjectionData(const glm::mat4& projectionMatrix)
         { std::memcpy(projection_data, glm::value_ptr(projectionMatrix), 64); }
@@ -218,6 +219,9 @@ namespace Poe
 
         void SetProjViewData(const glm::mat4& projViewMatrix)
         { std::memcpy(projView_data, glm::value_ptr(projViewMatrix), 64); }
+
+        void SetCamDirData(const glm::vec3& camDir)
+        { std::memcpy(camDir_data, glm::value_ptr(camDir), 12); }
     };
 
     ////////////////////////////////////////
@@ -239,6 +243,9 @@ namespace Poe
 
         void SetProjViewMatrix(const glm::mat4& projViewMatrix)
         { mData.SetProjViewData(projViewMatrix); }
+
+        void SetCamDir(const glm::vec3& camDir)
+        { mData.SetCamDirData(camDir); }
 
         void Update() { mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData); }
         void Set(const FirstPersonCamera& camera);

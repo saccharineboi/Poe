@@ -223,7 +223,7 @@ namespace Poe
 
     ////////////////////////////////////////
     TransformUB::TransformUB()
-        : mBuffer(192, GL_DYNAMIC_DRAW, 1)
+        : mBuffer(204, GL_DYNAMIC_DRAW, 1)
     {
         std::memset(&mData, 0, sizeof(TransformUB__DATA));
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
@@ -235,6 +235,7 @@ namespace Poe
         SetProjectionMatrix(camera.mProjection);
         SetViewMatrix(camera.mView);
         SetProjViewMatrix(camera.mProjection * camera.mView);
+        SetCamDir(camera.mDirection);
     }
 
     ////////////////////////////////////////
