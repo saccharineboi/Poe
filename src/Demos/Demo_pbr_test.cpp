@@ -227,8 +227,26 @@ namespace Poe::Demos
         TransformUB transformBlock;
         transformBlock.Buffer().TurnOn();
 
-        EmissiveColorMaterial objectMaterial{ glm::vec4(1.0f, 0.5f, 0.25f, 1.0f) };
         EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
+
+        PbrLightMaterialUB pbrBlock;
+        pbrBlock.Buffer().TurnOn();
+
+        PbrLightMaterial pbrLightMaterial{
+            glm::vec3(0.25f, 0.5f, 1.0f), // albedo
+            0.5f, // metallic
+            0.5f, // roughness
+            0.5f // ao
+        };
+
+        DirLightUB dirLightBlock;
+        dirLightBlock.Buffer().TurnOn();
+
+        DirLight sun{
+            glm::vec3(1.0f, 0.9f, 0.8f), // color
+            glm::vec3(0.0f, 0.0f, -1.0f), // direction
+            1.0f // intensity
+        };
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -262,7 +280,13 @@ namespace Poe::Demos
                 grid.Draw(GL_LINES);
             }
 
-            emissiveColorProgram.SetMaterial(objectMaterial);
+            pbrLightProgram.Use();
+
+            pbrBlock.Set(pbrLightMaterial);
+            pbrBlock.Update();
+
+            dirLightBlock.Set(0, sun);
+            dirLightBlock.Update();
 
             cube.Bind();
             cube.ApplyToAllInstances(10, 10, 1, 20.0f, 20.0f, 0.0f,
@@ -301,7 +325,8 @@ namespace Poe::Demos
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
             DebugUI::End_GlobalInfo();
             DebugUI::Render_LogInfo();
-            DebugUI::Render_EmissiveColorMaterialInfo(objectMaterial);
+            DebugUI::Render_DirLightInfo(sun);
+            DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
 
             DebugUI::EndFrame();
 
