@@ -216,7 +216,7 @@ namespace Poe
 
         ImGui::NewLine();
 
-        ImGui::SliderFloat("Intensity", &dirLight.mIntensity, 0.1f, 10.0f);
+        ImGui::SliderFloat("Intensity", &dirLight.mIntensity, 0.1f, 20.0f);
 
         ImGui::End();
     }

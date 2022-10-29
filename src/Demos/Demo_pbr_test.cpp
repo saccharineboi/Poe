@@ -206,7 +206,7 @@ namespace Poe::Demos
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        auto cube = CreateCube();
+        auto cube = CreateIcoSphere(3);
         cube.CreateInstances(100);
 
         auto grid = CreateGrid(100, 100);
@@ -292,7 +292,7 @@ namespace Poe::Demos
             cube.ApplyToAllInstances(10, 10, 1, 20.0f, 20.0f, 0.0f,
             [=](int i, int j, int k, int numInstances) {
                 auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 120.0f, -50.0f));
-                t = glm::scale(t, glm::vec3(10.0f));
+                t = glm::scale(t, glm::vec3(9.0f));
                 return t;
             });
             cube.Draw();
