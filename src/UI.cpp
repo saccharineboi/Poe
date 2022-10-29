@@ -39,7 +39,7 @@ namespace Poe
         ImGui_ImplOpenGL3_Init("#version 450 core");
 
         ImGuiIO& io = ImGui::GetIO();
-        io.Fonts->AddFontFromFileTTF("../fonts/VT323-Regular.ttf", 22);
+        io.Fonts->AddFontFromFileTTF("../fonts/Ubuntu-Regular.ttf", 18);
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     }
 
@@ -102,7 +102,7 @@ namespace Poe
     void DebugUI::Begin_GlobalInfo()
     {
         ImGui::SetNextWindowSize({ 400, 0 });
-        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
         ImGui::Begin("Poe Global Info (OpenGL 4.5 Core)");
     }
 
@@ -147,8 +147,8 @@ namespace Poe
     ////////////////////////////////////////
     void DebugUI::Render_LogInfo()
     {
-        ImGui::SetNextWindowSize({ 1200, 0 });
-        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowSize({ 800, 0 });
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
 
         ImGui::Begin("stdout");
         ImGui::BeginChild("stdout logs", { -1, 600 });
@@ -157,8 +157,8 @@ namespace Poe
         ImGui::EndChild();
         ImGui::End();
 
-        ImGui::SetNextWindowSize({ 1200, 0 });
-        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowSize({ 800, 0 });
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
 
         ImGui::Begin("stderr");
         ImGui::BeginChild("stderr logs", { -1, 600 });
@@ -190,11 +190,53 @@ namespace Poe
     ////////////////////////////////////////
     void DebugUI::Render_EmissiveColorMaterialInfo(EmissiveColorMaterial& mat)
     {
-        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
         ImGui::Begin("Emissive Color Material");
         float color4[] { mat.mColor.x, mat.mColor.y, mat.mColor.z, mat.mColor.w };
         ImGui::ColorEdit3("Color", color4);
         std::memcpy(glm::value_ptr(mat.mColor), color4, 16);
+        ImGui::End();
+    }
+
+    ////////////////////////////////////////
+    void DebugUI::Render_DirLightInfo(DirLight& dirLight)
+    {
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+        ImGui::Begin("Directional Light #0");
+
+        float color3[] { dirLight.mColor.x, dirLight.mColor.y, dirLight.mColor.z };
+        ImGui::ColorEdit3("Light Color", color3);
+        std::memcpy(glm::value_ptr(dirLight.mColor), color3, 12);
+
+        ImGui::NewLine();
+
+        ImGui::SliderFloat("X", &dirLight.mDirection.x, -1.0f, 1.0f);
+        ImGui::SliderFloat("Y", &dirLight.mDirection.y, -1.0f, 1.0f);
+        ImGui::SliderFloat("Z", &dirLight.mDirection.z, -1.0f, 1.0f);
+
+        ImGui::NewLine();
+
+        ImGui::SliderFloat("Intensity", &dirLight.mIntensity, 0.1f, 10.0f);
+
+        ImGui::End();
+    }
+
+    ////////////////////////////////////////
+    void DebugUI::Render_PbrLightMaterialInfo(PbrLightMaterial& material)
+    {
+        ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+        ImGui::Begin("PBR Light Material");
+
+        float albedo[] { material.mAlbedo.x, material.mAlbedo.y, material.mAlbedo.z };
+        ImGui::ColorEdit3("Albedo", albedo);
+        std::memcpy(glm::value_ptr(material.mAlbedo), albedo, 12);
+
+        ImGui::NewLine();
+
+        ImGui::SliderFloat("Metallic", &material.mMetallic, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &material.mRoughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("AO", &material.mAo, 0.0f, 1.0f);
+
         ImGui::End();
     }
 }

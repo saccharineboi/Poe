@@ -40,6 +40,8 @@ namespace Poe
     struct PostProcessProgram;
     struct FogUB;
     struct EmissiveColorMaterial;
+    struct DirLight;
+    struct PbrLightMaterial;
 
     ////////////////////////////////////////
     struct DebugUI
@@ -69,6 +71,8 @@ namespace Poe
         static inline constexpr int MAX_COUT_LOGS = 500;
         static inline constexpr int MAX_CERR_LOGS = 500;
 
+        static inline constexpr float BG_ALPHA = 0.8f;
+
         static std::vector<std::string> mCoutLogs;
         static std::vector<std::string> mCerrLogs;
 
@@ -77,5 +81,8 @@ namespace Poe
         static void Render_LogInfo();
 
         static void Render_EmissiveColorMaterialInfo(EmissiveColorMaterial&);
+        static void Render_PbrLightMaterialInfo(PbrLightMaterial&);
+
+        static void Render_DirLightInfo(DirLight& dirLight);
     };
 }
