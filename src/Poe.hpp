@@ -972,7 +972,7 @@ namespace Poe
     ////////////////////////////////////////
     StaticMesh CreateTriangle();
     StaticMesh CreateQuad();
-    StaticMesh CreateCircle(float radius, int numSegments);
+    StaticMesh CreateCircle(float radius = 1.0f, int numSegments = 50);
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
     StaticMesh CreatePyramid();

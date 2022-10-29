@@ -519,35 +519,24 @@ namespace Poe
         std::vector<float> vertices;
         vertices.reserve((numSegments + 1) * 5);
 
-        vertices.push_back(0.0f);
-        vertices.push_back(0.0f);
+        auto add_data = [](auto& buffer, auto... data)
+        { (buffer.push_back(data), ...); };
 
-        vertices.push_back(1.0f);
-        vertices.push_back(1.0f);
-        vertices.push_back(1.0f);
+        add_data(vertices, 0.0f, 0.0f);
+        add_data(vertices, 1.0f, 1.0f, 1.0f);
 
         const float angleDelta = PI2 / static_cast<float>(numSegments);
         for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
-            vertices.push_back(glm::cos(angle) * radius);
-            vertices.push_back(glm::sin(angle) * radius);
-
-            vertices.push_back(1.0f);
-            vertices.push_back((glm::cos(angle) + 1.0f) * 0.5f);
-            vertices.push_back((glm::sin(angle) + 1.0f) * 0.5f);
+            add_data(vertices, glm::cos(angle) * radius, glm::sin(angle) * radius);
+            add_data(vertices, 1.0f, (glm::cos(angle) + 1.0f) * 0.5f, (glm::sin(angle) + 1.0f) * 0.5f);
         }
 
         std::vector<unsigned> indices;
         indices.reserve((numSegments + 1) * 3);
 
-        for (int i = 0; i < numSegments; ++i) {
-            indices.push_back(0);
-            indices.push_back(i + 1);
-            indices.push_back(i + 2);
-        }
-
-        indices.push_back(0);
-        indices.push_back(numSegments);
-        indices.push_back(1);
+        for (int i = 0; i < numSegments; ++i)
+            add_data(indices, 0, i + 1, i + 2);
+        add_data(indices, 0, numSegments, 1);
 
         std::vector<VertexInfo> infos{
             { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
@@ -602,16 +591,12 @@ namespace Poe
         std::vector<float> vertices;
         vertices.reserve((numSegments + 1) * 3);
 
-        vertices.push_back(0.0f);
-        vertices.push_back(0.0f);
-        vertices.push_back(0.0f);
+        auto add_data = [](auto& buffer, auto... data)
+        { (buffer.push_back(data), ...); };
 
-        vertices.push_back(0.0f);
-        vertices.push_back(0.0f);
-        vertices.push_back(1.0f);
-
-        vertices.push_back(0.0f);
-        vertices.push_back(0.0f);
+        add_data(vertices, 0.0f, 0.0f, 0.0f);
+        add_data(vertices, 0.0f, 0.0f, 1.0f);
+        add_data(vertices, 0.0f, 0.0f);
 
         const float angleDelta = PI2 / static_cast<float>(numSegments);
         for (float angle = 0.0f; angle < PI2; angle += angleDelta) {
@@ -619,30 +604,17 @@ namespace Poe
             float yPos = glm::sin(angle) * radius;
             float zPos = 0.0f;
 
-            vertices.push_back(xPos);
-            vertices.push_back(yPos);
-            vertices.push_back(zPos);
-
-            vertices.push_back(0.0f);
-            vertices.push_back(0.0f);
-            vertices.push_back(1.0f);
-
-            vertices.push_back(xPos);
-            vertices.push_back(yPos);
+            add_data(vertices, xPos, yPos, zPos);
+            add_data(vertices, 0.0f, 0.0f, 1.0f);
+            add_data(vertices, xPos, yPos);
         }
 
         std::vector<unsigned> indices;
         indices.reserve((numSegments + 1) * 3);
 
-        for (int i = 0; i < numSegments; ++i) {
-            indices.push_back(0);
-            indices.push_back(i + 1);
-            indices.push_back(i + 2);
-        }
-
-        indices.push_back(0);
-        indices.push_back(numSegments);
-        indices.push_back(1);
+        for (int i = 0; i < numSegments; ++i)
+            add_data(indices, 0, i + 1, i + 2);
+        add_data(indices, 0, numSegments, 1);
 
         std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
@@ -788,6 +760,65 @@ namespace Poe
         };
 
         return StaticMesh(vertices, indices, infos);
+    }
+
+    ////////////////////////////////////////
+    StaticMesh CreateIcoSphere(int numSubdivisions)
+    {
+        constexpr float S_STEP = 186.0f / 2048.0f;  // horizontal texcoord step
+        constexpr float T_STEP = 322.0f / 1024.0f;  // vertical texcoord step
+
+        float icosahedronVertices[12 * 3];
+
+        constexpr float H_ANGLE = PI / 180.0f * 72.0f; // 360 / 5 -> 72 degrees
+        constexpr float V_ANGLE = glm::atan(0.5f); // elevation -> 26.565 degrees
+
+        constexpr float z = glm::sin(V_ANGLE);
+        constexpr float xy = glm::cos(V_ANGLE);
+
+        float hAngle1 = -PI / 2.0f  - H_ANGLE / 2.0f;
+        float hAngle2 = -PI / 2.0f;
+
+        // top vertex (0, 0, 1)
+        icosahedronVertices[0] = 0.0f;
+        icosahedronVertices[1] = 0.0f;
+        icosahedronVertices[2] = 1.0f;
+
+        // 10 vertices at 2nd and 3rd rows
+        for (int i = 1; i <= 5; ++i) {
+            int i1 = i * 3;         // 2nd row
+            int i2 = (i + 5) * 3;   // 3rd row
+
+            icosahedronVertices[i1] = xy * glm::cos(hAngle1);
+            icosahedronVertices[i2] = xy * glm::cos(hAngle2);
+
+            icosahedronVertices[i1 + 1] = xy * glm::sin(hAngle1);
+            icosahedronVertices[i2 + 1] = xy * glm::sin(hAngle2);
+
+            icosahedronVertices[i1 + 2] = z;
+            icosahedronVertices[i2 + 2] = -z;
+
+            hAngle1 += H_ANGLE;
+            hAngle2 += H_ANGLE;
+        }
+
+        // bottom vertex (0, 0, -1)
+        icosahedronVertices[11 * 3] = 0.0f;
+        icosahedronVertices[11 * 3 + 1] = 0.0f;
+        icosahedronVertices[11 * 3 + 2] = -1.0f;
+
+        std::vector<float> vertices;
+        std::vector<float> normals;
+
+        auto add_data = [](auto& buffer, auto... data)
+        { (buffer.push_back(data), ...); };
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+        };
+
+        return StaticMesh(vertices, std::vector<unsigned>{}, infos);
     }
 
     ////////////////////////////////////////
