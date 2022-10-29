@@ -767,6 +767,75 @@ namespace Poe
     ////////////////////////////////////////
     /// Source: https://songho.ca/opengl/gl_sphere.html
     ////////////////////////////////////////
+    StaticMesh CreateUVSphere(int numStacks, int numSectors)
+    {
+        std::vector<float> vertices;
+
+        const float stackStep = PI / numStacks;
+        const float sectorStep = 2.0f * PI / numSectors;
+
+        for (int i = 0; i <= numStacks; ++i) {
+            const float stackAngle = PI / 2.0f - i * stackStep;
+            const float xy = glm::cos(stackAngle);
+            const float z = glm::sin(stackAngle);
+
+            for (int j = 0; j <= numSectors; ++j) {
+                const float sectorAngle = j * sectorStep;
+
+                const float x = xy * glm::cos(sectorAngle);
+                const float y = xy * glm::sin(sectorAngle);
+
+                // positions
+                vertices.push_back(x);
+                vertices.push_back(y);
+                vertices.push_back(z);
+
+                // normals
+                vertices.push_back(x);
+                vertices.push_back(y);
+                vertices.push_back(z);
+
+                // texcoords
+                const float s = static_cast<float>(j) / numSectors;
+                const float t = static_cast<float>(i) / numStacks;
+
+                vertices.push_back(s);
+                vertices.push_back(t);
+            }
+        }
+
+        std::vector<unsigned> indices;
+
+        for (int i = 0; i < numStacks; ++i) {
+            int k1 = i * (numSectors + 1);
+            int k2 = k1 + numSectors + 1;
+
+            for (int j = 0; j < numSectors; ++j, ++k1, ++k2) {
+                if (i != 0) {
+                    indices.push_back(k1);
+                    indices.push_back(k2);
+                    indices.push_back(k1 + 1);
+                }
+                if (i != (numStacks - 1)) {
+                    indices.push_back(k1 + 1);
+                    indices.push_back(k2);
+                    indices.push_back(k2 + 1);
+                }
+            }
+        }
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
+        };
+
+        DebugUI::PushLog(stdout, "[DEBUG] Created UVSphere (%d vertices, %d indices)\n",
+                static_cast<int>(vertices.size()) / 8, static_cast<int>(indices.size()));
+
+        return StaticMesh(vertices, indices, infos);
+    }
+
     StaticMesh CreateIcoSphere(int numSubdivisions)
     {
         constexpr float S_STEP = 186.0f / 2048.0f;  // horizontal texcoord step

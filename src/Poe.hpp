@@ -925,8 +925,7 @@ namespace Poe
                 }
             }
 #ifdef _DEBUG
-            int status = mModelMatrixBuffer->Unmap();
-            assert(GL_TRUE == status);
+            assert(GL_TRUE == mModelMatrixBuffer->Unmap());
 #else
             mModelMatrixBuffer->Unmap();
 #endif
@@ -956,8 +955,7 @@ namespace Poe
                 }
             }
 #ifdef _DEBUG
-            int status = mModelMatrixBuffer->Unmap();
-            assert(GL_TRUE == status);
+            assert(GL_TRUE == mModelMatrixBuffer->Unmap());
 #else
             mModelMatrixBuffer->Unmap();
 #endif
@@ -976,6 +974,7 @@ namespace Poe
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
     StaticMesh CreatePyramid();
+    StaticMesh CreateUVSphere(int numStacks, int numSectors);
     StaticMesh CreateIcoSphere(int numSubdivisions = 0);
 
     ////////////////////////////////////////
