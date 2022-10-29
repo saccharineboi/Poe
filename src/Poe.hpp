@@ -976,7 +976,7 @@ namespace Poe
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
     StaticMesh CreatePyramid();
-    StaticMesh CreateIcoSphere(int numSubdivisions = 1);
+    StaticMesh CreateIcoSphere(int numSubdivisions = 0);
 
     ////////////////////////////////////////
     struct StaticModel

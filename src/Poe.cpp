@@ -19,6 +19,8 @@
 #include "Utility.hpp"
 #include "Cameras.hpp"
 
+#include <map>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -763,12 +765,14 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    /// Source: https://songho.ca/opengl/gl_sphere.html
+    ////////////////////////////////////////
     StaticMesh CreateIcoSphere(int numSubdivisions)
     {
         constexpr float S_STEP = 186.0f / 2048.0f;  // horizontal texcoord step
         constexpr float T_STEP = 322.0f / 1024.0f;  // vertical texcoord step
 
-        float icosahedronVertices[12 * 3];
+        float icoVertices[12 * 3];
 
         constexpr float H_ANGLE = PI / 180.0f * 72.0f; // 360 / 5 -> 72 degrees
         constexpr float V_ANGLE = glm::atan(0.5f); // elevation -> 26.565 degrees
@@ -780,45 +784,328 @@ namespace Poe
         float hAngle2 = -PI / 2.0f;
 
         // top vertex (0, 0, 1)
-        icosahedronVertices[0] = 0.0f;
-        icosahedronVertices[1] = 0.0f;
-        icosahedronVertices[2] = 1.0f;
+        icoVertices[0] = 0.0f;
+        icoVertices[1] = 0.0f;
+        icoVertices[2] = 1.0f;
 
         // 10 vertices at 2nd and 3rd rows
         for (int i = 1; i <= 5; ++i) {
             int i1 = i * 3;         // 2nd row
             int i2 = (i + 5) * 3;   // 3rd row
 
-            icosahedronVertices[i1] = xy * glm::cos(hAngle1);
-            icosahedronVertices[i2] = xy * glm::cos(hAngle2);
+            icoVertices[i1] = xy * glm::cos(hAngle1);
+            icoVertices[i2] = xy * glm::cos(hAngle2);
 
-            icosahedronVertices[i1 + 1] = xy * glm::sin(hAngle1);
-            icosahedronVertices[i2 + 1] = xy * glm::sin(hAngle2);
+            icoVertices[i1 + 1] = xy * glm::sin(hAngle1);
+            icoVertices[i2 + 1] = xy * glm::sin(hAngle2);
 
-            icosahedronVertices[i1 + 2] = z;
-            icosahedronVertices[i2 + 2] = -z;
+            icoVertices[i1 + 2] = z;
+            icoVertices[i2 + 2] = -z;
 
             hAngle1 += H_ANGLE;
             hAngle2 += H_ANGLE;
         }
 
         // bottom vertex (0, 0, -1)
-        icosahedronVertices[11 * 3] = 0.0f;
-        icosahedronVertices[11 * 3 + 1] = 0.0f;
-        icosahedronVertices[11 * 3 + 2] = -1.0f;
+        icoVertices[11 * 3] = 0.0f;
+        icoVertices[11 * 3 + 1] = 0.0f;
+        icoVertices[11 * 3 + 2] = -1.0f;
 
         std::vector<float> vertices;
         std::vector<float> normals;
+        std::vector<float> texcoords;
+        std::vector<unsigned> indices;
+        std::map<std::pair<float, float>, unsigned> sharedIndices; // key -> (s, t)
 
         auto add_data = [](auto& buffer, auto... data)
         { (buffer.push_back(data), ...); };
 
-        std::vector<VertexInfo> infos{
-            { 0, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
-            { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
+        add_data(vertices, icoVertices[0], icoVertices[1], icoVertices[2]);
+        add_data(normals, 0.0f, 0.0f, 1.0f);
+        add_data(texcoords, S_STEP, 0.0f);
+
+        add_data(vertices, icoVertices[0], icoVertices[1], icoVertices[2]);
+        add_data(normals, 0.0f, 0.0f, 1.0f);
+        add_data(texcoords, S_STEP * 3, 0.0f);
+
+        add_data(vertices, icoVertices[0], icoVertices[1], icoVertices[2]);
+        add_data(normals, 0.0f, 0.0f, 1.0f);
+        add_data(texcoords, S_STEP * 5, 0.0f);
+
+        add_data(vertices, icoVertices[0], icoVertices[1], icoVertices[2]);
+        add_data(normals, 0.0f, 0.0f, 1.0f);
+        add_data(texcoords, S_STEP * 7, 0.0f);
+
+        add_data(vertices, icoVertices[0], icoVertices[1], icoVertices[2]);
+        add_data(normals, 0.0f, 0.0f, 1.0f);
+        add_data(texcoords, S_STEP * 9, 0.0f);
+
+        add_data(vertices, icoVertices[33], icoVertices[34], icoVertices[35]);
+        add_data(normals, 0.0f, 0.0f, -1.0f);
+        add_data(texcoords, S_STEP * 2, T_STEP * 3);
+
+        add_data(vertices, icoVertices[33], icoVertices[34], icoVertices[35]);
+        add_data(normals, 0.0f, 0.0f, -1.0f);
+        add_data(texcoords, S_STEP * 4, T_STEP * 3);
+
+        add_data(vertices, icoVertices[33], icoVertices[34], icoVertices[35]);
+        add_data(normals, 0.0f, 0.0f, -1.0f);
+        add_data(texcoords, S_STEP * 6, T_STEP * 3);
+
+        add_data(vertices, icoVertices[33], icoVertices[34], icoVertices[35]);
+        add_data(normals, 0.0f, 0.0f, -1.0f);
+        add_data(texcoords, S_STEP * 8, T_STEP * 3);
+
+        add_data(vertices, icoVertices[33], icoVertices[34], icoVertices[35]);
+        add_data(normals, 0.0f, 0.0f, -1.0f);
+        add_data(texcoords, S_STEP * 10, T_STEP * 3);
+
+        glm::vec3 v(icoVertices[3], icoVertices[4], icoVertices[5]);
+        glm::vec3 n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, 0, T_STEP);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 10, T_STEP);
+
+        v = glm::vec3(icoVertices[18], icoVertices[19], icoVertices[20]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP, T_STEP * 2);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 11, T_STEP * 2);
+
+        v = glm::vec3(icoVertices[6], icoVertices[7], icoVertices[8]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 2, T_STEP);
+        sharedIndices[std::make_pair(S_STEP * 2, T_STEP)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[9], icoVertices[10], icoVertices[11]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 4, T_STEP);
+        sharedIndices[std::make_pair(S_STEP * 4, T_STEP)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[12], icoVertices[13], icoVertices[14]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 6, T_STEP);
+        sharedIndices[std::make_pair(S_STEP * 6, T_STEP)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[15], icoVertices[16], icoVertices[17]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 8, T_STEP);
+        sharedIndices[std::make_pair(S_STEP * 8, T_STEP)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[21], icoVertices[22], icoVertices[23]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 3, T_STEP * 2);
+        sharedIndices[std::make_pair(S_STEP * 3, T_STEP * 2)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[24], icoVertices[25], icoVertices[26]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 5, T_STEP * 2);
+        sharedIndices[std::make_pair(S_STEP * 5, T_STEP * 2)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[27], icoVertices[28], icoVertices[29]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 7, T_STEP * 2);
+        sharedIndices[std::make_pair(S_STEP * 7, T_STEP * 2)] = texcoords.size() / 2 - 1;
+
+        v = glm::vec3(icoVertices[30], icoVertices[31], icoVertices[32]);
+        n = glm::normalize(v);
+
+        add_data(vertices, v.x, v.y, v.z);
+        add_data(normals, n.x, n.y, n.z);
+        add_data(texcoords, S_STEP * 9, T_STEP * 2);
+        sharedIndices[std::make_pair(S_STEP * 9, T_STEP * 2)] = texcoords.size() / 2 - 1;
+
+        add_data(indices, 0, 10, 14);
+        add_data(indices, 1, 14, 15);
+        add_data(indices, 2, 15, 16);
+        add_data(indices, 3, 16, 17);
+        add_data(indices, 4, 17, 11);
+
+        add_data(indices, 10, 12, 14);
+        add_data(indices, 12, 18, 14);
+        add_data(indices, 14, 18, 15);
+        add_data(indices, 18, 19, 15);
+        add_data(indices, 15, 19, 16);
+        add_data(indices, 19, 20, 16);
+        add_data(indices, 16, 20, 17);
+        add_data(indices, 20, 21, 17);
+        add_data(indices, 17, 21, 11);
+        add_data(indices, 21, 13, 11);
+
+        add_data(indices, 5, 18, 12);
+        add_data(indices, 6, 19, 18);
+        add_data(indices, 7, 20, 19);
+        add_data(indices, 8, 21, 20);
+        add_data(indices, 9, 13, 21);
+
+        auto isOnLineSegment = [&](glm::vec2 a, glm::vec2 b, glm::vec2 c) {
+            float cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if (cross > EPSILON || cross < -EPSILON)
+                return false;
+            if ((c.x > a.x && c.x > b.x) || (c.x < a.x && c.x < b.x))
+                return false;
+            if ((c.y > a.y && c.y > b.y) || (c.y < a.y && c.y < b.y))
+                return false;
+            return true;
         };
 
-        return StaticMesh(vertices, std::vector<unsigned>{}, infos);
+        auto isSharedTexCoord = [&](glm::vec2 t) {
+            constexpr float S = 1.0f / 11.0f;
+            constexpr float T = 1.0f / 3.0f;
+
+            constexpr glm::vec2 segments[] {
+                glm::vec2(S,     0),     glm::vec2(0, T),
+                glm::vec2(S,     0),     glm::vec2(S * 2, T),
+                glm::vec2(S * 3, 0),     glm::vec2(S * 2, T),
+                glm::vec2(S * 3, 0),     glm::vec2(S * 4, T),
+                glm::vec2(S * 5, 0),     glm::vec2(S * 4, T),
+                glm::vec2(S * 5, 0),     glm::vec2(S * 6, T),
+                glm::vec2(S * 7, 0),     glm::vec2(S * 6, T),
+                glm::vec2(S * 7, 0),     glm::vec2(S * 8, T),
+                glm::vec2(S * 9, 0),     glm::vec2(S * 8, T),
+                glm::vec2(S * 9, 0),     glm::vec2(1, T * 2),
+                glm::vec2(0,     T),     glm::vec2(S * 2, 1),
+                glm::vec2(S * 3, T * 2), glm::vec2(S * 2, 1),
+                glm::vec2(S * 3, T * 2), glm::vec2(S * 4, 1),
+                glm::vec2(S * 5, T * 2), glm::vec2(S * 4, 1),
+                glm::vec2(S * 5, T * 2), glm::vec2(S * 6, 1),
+                glm::vec2(S * 7, T * 2), glm::vec2(S * 6, 1),
+                glm::vec2(S * 7, T * 2), glm::vec2(S * 8, 1),
+                glm::vec2(S * 9, T * 2), glm::vec2(S * 8, 1),
+                glm::vec2(S * 9, T * 2), glm::vec2(S * 10, 1),
+                glm::vec2(1,     T * 2), glm::vec2(S * 10, 1)
+            };
+
+            constexpr int cnt = sizeof(segments) / sizeof(segments[0]);
+            for (int i = 0, j = 1; i < cnt; i += 2, j += 2)
+                if (isOnLineSegment(segments[i], segments[j], t))
+                    return false;
+            return true;
+        };
+
+        auto computeIndex = [&](auto p, auto n, auto t) {
+            if (isSharedTexCoord(t)) {
+                auto key = std::make_pair(t.x, t.y);
+                auto it = sharedIndices.find(key);
+                if (it == sharedIndices.end()) {
+                    add_data(vertices, p.x, p.y, p.z);
+                    add_data(normals, n.x, n.y, n.z);
+                    add_data(texcoords, t.x, t.y);
+                    unsigned index = static_cast<unsigned>(texcoords.size() / 2 - 1);
+                    sharedIndices[key] = index;
+                    return index;
+                }
+                else
+                    return it->second;
+            }
+            else {
+                add_data(vertices, p.x, p.y, p.z);
+                add_data(normals, n.x, n.y, n.z);
+                add_data(texcoords, t.x, t.y);
+                return static_cast<unsigned>(texcoords.size() / 2 - 1);
+            }
+        };
+
+        for (int i = 1; i <= numSubdivisions; ++i) {
+            auto tmpIndices = std::move(indices);
+            indices.clear();
+            for (int j = 0; j < static_cast<int>(tmpIndices.size()); j += 3) {
+                unsigned i1 = tmpIndices[j];
+                unsigned i2 = tmpIndices[j + 1];
+                unsigned i3 = tmpIndices[j + 2];
+
+                glm::vec3 v1 = glm::vec3(vertices[i1 * 3],
+                                         vertices[i1 * 3 + 1],
+                                         vertices[i1 * 3 + 2]);
+
+                glm::vec3 v2 = glm::vec3(vertices[i2 * 3],
+                                         vertices[i2 * 3 + 1],
+                                         vertices[i2 * 3 + 2]);
+
+                glm::vec3 v3 = glm::vec3(vertices[i3 * 3],
+                                         vertices[i3 * 3 + 1],
+                                         vertices[i3 * 3 + 2]);
+
+                glm::vec2 t1 = glm::vec2(texcoords[i1 * 2],
+                                         texcoords[i1 * 2 + 1]);
+
+                glm::vec2 t2 = glm::vec2(texcoords[i2 * 2],
+                                         texcoords[i2 * 2 + 1]);
+
+                glm::vec2 t3 = glm::vec2(texcoords[i3 * 2],
+                                         texcoords[i3 * 2 + 1]);
+
+                glm::vec3 newV1 = glm::normalize(v1 + v2);
+                glm::vec3 newV2 = glm::normalize(v2 + v3);
+                glm::vec3 newV3 = glm::normalize(v1 + v3);
+
+                glm::vec2 newT1 = glm::vec2(0.5f) * (t1 + t2);
+                glm::vec2 newT2 = glm::vec2(0.5f) * (t2 + t3);
+                glm::vec2 newT3 = glm::vec2(0.5f) * (t1 + t3);
+
+                glm::vec3 newN1 = glm::normalize(newV1);
+                glm::vec3 newN2 = glm::normalize(newV2);
+                glm::vec3 newN3 = glm::normalize(newV3);
+
+                unsigned newI1 = computeIndex(newV1, newN1, newT1);
+                unsigned newI2 = computeIndex(newV2, newN2, newT2);
+                unsigned newI3 = computeIndex(newV3, newN3, newT3);
+
+                add_data(indices, i1, newI1, newI3);
+                add_data(indices, newI1, i2, newI2);
+                add_data(indices, newI1, newI2, newI3);
+                add_data(indices, newI3, newI2, i3);
+            }
+        }
+
+        std::vector<float> interleavedData;
+        for (int i = 0, j = 0; i < static_cast<int>(vertices.size()); i += 3, j += 2){
+            add_data(interleavedData, vertices[i], vertices[i + 1], vertices[i + 2]);
+            add_data(interleavedData, normals[i], normals[i + 1], normals[i + 2]);
+            add_data(interleavedData, texcoords[j], texcoords[j + 1]);
+        }
+
+        std::vector<VertexInfo> infos{
+            { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
+            { 1, 2, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 6 * sizeof(float) },
+            { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
+        };
+
+        DebugUI::PushLog(stdout, "[DEBUG] Created IcoSphere (%d vertices, %d indices)\n",
+                static_cast<int>(vertices.size()) / 3, static_cast<int>(indices.size()));
+
+        return StaticMesh(interleavedData, indices, infos);
     }
 
     ////////////////////////////////////////
