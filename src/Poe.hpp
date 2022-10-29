@@ -168,10 +168,9 @@ namespace Poe
     ////////////////////////////////////////
     struct FogUB__DATA
     {
-        float color[3];
-        float __padding0[1];
-        float distance;
-        float exponent;
+        alignas(16) float color[3];
+        alignas(16) float distance;
+        alignas(4) float exponent;
 
         glm::vec3 GetColor() const { return glm::vec3(color[0], color[1], color[2]); }
         void SetColor(const glm::vec3& c) { std::memcpy(color, glm::value_ptr(c), 12); }
@@ -206,10 +205,10 @@ namespace Poe
     ////////////////////////////////////////
     struct TransformUB__DATA
     {
-        float projection_data[16];
-        float view_data[16];
-        float projView_data[16];
-        float camDir_data[3];
+        alignas(64) float projection_data[16];
+        alignas(64) float view_data[16];
+        alignas(64) float projView_data[16];
+        alignas(16) float camDir_data[3];
 
         void SetProjectionData(const glm::mat4& projectionMatrix)
         { std::memcpy(projection_data, glm::value_ptr(projectionMatrix), 64); }
@@ -263,11 +262,10 @@ namespace Poe
     ////////////////////////////////////////
     struct PbrLightMaterial__DATA
     {
-        float albedo[3];
-        float __padding0[1];
-        float metallic;
-        float roughness;
-        float ao;
+        alignas(16) float albedo[3];
+        alignas(4) float metallic;
+        alignas(4) float roughness;
+        alignas(4) float ao;
 
         void SetAlbedo(const glm::vec3& v)
         { std::memcpy(albedo, glm::value_ptr(v), 12); }
@@ -304,18 +302,16 @@ namespace Poe
     ////////////////////////////////////////
     struct DirLight__DATA
     {
-        float color[3];
-        float __padding0[1];
-        float direction[3];
-        float intensity;
+        alignas(16) float color[3];
+        alignas(16) float direction[3];
+        alignas(4) float intensity;
     };
 
     ////////////////////////////////////////
     inline constexpr int NUM_DIR_LIGHTS = 2;
-    struct DirLightListElem__DATA
+    struct alignas(16) DirLightListElem__DATA
     {
         DirLight__DATA data;
-        float __padding0[3];
 
         void SetColor(const glm::vec3& color)
         { std::memcpy(data.color, glm::value_ptr(color), 12); }
@@ -928,7 +924,12 @@ namespace Poe
                     ++cnt;
                 }
             }
-            assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
+#ifdef _DEBUG
+            int status = mModelMatrixBuffer->Unmap();
+            assert(GL_TRUE == status);
+#else
+            mModelMatrixBuffer->Unmap();
+#endif
         }
 
         ////////////////////////////////////////
@@ -948,12 +949,18 @@ namespace Poe
                     for (int k = 0; k < numZMeshes; ++k) {
                         float zPos = negNumZMeshesHalf + static_cast<float>(k) * zOffset;
                         auto defaultTransform = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos));
-                        std::memcpy(modelMatrixPtr + cnt * sizeof(glm::vec4), glm::value_ptr(defaultTransform * func(i, j, k, mNumInstances)), sizeof(glm::mat4));
+                        auto res = defaultTransform * func(i, j, k, mNumInstances);
+                        std::memcpy(modelMatrixPtr + cnt * 16, glm::value_ptr(res), 64);
                         ++cnt;
                     }
                 }
             }
-            assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
+#ifdef _DEBUG
+            int status = mModelMatrixBuffer->Unmap();
+            assert(GL_TRUE == status);
+#else
+            mModelMatrixBuffer->Unmap();
+#endif
         }
     };
 
@@ -969,6 +976,7 @@ namespace Poe
     StaticMesh CreateCube();
     StaticMesh CreateGrid(int numX, int numZ);
     StaticMesh CreatePyramid();
+    StaticMesh CreateIcoSphere(int numSubdivisions = 1);
 
     ////////////////////////////////////////
     struct StaticModel
