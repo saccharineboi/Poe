@@ -2,7 +2,7 @@
 
 --------------------------------------------------
 workspace "poe"
-    configurations { "debug", "release" }
+    configurations { "debug", "release", "testing" }
     location "build"
 
     --------------------------------------------------
@@ -35,7 +35,10 @@ workspace "poe"
             defines { "NDEBUG" }
             optimize "On"
 
-        filter{}
+        filter "configurations:testing"
+            defines { "NDEBUG" }
+            optimize "On"
+            symbols "On"
 
     --------------------------------------------------
     project "poe_glad"
@@ -58,7 +61,11 @@ workspace "poe"
         filter "configurations:release"
             defines { "NDEBUG" }
             optimize "On"
-        filter{}
+
+        filter "configurations:testing"
+            defines { "NDEBUG" }
+            optimize "On"
+            symbols "On"
 
     --------------------------------------------------
     project "poe"
@@ -86,6 +93,11 @@ workspace "poe"
         filter "configurations:debug"
             defines { "_DEBUG", "DEBUG" }
             symbols "On"
+
+        filter "configurations:testing"
+            defines { "NDEBUG" }
+            symbols "On"
+            optimize "On"
 
         filter "configurations:release"
             defines { "NDEBUG" }
@@ -117,4 +129,3 @@ workspace "poe"
         filter { "system:linux", "action:gmake2", "configurations:Debug" }
             buildoptions { "-Wno-unused-but-set-variable",
                            "-Wno-unused-variable" }
-        filter{}
