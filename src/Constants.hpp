@@ -28,4 +28,5 @@ namespace Poe
     inline constexpr float PIH = 1.5707963f;
     inline constexpr float R2D = 57.295779f;
     inline constexpr float D2R = 0.017453293f;
+    inline constexpr float EPSILON = 0.000001f;
 }
