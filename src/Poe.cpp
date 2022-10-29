@@ -413,16 +413,6 @@ namespace Poe
     ////////////////////////////////////////
     void StaticMesh::ReconfigureMatrixBuffer()
     {
-#if 0
-        glVertexArrayVertexBuffer(mVao.GetId(), 1, mModelMatrixBuffer->GetId(), 0, sizeof(glm::mat4));
-        for (int i = 8; i < 12; ++i) {
-            glEnableVertexArrayAttrib(mVao.GetId(), i);
-            glVertexArrayAttribFormat(mVao.GetId(), i, 4, GL_FLOAT, GL_FALSE, (i - 8) * sizeof(glm::vec4));
-            glVertexArrayAttribBinding(mVao.GetId(), i, 1);
-            glVertexAttribDivisor(i, 1);
-        }
-#endif
-
         mModelMatrixBuffer->Bind();
         mVao.Bind();
         for (int i = 8; i < 12; ++i) {
