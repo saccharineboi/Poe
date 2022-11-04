@@ -194,7 +194,7 @@ map_Kd cs_italy_material_31.png
 newmtl material_32
 Kd 1.0000 1.0000 1.0000
 illum 0
-map_Kd cs_italy_material_32.png
+map_Kd cs_italy_material_32.tga
 
 # oldDoor
 newmtl material_33
@@ -308,7 +308,7 @@ map_Kd cs_italy_material_50.png
 newmtl material_51
 Kd 1.0000 1.0000 1.0000
 illum 0
-map_Kd cs_italy_material_51.png
+map_Kd cs_italy_material_51.tga
 
 # oldRadio
 newmtl material_52
@@ -488,7 +488,7 @@ map_Kd cs_italy_material_80.png
 newmtl material_81
 Kd 1.0000 1.0000 1.0000
 illum 0
-map_Kd cs_italy_material_81.png
+map_Kd cs_italy_material_81.tga
 
 # {ornateGate
 newmtl material_82
