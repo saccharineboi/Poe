@@ -181,7 +181,7 @@ namespace Poe::Demos
     }
 
     ////////////////////////////////////////
-    int emissive_color_material_test(int argc, char** argv)
+    int pbr_light_test(int argc, char** argv)
     {
         InitGLFW();
         SetHints();

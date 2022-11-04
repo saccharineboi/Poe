@@ -20,5 +20,5 @@ namespace Poe::Demos
 {
     ////////////////////////////////////////
     int cs_italy(int argc, char** argv);
-    int emissive_color_material_test(int argc, char** argv);
+    int pbr_light_test(int argc, char** argv);
 }

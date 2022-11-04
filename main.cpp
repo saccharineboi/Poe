@@ -110,7 +110,7 @@ int main(int argc, char** argv)
         case demo_cs_italy:
             return Poe::Demos::cs_italy(argc, argv);
         case demo_emissive_color_material_test:
-            return Poe::Demos::emissive_color_material_test(argc, argv);
+            return Poe::Demos::pbr_light_test(argc, argv);
     }
 
     std::printf("No demo found. Please read help to see the list of demos.\n");
