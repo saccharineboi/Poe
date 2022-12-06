@@ -206,6 +206,9 @@ namespace Poe::Demo
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        auto cube = CreateIcoSphere(3);
+        cube.CreateInstances(100);
+
         auto grid = CreateGrid(100, 100);
         grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
@@ -213,6 +216,7 @@ namespace Poe::Demo
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
+        PbrLightProgram pbrLightProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
 
@@ -234,6 +238,25 @@ namespace Poe::Demo
 
         EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
         EmissiveTextureMaterial modelMaterial{ glm::vec2(1.0f), glm::vec2(0.0f) };
+
+        PbrLightMaterialUB pbrBlock;
+        pbrBlock.Buffer().TurnOn();
+
+        PbrLightMaterial pbrLightMaterial{
+            glm::vec3(0.25f, 0.5f, 1.0f), // albedo
+            0.5f, // metallic
+            0.5f, // roughness
+            0.5f // ao
+        };
+
+        DirLightUB dirLightBlock;
+        dirLightBlock.Buffer().TurnOn();
+
+        DirLight sun{
+            glm::vec3(1.0f, 0.9f, 0.8f), // color
+            glm::vec3(0.0f, 0.0f, -1.0f), // direction
+            1.0f // intensity
+        };
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -262,6 +285,23 @@ namespace Poe::Demo
             emissiveTextureProgram.Use();
             emissiveTextureProgram.SetMaterial(modelMaterial);
             staticModel.Draw();
+
+            pbrLightProgram.Use();
+
+            pbrBlock.Set(pbrLightMaterial);
+            pbrBlock.Update();
+
+            dirLightBlock.Set(0, sun);
+            dirLightBlock.Update();
+
+            cube.Bind();
+            cube.ApplyToAllInstances(10, 1, 10, 20.0f, 20.0f, 20.0f,
+            [=](int i, int j, int k, int numInstances) {
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 150.0f, -50.0f));
+                t = glm::scale(t, glm::vec3(9.0f));
+                return t;
+            });
+            cube.Draw();
 
             emissiveColorProgram.Use();
 
@@ -297,6 +337,8 @@ namespace Poe::Demo
                 DebugUI::Draw_GlobalInfo_Camera(mainCamera);
                 DebugUI::Draw_GlobalInfo_PostProcess(ppStack.Program());
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
+                DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
+                DebugUI::Render_DirLightInfo(sun);
             DebugUI::End_GlobalInfo();
             DebugUI::Render_LogInfo();
 

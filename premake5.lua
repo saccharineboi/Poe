@@ -106,6 +106,7 @@ workspace "poe"
                            "-march=native",
                            "-Wall",
                            "-Wextra",
+                           "-Werror",
                            "-Wpedantic",
                            "-Wfloat-equal",
                            "-Wundef",
