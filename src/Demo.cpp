@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Demos.hpp"
+#include "Demo.hpp"
 #include "Poe.hpp"
 #include "IO.hpp"
 #include "UI.hpp"
@@ -27,7 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace Poe::Demos
+namespace Poe::Demo
 {
     ////////////////////////////////////////
     static FirstPersonCamera mainCamera;
@@ -181,7 +181,7 @@ namespace Poe::Demos
     }
 
     ////////////////////////////////////////
-    int pbr_light_test(int argc, char** argv)
+    int Run(int argc, char** argv)
     {
         InitGLFW();
         SetHints();
@@ -206,18 +206,23 @@ namespace Poe::Demos
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        auto cube = CreateIcoSphere(3);
-        cube.CreateInstances(100);
-
         auto grid = CreateGrid(100, 100);
         grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
+        EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
-        PbrLightProgram pbrLightProgram("..", shaderLoader);
 
-        mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 100.0f));
+        mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
+
+        Texture2DLoader texture2DLoader;
+        auto staticModel = LoadCsItaly("..", texture2DLoader);
+
+        auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.1f));
+        staticModel.SetInstanceMatrix(model);
 
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
@@ -228,25 +233,7 @@ namespace Poe::Demos
         transformBlock.Buffer().TurnOn();
 
         EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
-
-        PbrLightMaterialUB pbrBlock;
-        pbrBlock.Buffer().TurnOn();
-
-        PbrLightMaterial pbrLightMaterial{
-            glm::vec3(0.25f, 0.5f, 1.0f), // albedo
-            0.5f, // metallic
-            0.5f, // roughness
-            0.5f // ao
-        };
-
-        DirLightUB dirLightBlock;
-        dirLightBlock.Buffer().TurnOn();
-
-        DirLight sun{
-            glm::vec3(1.0f, 0.9f, 0.8f), // color
-            glm::vec3(0.0f, 0.0f, -1.0f), // direction
-            1.0f // intensity
-        };
+        EmissiveTextureMaterial modelMaterial{ glm::vec2(1.0f), glm::vec2(0.0f) };
 
         float rads = 0.0f;
         while (!glfwWindowShouldClose(window)) {
@@ -272,6 +259,10 @@ namespace Poe::Demos
 
             rads += dt;
 
+            emissiveTextureProgram.Use();
+            emissiveTextureProgram.SetMaterial(modelMaterial);
+            staticModel.Draw();
+
             emissiveColorProgram.Use();
 
             if (DebugUI::mEnableGrid) {
@@ -279,23 +270,6 @@ namespace Poe::Demos
                 grid.Bind();
                 grid.Draw(GL_LINES);
             }
-
-            pbrLightProgram.Use();
-
-            pbrBlock.Set(pbrLightMaterial);
-            pbrBlock.Update();
-
-            dirLightBlock.Set(0, sun);
-            dirLightBlock.Update();
-
-            cube.Bind();
-            cube.ApplyToAllInstances(10, 10, 1, 20.0f, 20.0f, 0.0f,
-            [=](int i, int j, int k, int numInstances) {
-                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 120.0f, -50.0f));
-                t = glm::scale(t, glm::vec3(9.0f));
-                return t;
-            });
-            cube.Draw();
 
             if (DebugUI::mEnableSkybox)
                 skybox.Draw();
@@ -325,8 +299,6 @@ namespace Poe::Demos
                 DebugUI::Draw_GlobalInfo_Fog(fogBlock);
             DebugUI::End_GlobalInfo();
             DebugUI::Render_LogInfo();
-            DebugUI::Render_DirLightInfo(sun);
-            DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
 
             DebugUI::EndFrame();
 

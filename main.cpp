@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Demos.hpp"
+#include "Demo.hpp"
 #include "Constants.hpp"
 
 #include <cstdio>
@@ -31,10 +31,6 @@ static void printHelp(const char* progName)
     std::printf("\t-h, --help\t\tDisplay this help message\n");
     std::printf("\t-v, --version\t\tDisplay version information\n");
     std::printf("\t-l, --license\t\tDisplay license information\n");
-    std::printf("\t-d, --demo\t\tName of the demo to play\n\n");
-    std::printf("Available demos:\n");
-    std::printf("\t[0] cs_italy\t\tRenders the cs_italy map\n");
-    std::printf("\t[1] pbr_test\t\tLight-based PBR test\n");
 }
 
 ////////////////////////////////////////
@@ -62,18 +58,8 @@ static void printLicense()
 }
 
 ////////////////////////////////////////
-enum ChosenDemo { demo_cs_italy,
-                  demo_emissive_color_material_test };
-
-////////////////////////////////////////
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        std::printf("Demo not specified, running cs_italy by default ...\n");
-        return Poe::Demos::cs_italy(argc, argv);
-    }
-
-    ChosenDemo demo = demo_cs_italy;
     constexpr int strMaxSize = 20;
     for (int i = 1; i < argc; ++i) {
         if (!std::strncmp(argv[i], "-h", strMaxSize) ||
@@ -91,28 +77,11 @@ int main(int argc, char** argv)
             printLicense();
             std::exit(EXIT_SUCCESS);
         }
-        else if (!std::strncmp(argv[i], "-d", strMaxSize) ||
-                 !std::strncmp(argv[i], "--demo", strMaxSize)) {
-            if (i == argc - 1) {
-                std::fprintf(stderr, "You have to specify the name of the demo!\n");
-                std::exit(EXIT_FAILURE);
-            }
-            demo = static_cast<ChosenDemo>(std::atoi(argv[i + 1]));
-            break;
-        }
         else {
             std::fprintf(stderr, "ERROR: %s is an unknown option\n", argv[i]);
             std::exit(EXIT_FAILURE);
         }
     }
 
-    switch (demo) {
-        case demo_cs_italy:
-            return Poe::Demos::cs_italy(argc, argv);
-        case demo_emissive_color_material_test:
-            return Poe::Demos::pbr_light_test(argc, argv);
-    }
-
-    std::printf("No demo found. Please read help to see the list of demos.\n");
-    return EXIT_FAILURE;
+    return Poe::Demo::Run(argc, argv);
 }

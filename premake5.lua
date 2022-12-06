@@ -79,9 +79,7 @@ workspace "poe"
             "src/UI.cpp",
             "src/Cameras.cpp",
 
-            "src/Demos/Demo_cs_italy.cpp",
-            "src/Demos/Demo_pbr_test.cpp",
-
+            "src/Demo.cpp",
             "main.cpp"
         }
 
