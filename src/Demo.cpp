@@ -206,17 +206,16 @@ namespace Poe::Demo
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        auto cube = CreateIcoSphere(3);
-        cube.CreateInstances(100);
+        auto cube = CreateIcoSphere(3, 100);
 
-        auto grid = CreateGrid(100, 100);
-        grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
+        auto grid = CreateGrid(100, 100, 0);
+        // grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         ShaderLoader shaderLoader;
         EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         TexturedSkyboxProgram skybox("..", shaderLoader, DefaultSkyboxTexture::Cloudy);
-        PbrLightProgram pbrLightProgram("..", shaderLoader);
+        PbrLightProgramInstanced pbrLightProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(0.0f, 100.0f, 0.0f));
 
@@ -226,7 +225,6 @@ namespace Poe::Demo
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
-        staticModel.SetInstanceMatrix(model);
 
         PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
@@ -284,6 +282,7 @@ namespace Poe::Demo
 
             emissiveTextureProgram.Use();
             emissiveTextureProgram.SetMaterial(modelMaterial);
+            emissiveTextureProgram.SetModelMatrix(model);
             staticModel.Draw();
 
             pbrLightProgram.Use();
@@ -301,12 +300,13 @@ namespace Poe::Demo
                 t = glm::scale(t, glm::vec3(9.0f));
                 return t;
             });
-            cube.Draw();
+            cube.DrawInstanced();
 
             emissiveColorProgram.Use();
 
             if (DebugUI::mEnableGrid) {
                 emissiveColorProgram.SetMaterial(gridMaterial);
+                emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
                 grid.Bind();
                 grid.Draw(GL_LINES);
             }
