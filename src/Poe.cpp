@@ -415,21 +415,17 @@ namespace Poe
     ////////////////////////////////////////
     void StaticMesh::ReconfigureMatrixBuffer()
     {
-        mModelMatrixBuffer->Bind();
-        mVao.Bind();
-        for (int i = 8; i < 12; ++i) {
-            glEnableVertexAttribArray(i);
-            glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>((i - 8) * sizeof(glm::vec4)));
-            glVertexAttribDivisor(i, 1);
+        if (mNumInstances > 0) {
+            mModelMatrixBuffer->Bind();
+            mVao.Bind();
+            for (int i = 8; i < 12; ++i) {
+                glEnableVertexAttribArray(i);
+                glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>((i - 8) * sizeof(glm::vec4)));
+                glVertexAttribDivisor(i, 1);
+            }
+            mVao.UnBind();
+            mModelMatrixBuffer->UnBind();
         }
-        mVao.UnBind();
-        mModelMatrixBuffer->UnBind();
-    }
-
-    ////////////////////////////////////////
-    void StaticMesh::CreateFirstInstance()
-    {
-        mModelMatrixBuffer->Modify(0, sizeof(glm::mat4), glm::value_ptr(glm::mat4(1.0f)));
     }
 
     ////////////////////////////////////////
@@ -479,7 +475,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateColoredTriangle()
+    StaticMesh CreateColoredTriangle(int numInstances)
     {
         std::vector<float> vertices {
             -0.5f, -0.5f,   1.0f, 0.0f, 0.0f,
@@ -493,11 +489,11 @@ namespace Poe
             { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateColoredQuad()
+    StaticMesh CreateColoredQuad(int numInstances)
     {
         std::vector<float> vertices {
             -0.5f, -0.5f,   1.0f, 0.0f, 0.0f,
@@ -512,11 +508,11 @@ namespace Poe
             { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateColoredCircle(float radius, int numSegments)
+    StaticMesh CreateColoredCircle(float radius, int numSegments, int numInstances)
     {
         std::vector<float> vertices;
         vertices.reserve((numSegments + 1) * 5);
@@ -545,11 +541,11 @@ namespace Poe
             { 1, 3, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 2 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateTriangle()
+    StaticMesh CreateTriangle(int numInstances)
     {
         std::vector<float> vertices {
             -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f,
@@ -564,11 +560,11 @@ namespace Poe
             { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateQuad()
+    StaticMesh CreateQuad(int numInstances)
     {
         std::vector<float> vertices {
             -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f,
@@ -584,11 +580,11 @@ namespace Poe
             { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateCircle(float radius, int numSegments)
+    StaticMesh CreateCircle(float radius, int numSegments, int numInstances)
     {
         std::vector<float> vertices;
         vertices.reserve((numSegments + 1) * 3);
@@ -624,11 +620,11 @@ namespace Poe
             { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateCube()
+    StaticMesh CreateCube(int numInstances)
     {
         std::vector<float> vertices{
             // front
@@ -689,11 +685,11 @@ namespace Poe
             { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreateGrid(int numX, int numZ)
+    StaticMesh CreateGrid(int numX, int numZ, int numInstances)
     {
         std::vector<float> vertices;
         vertices.reserve(numX * 2 * 3 + numZ * 2 * 3);
@@ -733,11 +729,11 @@ namespace Poe
             { 0, 3, GL_FLOAT, static_cast<int>(3 * sizeof(float)), 0 }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
-    StaticMesh CreatePyramid()
+    StaticMesh CreatePyramid(int numInstances)
     {
         std::vector<float> vertices{
             0.0f,  0.5f,  0.0f,       0.5f, 1.0f,
@@ -761,13 +757,13 @@ namespace Poe
             { 1, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
     ////////////////////////////////////////
     /// Source: https://songho.ca/opengl/gl_sphere.html
     ////////////////////////////////////////
-    StaticMesh CreateUVSphere(int numStacks, int numSectors)
+    StaticMesh CreateUVSphere(int numStacks, int numSectors, int numInstances)
     {
         std::vector<float> vertices;
 
@@ -833,10 +829,13 @@ namespace Poe
         DebugUI::PushLog(stdout, "[DEBUG] Created UVSphere (%d vertices, %d indices)\n",
                 static_cast<int>(vertices.size()) / 8, static_cast<int>(indices.size()));
 
-        return StaticMesh(vertices, indices, infos);
+        return StaticMesh(numInstances, vertices, indices, infos);
     }
 
-    StaticMesh CreateIcoSphere(int numSubdivisions)
+    ////////////////////////////////////////
+    /// Source: https://songho.ca/opengl/gl_sphere.html
+    ////////////////////////////////////////
+    StaticMesh CreateIcoSphere(int numSubdivisions, int numInstances)
     {
         constexpr float S_STEP = 186.0f / 2048.0f;  // horizontal texcoord step
         constexpr float T_STEP = 322.0f / 1024.0f;  // vertical texcoord step
@@ -1174,7 +1173,7 @@ namespace Poe
         DebugUI::PushLog(stdout, "[DEBUG] Created IcoSphere (%d vertices, %d indices)\n",
                 static_cast<int>(vertices.size()) / 3, static_cast<int>(indices.size()));
 
-        return StaticMesh(interleavedData, indices, infos);
+        return StaticMesh(numInstances, interleavedData, indices, infos);
     }
 
     ////////////////////////////////////////
@@ -1250,7 +1249,8 @@ namespace Poe
             for (int j = 0; j < static_cast<int>(mesh->mFaces[i].mNumIndices); ++j)
                 ++numIndices;
 
-        StaticMesh staticMesh(static_cast<int>(mesh->mNumVertices) * 8,
+        StaticMesh staticMesh(mNumInstances,
+                              static_cast<int>(mesh->mNumVertices) * 8,
                               numIndices, infos, textures);
 
         float* vboPtr = staticMesh.GetVboWritePtr();
@@ -1279,7 +1279,7 @@ namespace Poe
         return staticMesh;
     }
 
-    // ////////////////////////////////////////
+    ///////////////////////////////////////////
     std::vector<std::reference_wrapper<const Texture2D>> StaticModel::Load2DTextures(aiMaterial* material, aiTextureType type, std::string_view typeName)
     {
         std::vector<std::reference_wrapper<const Texture2D>> textures;
@@ -1320,43 +1320,43 @@ namespace Poe
     ////////////////////////////////////////
     StaticModel LoadCsItaly(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/cs_italy/cs_italy.obj", loader);
+        return StaticModel(0, rootPath + "/models/cs_italy/cs_italy.obj", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadDeDust(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/de_dust2/de_dust2.obj", loader);
+        return StaticModel(0, rootPath + "/models/de_dust2/de_dust2.obj", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadBackpack(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/backpack/backpack.obj", loader);
+        return StaticModel(0, rootPath + "/models/backpack/backpack.obj", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadViceCity(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/GTA1_Vice_City/GTA1 Vice City.dae", loader);
+        return StaticModel(0, rootPath + "/models/GTA1_Vice_City/GTA1 Vice City.dae", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadGTA2Downtown(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/gta2_maps/Downtown.dae", loader);
+        return StaticModel(0, rootPath + "/models/gta2_maps/Downtown.dae", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadGTA2Industrial(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/gta2_maps/Industrial.dae", loader);
+        return StaticModel(0, rootPath + "/models/gta2_maps/Industrial.dae", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadGTA2Residential(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(rootPath + "/models/gta2_maps/Residential.dae", loader);
+        return StaticModel(0, rootPath + "/models/gta2_maps/Residential.dae", loader);
     }
 
     ////////////////////////////////////////
@@ -1795,9 +1795,24 @@ namespace Poe
           mFbo(mColor0) {}
 
     ////////////////////////////////////////
+    EmissiveColorProgramInstanced::EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color_instanced.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
+
+    ////////////////////////////////////////
     EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
+
+    ////////////////////////////////////////
+    EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture_instanced.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") }
+    {
+        mProgram.Use();
+            glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
+        mProgram.Halt();
+    }
 
     ////////////////////////////////////////
     EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
@@ -1849,6 +1864,12 @@ namespace Poe
     {
         Init();
     }
+
+    ////////////////////////////////////////
+    PbrLightProgramInstanced::PbrLightProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/pbr_light_instanced.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/pbr_light.frag") }
+    {}
 
     ////////////////////////////////////////
     PbrLightProgram::PbrLightProgram(const std::string& rootPath, ShaderLoader& loader)

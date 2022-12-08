@@ -809,21 +809,22 @@ namespace Poe
         std::unique_ptr<VertexBuffer> mModelMatrixBuffer;
         int mNumInstances;
 
-        void CreateFirstInstance();
         void ReconfigureMatrixBuffer();
 
     public:
-        StaticMesh(const std::vector<float>& vertices,
+        StaticMesh(int numInstances,
+                   const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos)
             : mVbo(vertices, GL_STATIC_DRAW),
               mEbo(indices, GL_STATIC_DRAW),
               mVao(mVbo, mEbo, infos),
               mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{1}
-        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
+              mNumInstances{numInstances}
+        { CreateInstances(mNumInstances); }
 
-        StaticMesh(const std::vector<float>& vertices,
+        StaticMesh(int numInstances,
+                   const std::vector<float>& vertices,
                    const std::vector<unsigned>& indices,
                    const std::vector<VertexInfo>& infos,
                    const std::vector<std::reference_wrapper<const Texture2D>>& textures)
@@ -832,20 +833,22 @@ namespace Poe
               mVao(mVbo, mEbo, infos),
               mTextures{textures},
               mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{1}
-        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
+              mNumInstances{numInstances}
+        { CreateInstances(mNumInstances); }
 
-        StaticMesh(int numVertices,
+        StaticMesh(int numInstances,
+                   int numVertices,
                    int numIndices,
                    const std::vector<VertexInfo>& infos)
             : mVbo(numVertices, GL_STATIC_DRAW),
               mEbo(numIndices, GL_STATIC_DRAW),
               mVao(mVbo, mEbo, infos),
               mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{1}
-        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
+              mNumInstances{numInstances}
+        { CreateInstances(mNumInstances); }
 
-        StaticMesh(int numVertices,
+        StaticMesh(int numInstances,
+                   int numVertices,
                    int numIndices,
                    const std::vector<VertexInfo>& infos,
                    const std::vector<std::reference_wrapper<const Texture2D>>& textures)
@@ -854,13 +857,16 @@ namespace Poe
               mVao(mVbo, mEbo, infos),
               mTextures{textures},
               mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{1}
-        { CreateFirstInstance(); ReconfigureMatrixBuffer(); }
+              mNumInstances{numInstances}
+        { CreateInstances(mNumInstances); }
 
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
 
         void Draw(int mode = GL_TRIANGLES) const
+        { mVao.Draw(mode); }
+
+        void DrawInstanced(int mode = GL_TRIANGLES) const
         { mVao.DrawInstanced(mode, mNumInstances); }
 
         void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
@@ -963,19 +969,19 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    StaticMesh CreateColoredTriangle();
-    StaticMesh CreateColoredQuad();
-    StaticMesh CreateColoredCircle(float radius, int numSegments);
+    StaticMesh CreateColoredTriangle(int numInstances);
+    StaticMesh CreateColoredQuad(int numInstances);
+    StaticMesh CreateColoredCircle(float radius, int numSegments, int numInstances);
 
     ////////////////////////////////////////
-    StaticMesh CreateTriangle();
-    StaticMesh CreateQuad();
-    StaticMesh CreateCircle(float radius = 1.0f, int numSegments = 50);
-    StaticMesh CreateCube();
-    StaticMesh CreateGrid(int numX, int numZ);
-    StaticMesh CreatePyramid();
-    StaticMesh CreateUVSphere(int numStacks, int numSectors);
-    StaticMesh CreateIcoSphere(int numSubdivisions = 0);
+    StaticMesh CreateTriangle(int numInstances);
+    StaticMesh CreateQuad(int numInstances);
+    StaticMesh CreateCircle(float radius, int numSegments, int numInstances);
+    StaticMesh CreateCube(int numInstances);
+    StaticMesh CreateGrid(int numX, int numZ, int numInstances);
+    StaticMesh CreatePyramid(int numInstances);
+    StaticMesh CreateUVSphere(int numStacks, int numSectors, int numInstances);
+    StaticMesh CreateIcoSphere(int numSubdivisions, int numInstances);
 
     ////////////////////////////////////////
     struct StaticModel
@@ -997,7 +1003,14 @@ namespace Poe
         StaticModel(const std::string& modelPath, Texture2DLoader& texture2DLoader)
             : mPath{modelPath},
               mTexture2DLoader{texture2DLoader},
-              mNumTextures{} { Load(); }
+              mNumTextures{},
+              mNumInstances{} { Load(); }
+
+        StaticModel(int numInstances, const std::string& modelPath, Texture2DLoader& texture2DLoader)
+            : mPath{modelPath},
+              mTexture2DLoader{texture2DLoader},
+              mNumTextures{},
+              mNumInstances{numInstances} { Load(); }
 
         void Draw(int mode = GL_TRIANGLES) const
         {
@@ -1005,6 +1018,15 @@ namespace Poe
                 staticMesh.Bind();
                 staticMesh.BindTextures();
                 staticMesh.Draw(mode);
+            }
+        }
+
+        void DrawInstanced(int mode = GL_TRIANGLES) const
+        {
+            for (const StaticMesh& staticMesh : mMeshes) {
+                staticMesh.Bind();
+                staticMesh.BindTextures();
+                staticMesh.DrawInstanced(mode);
             }
         }
 
@@ -1080,13 +1102,13 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct EmissiveColorProgram
+    struct EmissiveColorProgramInstanced
     {
     private:
         Program mProgram;
 
     public:
-        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+        EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
         static inline constexpr int COLOR_LOC = 0;
 
@@ -1098,10 +1120,53 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct EmissiveColorProgram
+    {
+    private:
+        Program mProgram;
+
+    public:
+        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+
+        static inline constexpr int COLOR_LOC = 0;
+        static inline constexpr int MODEL_LOC = 1;
+
+        void SetMaterial(const EmissiveColorMaterial& m) const
+        { glUniform4fv(COLOR_LOC, 1, glm::value_ptr(m.mColor)); }
+
+        void SetModelMatrix(const glm::mat4& model) const
+        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
     struct EmissiveTextureMaterial
     {
         glm::vec2 mTileMultiplier;
         glm::vec2 mTileOffset;
+    };
+
+    ////////////////////////////////////////
+    struct EmissiveTextureProgramInstanced
+    {
+    private:
+        Program mProgram;
+
+    public:
+        EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
+        static inline constexpr int TILE_MULTIPLIER_LOC = 1;
+        static inline constexpr int TILE_OFFSET_LOC = 2;
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+
+        void SetMaterial(const EmissiveTextureMaterial& m) const
+        { glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
+          glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset)); }
     };
 
     ////////////////////////////////////////
@@ -1116,6 +1181,7 @@ namespace Poe
         static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
         static inline constexpr int TILE_MULTIPLIER_LOC = 1;
         static inline constexpr int TILE_OFFSET_LOC = 2;
+        static inline constexpr int MODEL_LOC = 3;
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
@@ -1123,6 +1189,9 @@ namespace Poe
         void SetMaterial(const EmissiveTextureMaterial& m) const
         { glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
           glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset)); }
+
+        void SetModelMatrix(const glm::mat4& model) const
+        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
     };
 
     ////////////////////////////////////////
@@ -1154,6 +1223,19 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct PbrLightProgramInstanced
+    {
+    private:
+        Program mProgram;
+
+    public:
+        PbrLightProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
     struct PbrLightProgram
     {
     private:
@@ -1162,7 +1244,12 @@ namespace Poe
     public:
         PbrLightProgram(const std::string& rootPath, ShaderLoader&);
 
+        static inline constexpr int MODEL_LOC = 0;
+
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+
+        void SetModelMatrix(const glm::mat4& model) const
+        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
     };
 }
