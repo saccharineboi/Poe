@@ -1102,31 +1102,15 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct EmissiveColorProgramInstanced
+    struct AbstractEmissiveColorProgram
     {
-    private:
+    protected:
         Program mProgram;
 
     public:
-        EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader&);
+        AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader&, const std::string& vshaderUrl);
 
-        static inline constexpr int COLOR_LOC = 0;
-
-        void SetMaterial(const EmissiveColorMaterial& m) const
-        { glUniform4fv(COLOR_LOC, 1, glm::value_ptr(m.mColor)); }
-
-        void Use() const { mProgram.Use(); }
-        void Halt() const { mProgram.Halt(); }
-    };
-
-    ////////////////////////////////////////
-    struct EmissiveColorProgram
-    {
-    private:
-        Program mProgram;
-
-    public:
-        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+        virtual ~AbstractEmissiveColorProgram() {}
 
         static inline constexpr int COLOR_LOC = 0;
         static inline constexpr int MODEL_LOC = 1;
@@ -1134,11 +1118,27 @@ namespace Poe
         void SetMaterial(const EmissiveColorMaterial& m) const
         { glUniform4fv(COLOR_LOC, 1, glm::value_ptr(m.mColor)); }
 
-        void SetModelMatrix(const glm::mat4& model) const
-        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
+        virtual void SetModelMatrix(const glm::mat4& model) const = 0;
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
+    struct EmissiveColorProgramInstanced : public AbstractEmissiveColorProgram
+    {
+        EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& model) const override
+        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
+    };
+
+    ////////////////////////////////////////
+    struct EmissiveColorProgram : public AbstractEmissiveColorProgram
+    {
+        EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& model) const override { }
     };
 
     ////////////////////////////////////////

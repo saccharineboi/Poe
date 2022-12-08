@@ -1795,14 +1795,15 @@ namespace Poe
           mFbo(mColor0) {}
 
     ////////////////////////////////////////
-    EmissiveColorProgramInstanced::EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color_instanced.vert"),
+    AbstractEmissiveColorProgram::AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
 
     ////////////////////////////////////////
-    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_color.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
+    EmissiveColorProgramInstanced::EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveColorProgram(rootPath, loader, "/shaders/emissive_color_instanced.vert") {}
+
+    ////////////////////////////////////////
+    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveColorProgram(rootPath, loader, "/shaders/emissive_color.vert") {}
 
     ////////////////////////////////////////
     EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
