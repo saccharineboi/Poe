@@ -1,0 +1,8 @@
+*~
+.*~
+*.swp
+build/
+skyboxes/
+textures/
+models/
+fonts/
