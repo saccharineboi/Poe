@@ -6,3 +6,5 @@ skyboxes/
 textures/
 models/
 fonts/
+lib/
+include/GLFW/
