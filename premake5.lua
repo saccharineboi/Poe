@@ -31,7 +31,7 @@ for _, program in ipairs(required_programs) do
 end
 
 function install_glfw()
-    if os.execute("[ -d submodules/glfw ]") then
+    if os.execute("[ -d submodules/glfw ] && [ -n \"$(ls -A submodules/glfw)\" ]") then
         return
     end
 
