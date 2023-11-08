@@ -14,6 +14,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+--------------------------------------------------
 local required_programs = {"git", "cmake"}
 
 function is_program_in_path(program)
@@ -30,6 +31,7 @@ for _, program in ipairs(required_programs) do
     end
 end
 
+--------------------------------------------------
 function install_glfw()
     if os.execute("[ -d submodules/glfw ] && [ -n \"$(ls -A submodules/glfw)\" ]") then
         return
@@ -38,14 +40,12 @@ function install_glfw()
     os.execute("git submodule update --init --recursive")
     os.execute("mkdir -p submodules/glfw/build")
 
-    local cmake_success = os.execute("cd submodules/glfw && cmake -B build")
-    if not cmake_success then
+    if not os.execute("cd submodules/glfw && cmake -B build") then
         print("premake.lua: cmake failed at glfw")
         return
     end
 
-    local make_success = os.execute("cd submodules/glfw/build && make")
-    if not make_success then
+    if not os.execute("cd submodules/glfw/build && make") then
         print("premake.lua: make failed at glfw")
         return
     end
@@ -58,6 +58,20 @@ function install_glfw()
 end
 
 install_glfw()
+
+--------------------------------------------------
+function install_glm()
+    if os.execute("[ -d submodules/glm ] && [ -n \"$(ls -A submodules/glm)\" ]") then
+        return
+    end
+
+    os.execute("git submodule update --init --recursive")
+
+    os.execute("mkdir -p include")
+    os.execute("cp -r submodules/glm/glm include/")
+end
+
+install_glm()
 
 --------------------------------------------------
 workspace "poe"

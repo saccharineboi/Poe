@@ -8,3 +8,4 @@ models/
 fonts/
 lib/
 include/GLFW/
+include/glm/
