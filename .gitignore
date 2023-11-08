@@ -9,3 +9,4 @@ fonts/
 lib/
 include/GLFW/
 include/glm/
+include/assimp/

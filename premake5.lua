@@ -33,10 +33,6 @@ end
 
 --------------------------------------------------
 function install_glfw()
-    if os.execute("[ -d submodules/glfw ] && [ -n \"$(ls -A submodules/glfw)\" ]") then
-        return
-    end
-
     os.execute("git submodule update --init --recursive")
     os.execute("mkdir -p submodules/glfw/build")
 
@@ -61,10 +57,6 @@ install_glfw()
 
 --------------------------------------------------
 function install_glm()
-    if os.execute("[ -d submodules/glm ] && [ -n \"$(ls -A submodules/glm)\" ]") then
-        return
-    end
-
     os.execute("git submodule update --init --recursive")
 
     os.execute("mkdir -p include")
@@ -72,6 +64,31 @@ function install_glm()
 end
 
 install_glm()
+
+--------------------------------------------------
+function install_assimp()
+    os.execute("git submodule update --init --recursive")
+    os.execute("mkdir -p submodules/assimp/build")
+
+    if not os.execute("cd submodules/assimp && cmake -B build") then
+        print("premake.lua: cmake failed at assimp")
+        return
+    end
+
+    if not os.execute("cd submodules/assimp/build && make") then
+        print("premake.lua: make failed at assimp")
+        return
+    end
+
+    os.execute("mkdir -p include")
+    os.execute("cp -r submodules/assimp/include/assimp include/")
+    os.execute("cp submodules/assimp/build/include/assimp/config.h include/assimp")
+
+    os.execute("mkdir -p lib")
+    os.execute("cp submodules/assimp/build/bin/libassimp* lib/")
+end
+
+install_assimp()
 
 --------------------------------------------------
 workspace "poe"
