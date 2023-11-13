@@ -674,11 +674,6 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    Cubemap CreateUlukaiCoronaSkybox(const std::string& root);
-    Cubemap CreateUlukaiRedEclipseSkybox(const std::string& root);
-    Cubemap CreateCloudySkybox(const std::string& root);
-
-    ////////////////////////////////////////
     struct Renderbuffer
     {
     private:
@@ -1193,7 +1188,27 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    enum class DefaultSkyboxTexture{ UlukaiCorona, UlukaiRedEclipse, Cloudy };
+    enum class DefaultSkyboxTexture{ Cloudy,
+                                     Apocalypse,
+                                     ApocalypseLand,
+                                     ApocalypseOcean,
+                                     Classic,
+                                     ClassicLand,
+                                     Clear,
+                                     ClearOcean,
+                                     Dawn,
+                                     Dusk,
+                                     DuskLand,
+                                     DuskOcean,
+                                     EmptySpace,
+                                     Gray,
+                                     Moody,
+                                     Netherworld,
+                                     Sinister,
+                                     SinisterLand,
+                                     SinisterOcean,
+                                     Sunshine,
+                                     Techno };
 
     ////////////////////////////////////////
     struct TexturedSkyboxProgram

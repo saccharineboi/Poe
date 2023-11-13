@@ -1570,45 +1570,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Cubemap CreateUlukaiCoronaSkybox(const std::string& root)
-    {
-        return Cubemap{
-            std::make_pair(CubemapFace::Front,  root + "/skyboxes/ulukai/corona_ft.png"),
-            std::make_pair(CubemapFace::Back,   root + "/skyboxes/ulukai/corona_bk.png"),
-            std::make_pair(CubemapFace::Left,   root + "/skyboxes/ulukai/corona_lf.png"),
-            std::make_pair(CubemapFace::Right,  root + "/skyboxes/ulukai/corona_rt.png"),
-            std::make_pair(CubemapFace::Top,    root + "/skyboxes/ulukai/corona_up.png"),
-            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/ulukai/corona_dn.png")
-        };
-    }
-
-    ////////////////////////////////////////
-    Cubemap CreateUlukaiRedEclipseSkybox(const std::string& root)
-    {
-        return Cubemap{
-            std::make_pair(CubemapFace::Front,  root + "/skyboxes/ulukai/redeclipse_ft.png"),
-            std::make_pair(CubemapFace::Back,   root + "/skyboxes/ulukai/redeclipse_bk.png"),
-            std::make_pair(CubemapFace::Left,   root + "/skyboxes/ulukai/redeclipse_lf.png"),
-            std::make_pair(CubemapFace::Right,  root + "/skyboxes/ulukai/redeclipse_rt.png"),
-            std::make_pair(CubemapFace::Top,    root + "/skyboxes/ulukai/redeclipse_up.png"),
-            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/ulukai/redeclipse_dn.png")
-        };
-    }
-
-    ////////////////////////////////////////
-    Cubemap CreateCloudySkybox(const std::string& root)
-    {
-        return Cubemap{
-            std::make_pair(CubemapFace::Front,  root + "/skyboxes/clouds1/clouds1_south.bmp"),
-            std::make_pair(CubemapFace::Back,   root + "/skyboxes/clouds1/clouds1_north.bmp"),
-            std::make_pair(CubemapFace::Left,   root + "/skyboxes/clouds1/clouds1_west.bmp"),
-            std::make_pair(CubemapFace::Right,  root + "/skyboxes/clouds1/clouds1_east.bmp"),
-            std::make_pair(CubemapFace::Top,    root + "/skyboxes/clouds1/clouds1_up.bmp"),
-            std::make_pair(CubemapFace::Bottom, root + "/skyboxes/clouds1/clouds1_down.bmp")
-        };
-    }
-
-    ////////////////////////////////////////
     Renderbuffer::Renderbuffer(unsigned type, int width, int height)
         : mType{type}, mWidth{width}, mHeight{height}
     {
@@ -1809,17 +1770,207 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Cubemap TexturedSkyboxProgram::ChooseCubemap(DefaultSkyboxTexture defaultSkybox, const std::string& rootPath)
+    Cubemap TexturedSkyboxProgram::ChooseCubemap(DefaultSkyboxTexture defaultSkybox, const std::string& root)
     {
         switch (defaultSkybox) {
-            case DefaultSkyboxTexture::UlukaiCorona:
-                return CreateUlukaiCoronaSkybox(rootPath);
-            case DefaultSkyboxTexture::UlukaiRedEclipse:
-                return CreateUlukaiRedEclipseSkybox(rootPath);
+            case DefaultSkyboxTexture::Techno:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Techno/vz_techno_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Techno/vz_techno_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Techno/vz_techno_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Techno/vz_techno_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Techno/vz_techno_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Techno/vz_techno_down.png")
+                };
+            case DefaultSkyboxTexture::Sunshine:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Sunshine/vz_sunshine_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Sunshine/vz_sunshine_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Sunshine/vz_sunshine_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Sunshine/vz_sunshine_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Sunshine/vz_sunshine_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Sunshine/vz_sunshine_down.png")
+                };
+            case DefaultSkyboxTexture::SinisterOcean:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Sinister Ocean/vz_sinister_ocean_down.png")
+                };
+            case DefaultSkyboxTexture::SinisterLand:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Sinister Land/vz_sinister_land_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Sinister Land/vz_sinister_land_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Sinister Land/vz_sinister_land_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Sinister Land/vz_sinister_land_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Sinister Land/vz_sinister_land_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Sinister Land/vz_sinister_land_down.png")
+                };
+            case DefaultSkyboxTexture::Sinister:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Sinister/vz_sinister_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Sinister/vz_sinister_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Sinister/vz_sinister_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Sinister/vz_sinister_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Sinister/vz_sinister_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Sinister/vz_sinister_down.png")
+                };
+            case DefaultSkyboxTexture::Netherworld:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Netherworld/vz_netherworld_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Netherworld/vz_netherworld_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Netherworld/vz_netherworld_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Netherworld/vz_netherworld_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Netherworld/vz_netherworld_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Netherworld/vz_netherworld_down.png")
+                };
+            case DefaultSkyboxTexture::Moody:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Moody/vz_moody_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Moody/vz_moody_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Moody/vz_moody_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Moody/vz_moody_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Moody/vz_moody_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Moody/vz_moody_down.png")
+                };
+            case DefaultSkyboxTexture::Gray:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Gray/vz_gray_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Gray/vz_gray_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Gray/vz_gray_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Gray/vz_gray_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Gray/vz_gray_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Gray/vz_gray_down.png")
+                };
+            case DefaultSkyboxTexture::EmptySpace:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Empty Space/vz_empty_space_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Empty Space/vz_empty_space_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Empty Space/vz_empty_space_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Empty Space/vz_empty_space_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Empty Space/vz_empty_space_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Empty Space/vz_empty_space_down.png")
+                };
+            case DefaultSkyboxTexture::DuskOcean:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Dusk Ocean/vz_dusk_ocean_down.png")
+                };
+            case DefaultSkyboxTexture::DuskLand:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Dusk Land/vz_dusk_land_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Dusk Land/vz_dusk_land_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Dusk Land/vz_dusk_land_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Dusk Land/vz_dusk_land_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Dusk Land/vz_dusk_land_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Dusk Land/vz_dusk_land_down.png")
+                };
+            case DefaultSkyboxTexture::Dusk:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Dusk/vz_dusk_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Dusk/vz_dusk_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Dusk/vz_dusk_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Dusk/vz_dusk_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Dusk/vz_dusk_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Dusk/vz_dusk_down.png")
+                };
+            case DefaultSkyboxTexture::Dawn:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Dawn/vz_dawn_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Dawn/vz_dawn_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Dawn/vz_dawn_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Dawn/vz_dawn_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Dawn/vz_dawn_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Dawn/vz_dawn_down.png")
+                };
+            case DefaultSkyboxTexture::ClearOcean:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Clear Ocean/vz_clear_ocean_down.png")
+                };
+            case DefaultSkyboxTexture::Clear:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Clear/vz_clear_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Clear/vz_clear_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Clear/vz_clear_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Clear/vz_clear_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Clear/vz_clear_down.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Clear/vz_clear_up.png")
+                };
+            case DefaultSkyboxTexture::ClassicLand:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Classic Land/vz_classic_land_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Classic Land/vz_classic_land_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Classic Land/vz_classic_land_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Classic Land/vz_classic_land_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Classic Land/vz_classic_land_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Classic Land/vz_classic_land_down.png")
+                };
+            case DefaultSkyboxTexture::Classic:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Classic/vz_classic_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Classic/vz_classic_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Classic/vz_classic_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Classic/vz_classic_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Classic/vz_classic_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Classic/vz_classic_down.png")
+                };
+            case DefaultSkyboxTexture::ApocalypseOcean:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Apocalypse Ocean/vz_apocalypse_ocean_down.png")
+                };
+            case DefaultSkyboxTexture::ApocalypseLand:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Apocalypse Land/vz_apocalypse_land_down.png")
+                };
+            case DefaultSkyboxTexture::Apocalypse:
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/retro/Apocalypse/vz_apocalypse_front.png"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/retro/Apocalypse/vz_apocalypse_back.png"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/retro/Apocalypse/vz_apocalypse_left.png"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/retro/Apocalypse/vz_apocalypse_right.png"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/retro/Apocalypse/vz_apocalypse_up.png"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/retro/Apocalypse/vz_apocalypse_down.png")
+                };
             case DefaultSkyboxTexture::Cloudy:
-                return CreateCloudySkybox(rootPath);
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/clouds1/clouds1_north.bmp"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/clouds1/clouds1_south.bmp"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/clouds1/clouds1_west.bmp"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/clouds1/clouds1_east.bmp"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/clouds1/clouds1_down.bmp"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/clouds1/clouds1_up.bmp")
+                };
             default:
-                return CreateCloudySkybox(rootPath);
+                return Cubemap{
+                    std::make_pair(CubemapFace::Front,  root + "/skyboxes/clouds1/clouds1_north.bmp"),
+                    std::make_pair(CubemapFace::Back,   root + "/skyboxes/clouds1/clouds1_south.bmp"),
+                    std::make_pair(CubemapFace::Left,   root + "/skyboxes/clouds1/clouds1_west.bmp"),
+                    std::make_pair(CubemapFace::Right,  root + "/skyboxes/clouds1/clouds1_east.bmp"),
+                    std::make_pair(CubemapFace::Top,    root + "/skyboxes/clouds1/clouds1_down.bmp"),
+                    std::make_pair(CubemapFace::Bottom, root + "/skyboxes/clouds1/clouds1_up.bmp")
+                };
         }
     }
 
