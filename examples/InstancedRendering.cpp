@@ -205,18 +205,17 @@ namespace CSItalyDemo
         // glEnable(GL_BLEND);
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        auto cube = Poe::CreateIcoSphere(3, 100);
+
         auto grid = Poe::CreateGrid(100, 100, 0);
         // grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         Poe::ShaderLoader shaderLoader;
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
-        Poe::EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Cloudy);
+        Poe::PbrLightProgramInstanced pbrLightProgram("..", shaderLoader);
 
-        mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
-
-        Poe::Texture2DLoader texture2DLoader;
-        auto staticModel = LoadCsItaly("..", texture2DLoader);
+        mainCamera.SetPosition(glm::vec3(0.0f, 180.0f, 100.0f));
 
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -231,7 +230,6 @@ namespace CSItalyDemo
         transformBlock.Buffer().TurnOn();
 
         Poe::EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
-        Poe::EmissiveTextureMaterial modelMaterial{ glm::vec2(1.0f), glm::vec2(0.0f) };
 
         Poe::PbrLightMaterialUB pbrBlock;
         pbrBlock.Buffer().TurnOn();
@@ -273,13 +271,22 @@ namespace CSItalyDemo
             transformBlock.Update();
             fogBlock.Update();
 
-            emissiveTextureProgram.Use();
-            emissiveTextureProgram.SetMaterial(modelMaterial);
-            emissiveTextureProgram.SetModelMatrix(model);
-            staticModel.Draw();
+            pbrLightProgram.Use();
+
+            pbrBlock.Set(pbrLightMaterial);
+            pbrBlock.Update();
 
             dirLightBlock.Set(0, sun);
             dirLightBlock.Update();
+
+            cube.Bind();
+            cube.ApplyToAllInstances(10, 1, 10, 20.0f, 20.0f, 20.0f,
+            [=](int i, int j, int k, int numInstances) {
+                auto t = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 150.0f, -50.0f));
+                t = glm::scale(t, glm::vec3(9.0f));
+                return t;
+            });
+            cube.DrawInstanced();
 
             emissiveColorProgram.Use();
 
