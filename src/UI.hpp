@@ -18,20 +18,24 @@
 
 #include "Cameras.hpp"
 #include "Poe.hpp"
+#include "Suppress.hpp"
+#include "Utility.hpp"
 
+SUPPRESS_WARNINGS()
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
-
-#include <cstdio>
-#include <cstdarg>
-#include <vector>
-#include <string>
 
 #include <glm/common.hpp>
 #include <glm/exponential.hpp>
 #include <glm/matrix.hpp>
 #include <glm/trigonometric.hpp>
+ENABLE_WARNINGS()
+
+#include <cstdio>
+#include <cstdarg>
+#include <vector>
+#include <string>
 
 namespace Poe
 {
@@ -58,7 +62,7 @@ namespace Poe
             ImGui_ImplOpenGL3_Init("#version 460 core");
 
             ImGuiIO& io = ImGui::GetIO();
-            io.Fonts->AddFontFromFileTTF("../fonts/Ubuntu-Regular.ttf", 18);
+            io.Fonts->AddFontFromFileTTF("../fonts/VT323-Regular.ttf", 18);
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         }
 
@@ -144,11 +148,11 @@ namespace Poe
             ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Fog Settings]");
             float fogDistance = fogBlock.GetDistance();
             ImGui::SliderFloat("Distance", &fogDistance, 1.0f, 1000.0f);
-            if (fogDistance != fogBlock.GetDistance())
+            if (!Utility::FloatEquals(fogDistance, fogBlock.GetDistance()))
                 fogBlock.SetDistance(fogDistance);
             float fogExponent = fogBlock.GetExponent();
             ImGui::SliderFloat("Exponent", &fogExponent, 0.01f, 3.0f);
-            if (fogExponent != fogBlock.GetExponent())
+            if (!Utility::FloatEquals(fogExponent, fogBlock.GetExponent()))
                 fogBlock.SetExponent(fogExponent);
             glm::vec3 color = fogBlock.GetColor();
             float colorF[]{ color.x, color.y, color.z };
@@ -192,8 +196,8 @@ namespace Poe
 
             ImGui::Begin("stdout");
             ImGui::BeginChild("stdout logs", { -1, 600 });
-            for (int i = 0; i < MAX_COUT_LOGS && i < static_cast<int>(mCoutLogs.size()); ++i)
-                ImGui::TextWrapped(mCoutLogs[i].c_str());
+            for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
+                ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
             ImGui::EndChild();
             ImGui::End();
 
@@ -202,8 +206,8 @@ namespace Poe
 
             ImGui::Begin("stderr");
             ImGui::BeginChild("stderr logs", { -1, 600 });
-            for (int i = 0; i < MAX_CERR_LOGS && i < static_cast<int>(mCerrLogs.size()); ++i)
-                ImGui::TextWrapped(mCerrLogs[i].c_str());
+            for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
+                ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
             ImGui::EndChild();
             ImGui::End();
         }

@@ -19,13 +19,16 @@
 #include "IO.hpp"
 #include "Utility.hpp"
 #include "Cameras.hpp"
+#include "Suppress.hpp"
 
 #include <map>
 
+SUPPRESS_WARNINGS()
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include <glm/gtc/integer.hpp>
+ENABLE_WARNINGS()
 
 #include <cstdio>
 #include <cstdlib>
@@ -103,19 +106,19 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    VertexBuffer::VertexBuffer(const std::vector<float>& vertices, int mode)
-        : mMode{mode}, mNumElements{static_cast<int>(vertices.size())}
+    VertexBuffer::VertexBuffer(const std::vector<float>& vertices, unsigned mode)
+        : mMode{mode}, mNumElements{vertices.size()}
     {
         glCreateBuffers(1, &mId);
-        glNamedBufferData(mId, vertices.size() * sizeof(float), vertices.data(), mode);
+        glNamedBufferData(mId, static_cast<GLsizeiptr>(vertices.size() * sizeof(float)), vertices.data(), mode);
     }
 
     ////////////////////////////////////////
-    VertexBuffer::VertexBuffer(int numElements, int mode)
+    VertexBuffer::VertexBuffer(size_t numElements, unsigned mode)
         : mMode{mode}, mNumElements{numElements}
     {
         glCreateBuffers(1, &mId);
-        glNamedBufferData(mId, numElements * sizeof(float), nullptr, mode);
+        glNamedBufferData(mId, static_cast<GLsizeiptr>(numElements * sizeof(float)), nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -143,19 +146,19 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, int mode)
-        : mMode{mode}, mNumElements{static_cast<int>(indices.size())}
+    IndexBuffer::IndexBuffer(const std::vector<unsigned>& indices, unsigned mode)
+        : mMode{mode}, mNumElements{indices.size()}
     {
         glCreateBuffers(1, &mId);
-        glNamedBufferData(mId, indices.size() * sizeof(unsigned), indices.data(), mode);
+        glNamedBufferData(mId, static_cast<GLsizeiptr>(indices.size() * sizeof(unsigned)), indices.data(), mode);
     }
 
     ////////////////////////////////////////
-    IndexBuffer::IndexBuffer(int numElements, int mode)
+    IndexBuffer::IndexBuffer(size_t numElements, unsigned mode)
         : mMode{mode}, mNumElements{numElements}
     {
         glCreateBuffers(1, &mId);
-        glNamedBufferData(mId, numElements * sizeof(unsigned), nullptr, mode);
+        glNamedBufferData(mId, static_cast<GLsizeiptr>(numElements * sizeof(unsigned)), nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -183,11 +186,11 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    UniformBuffer::UniformBuffer(int size, int mode, int bindLoc)
+    UniformBuffer::UniformBuffer(size_t size, unsigned mode, unsigned bindLoc)
         : mSize{size}, mMode{mode}, mBindLoc{bindLoc}
     {
         glCreateBuffers(1, &mId);
-        glNamedBufferData(mId, size, nullptr, mode);
+        glNamedBufferData(mId, static_cast<GLsizeiptr>(size), nullptr, mode);
     }
 
     ////////////////////////////////////////
@@ -276,7 +279,7 @@ namespace Poe
 
     ////////////////////////////////////////
     VAO::VAO(const VertexBuffer& vbo, const IndexBuffer& ebo, const std::vector<VertexInfo>& infos)
-        : mNumIndices{ebo.GetNumElements()}
+        : mNumIndices{static_cast<int>(ebo.GetNumElements())}
     {
         assert(infos.size() > 0);
 
@@ -317,7 +320,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Shader::Shader(int type, const std::string& source)
+    Shader::Shader(unsigned type, const std::string& source)
         : mId{glCreateShader(type)}, mType{type}
     {
         assert(source.size() > 0);
@@ -419,7 +422,7 @@ namespace Poe
         if (mNumInstances > 0) {
             mModelMatrixBuffer->Bind();
             mVao.Bind();
-            for (int i = 8; i < 12; ++i) {
+            for (unsigned i = 8; i < 12; ++i) {
                 glEnableVertexAttribArray(i);
                 glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>((i - 8) * sizeof(glm::vec4)));
                 glVertexAttribDivisor(i, 1);
@@ -436,10 +439,10 @@ namespace Poe
         if (numMatrices > 0) {
             VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
             delete oldBuffer;
-            mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * static_cast<size_t>(numMatrices), GL_DYNAMIC_DRAW));
             int i{};
             for (const glm::mat4& model : modelMatrices) {
-                mModelMatrixBuffer->Modify(i * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(model));
+                mModelMatrixBuffer->Modify(i * static_cast<int>(sizeof(glm::mat4)), sizeof(glm::mat4), glm::value_ptr(model));
                 ++i;
             }
             mNumInstances = numMatrices;
@@ -454,7 +457,7 @@ namespace Poe
         if (numMatrices > 0) {
             VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
             delete oldBuffer;
-            mModelMatrixBuffer.reset(new VertexBuffer(16 * numMatrices, GL_DYNAMIC_DRAW));
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * static_cast<size_t>(numMatrices), GL_DYNAMIC_DRAW));
             float* modelMatrixPtr = mModelMatrixBuffer->GetWritePtr();
             std::memcpy(modelMatrixPtr, modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
             assert(mModelMatrixBuffer->Unmap() == GL_TRUE);
@@ -469,7 +472,7 @@ namespace Poe
         if (numInstances > 0) {
             VertexBuffer* oldBuffer = mModelMatrixBuffer.release();
             delete oldBuffer;
-            mModelMatrixBuffer.reset(new VertexBuffer(16 * numInstances, GL_DYNAMIC_DRAW));
+            mModelMatrixBuffer.reset(new VertexBuffer(16 * static_cast<size_t>(numInstances), GL_DYNAMIC_DRAW));
             mNumInstances = numInstances;
             ReconfigureMatrixBuffer();
         }
@@ -516,7 +519,7 @@ namespace Poe
     StaticMesh CreateColoredCircle(float radius, int numSegments, int numInstances)
     {
         std::vector<float> vertices;
-        vertices.reserve((numSegments + 1) * 5);
+        vertices.reserve((static_cast<size_t>(numSegments) + 1) * 5);
 
         auto add_data = [](auto& buffer, auto... data)
         { (buffer.push_back(data), ...); };
@@ -531,11 +534,11 @@ namespace Poe
         }
 
         std::vector<unsigned> indices;
-        indices.reserve((numSegments + 1) * 3);
+        indices.reserve((static_cast<size_t>(numSegments) + 1) * 3);
 
-        for (int i = 0; i < numSegments; ++i)
-            add_data(indices, 0, i + 1, i + 2);
-        add_data(indices, 0, numSegments, 1);
+        for (unsigned i = 0; i < static_cast<unsigned>(numSegments); ++i)
+            add_data(indices, 0U, i + 1, i + 2);
+        add_data(indices, 0U, static_cast<unsigned>(numSegments), 1U);
 
         std::vector<VertexInfo> infos{
             { 0, 2, GL_FLOAT, static_cast<int>(5 * sizeof(float)), 0 },
@@ -588,7 +591,7 @@ namespace Poe
     StaticMesh CreateCircle(float radius, int numSegments, int numInstances)
     {
         std::vector<float> vertices;
-        vertices.reserve((numSegments + 1) * 3);
+        vertices.reserve((static_cast<unsigned>(numSegments) + 1) * 3);
 
         auto add_data = [](auto& buffer, auto... data)
         { (buffer.push_back(data), ...); };
@@ -609,11 +612,11 @@ namespace Poe
         }
 
         std::vector<unsigned> indices;
-        indices.reserve((numSegments + 1) * 3);
+        indices.reserve((static_cast<unsigned>(numSegments) + 1) * 3);
 
-        for (int i = 0; i < numSegments; ++i)
-            add_data(indices, 0, i + 1, i + 2);
-        add_data(indices, 0, numSegments, 1);
+        for (unsigned i = 0; i < static_cast<unsigned>(numSegments); ++i)
+            add_data(indices, 0U, i + 1, i + 2);
+        add_data(indices, 0U, static_cast<unsigned>(numSegments), 1U);
 
         std::vector<VertexInfo> infos{
             { 0, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 0 },
@@ -693,7 +696,7 @@ namespace Poe
     StaticMesh CreateGrid(int numX, int numZ, int numInstances)
     {
         std::vector<float> vertices;
-        vertices.reserve(numX * 2 * 3 + numZ * 2 * 3);
+        vertices.reserve(static_cast<size_t>(numX * 2 * 3 + numZ * 2 * 3));
 
         const float startPosX = -0.5f * static_cast<float>(numX - 1);
         constexpr float offsetX = 1.0f;
@@ -722,8 +725,8 @@ namespace Poe
         }
 
         std::vector<unsigned> indices;
-        indices.reserve(2 * (numX + numZ));
-        for (int i = 0; i < 2 * (numX + numZ); ++i)
+        indices.reserve(static_cast<size_t>(2 * (numX + numZ)));
+        for (unsigned i = 0; i < static_cast<unsigned>(2 * (numX + numZ)); ++i)
             indices.push_back(i);
 
         std::vector<VertexInfo> infos{
@@ -768,16 +771,16 @@ namespace Poe
     {
         std::vector<float> vertices;
 
-        const float stackStep = PI / numStacks;
-        const float sectorStep = 2.0f * PI / numSectors;
+        const float stackStep = PI / static_cast<float>(numStacks);
+        const float sectorStep = 2.0f * PI / static_cast<float>(numSectors);
 
         for (int i = 0; i <= numStacks; ++i) {
-            const float stackAngle = PI / 2.0f - i * stackStep;
+            const float stackAngle = PI / 2.0f - static_cast<float>(i) * stackStep;
             const float xy = glm::cos(stackAngle);
             const float z = glm::sin(stackAngle);
 
             for (int j = 0; j <= numSectors; ++j) {
-                const float sectorAngle = j * sectorStep;
+                const float sectorAngle = static_cast<float>(j) * sectorStep;
 
                 const float x = xy * glm::cos(sectorAngle);
                 const float y = xy * glm::sin(sectorAngle);
@@ -793,8 +796,8 @@ namespace Poe
                 vertices.push_back(z);
 
                 // texcoords
-                const float s = static_cast<float>(j) / numSectors;
-                const float t = static_cast<float>(i) / numStacks;
+                const float s = static_cast<float>(j) / static_cast<float>(numSectors);
+                const float t = static_cast<float>(i) / static_cast<float>(numStacks);
 
                 vertices.push_back(s);
                 vertices.push_back(t);
@@ -809,14 +812,14 @@ namespace Poe
 
             for (int j = 0; j < numSectors; ++j, ++k1, ++k2) {
                 if (i != 0) {
-                    indices.push_back(k1);
-                    indices.push_back(k2);
-                    indices.push_back(k1 + 1);
+                    indices.push_back(static_cast<unsigned>(k1));
+                    indices.push_back(static_cast<unsigned>(k2));
+                    indices.push_back(static_cast<unsigned>(k1 + 1));
                 }
                 if (i != (numStacks - 1)) {
-                    indices.push_back(k1 + 1);
-                    indices.push_back(k2);
-                    indices.push_back(k2 + 1);
+                    indices.push_back(static_cast<unsigned>(k1 + 1));
+                    indices.push_back(static_cast<unsigned>(k2));
+                    indices.push_back(static_cast<unsigned>(k2 + 1));
                 }
             }
         }
@@ -934,7 +937,7 @@ namespace Poe
 
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
-        add_data(texcoords, 0, T_STEP);
+        add_data(texcoords, 0.0f, T_STEP);
 
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
@@ -957,7 +960,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 2, T_STEP);
-        sharedIndices[std::make_pair(S_STEP * 2, T_STEP)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 2, T_STEP)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[9], icoVertices[10], icoVertices[11]);
         n = glm::normalize(v);
@@ -965,7 +968,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 4, T_STEP);
-        sharedIndices[std::make_pair(S_STEP * 4, T_STEP)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 4, T_STEP)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[12], icoVertices[13], icoVertices[14]);
         n = glm::normalize(v);
@@ -973,7 +976,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 6, T_STEP);
-        sharedIndices[std::make_pair(S_STEP * 6, T_STEP)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 6, T_STEP)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[15], icoVertices[16], icoVertices[17]);
         n = glm::normalize(v);
@@ -981,7 +984,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 8, T_STEP);
-        sharedIndices[std::make_pair(S_STEP * 8, T_STEP)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 8, T_STEP)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[21], icoVertices[22], icoVertices[23]);
         n = glm::normalize(v);
@@ -989,7 +992,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 3, T_STEP * 2);
-        sharedIndices[std::make_pair(S_STEP * 3, T_STEP * 2)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 3, T_STEP * 2)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[24], icoVertices[25], icoVertices[26]);
         n = glm::normalize(v);
@@ -997,7 +1000,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 5, T_STEP * 2);
-        sharedIndices[std::make_pair(S_STEP * 5, T_STEP * 2)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 5, T_STEP * 2)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[27], icoVertices[28], icoVertices[29]);
         n = glm::normalize(v);
@@ -1005,7 +1008,7 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 7, T_STEP * 2);
-        sharedIndices[std::make_pair(S_STEP * 7, T_STEP * 2)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 7, T_STEP * 2)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
         v = glm::vec3(icoVertices[30], icoVertices[31], icoVertices[32]);
         n = glm::normalize(v);
@@ -1013,30 +1016,30 @@ namespace Poe
         add_data(vertices, v.x, v.y, v.z);
         add_data(normals, n.x, n.y, n.z);
         add_data(texcoords, S_STEP * 9, T_STEP * 2);
-        sharedIndices[std::make_pair(S_STEP * 9, T_STEP * 2)] = texcoords.size() / 2 - 1;
+        sharedIndices[std::make_pair(S_STEP * 9, T_STEP * 2)] = static_cast<unsigned>(texcoords.size()) / 2 - 1;
 
-        add_data(indices, 0, 10, 14);
-        add_data(indices, 1, 14, 15);
-        add_data(indices, 2, 15, 16);
-        add_data(indices, 3, 16, 17);
-        add_data(indices, 4, 17, 11);
+        add_data(indices, 0U, 10U, 14U);
+        add_data(indices, 1U, 14U, 15U);
+        add_data(indices, 2U, 15U, 16U);
+        add_data(indices, 3U, 16U, 17U);
+        add_data(indices, 4U, 17U, 11U);
 
-        add_data(indices, 10, 12, 14);
-        add_data(indices, 12, 18, 14);
-        add_data(indices, 14, 18, 15);
-        add_data(indices, 18, 19, 15);
-        add_data(indices, 15, 19, 16);
-        add_data(indices, 19, 20, 16);
-        add_data(indices, 16, 20, 17);
-        add_data(indices, 20, 21, 17);
-        add_data(indices, 17, 21, 11);
-        add_data(indices, 21, 13, 11);
+        add_data(indices, 10U, 12U, 14U);
+        add_data(indices, 12U, 18U, 14U);
+        add_data(indices, 14U, 18U, 15U);
+        add_data(indices, 18U, 19U, 15U);
+        add_data(indices, 15U, 19U, 16U);
+        add_data(indices, 19U, 20U, 16U);
+        add_data(indices, 16U, 20U, 17U);
+        add_data(indices, 20U, 21U, 17U);
+        add_data(indices, 17U, 21U, 11U);
+        add_data(indices, 21U, 13U, 11U);
 
-        add_data(indices, 5, 18, 12);
-        add_data(indices, 6, 19, 18);
-        add_data(indices, 7, 20, 19);
-        add_data(indices, 8, 21, 20);
-        add_data(indices, 9, 13, 21);
+        add_data(indices, 5U, 18U, 12U);
+        add_data(indices, 6U, 19U, 18U);
+        add_data(indices, 7U, 20U, 19U);
+        add_data(indices, 8U, 21U, 20U);
+        add_data(indices, 9U, 13U, 21U);
 
         auto isOnLineSegment = [&](glm::vec2 a, glm::vec2 b, glm::vec2 c) {
             float cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -1083,13 +1086,13 @@ namespace Poe
             return true;
         };
 
-        auto computeIndex = [&](auto p, auto n, auto t) {
+        auto computeIndex = [&](auto p, auto _n, auto t) {
             if (isSharedTexCoord(t)) {
                 auto key = std::make_pair(t.x, t.y);
                 auto it = sharedIndices.find(key);
                 if (it == sharedIndices.end()) {
                     add_data(vertices, p.x, p.y, p.z);
-                    add_data(normals, n.x, n.y, n.z);
+                    add_data(normals, _n.x, _n.y, _n.z);
                     add_data(texcoords, t.x, t.y);
                     unsigned index = static_cast<unsigned>(texcoords.size() / 2 - 1);
                     sharedIndices[key] = index;
@@ -1100,7 +1103,7 @@ namespace Poe
             }
             else {
                 add_data(vertices, p.x, p.y, p.z);
-                add_data(normals, n.x, n.y, n.z);
+                add_data(normals, _n.x, _n.y, _n.z);
                 add_data(texcoords, t.x, t.y);
                 return static_cast<unsigned>(texcoords.size() / 2 - 1);
             }
@@ -1109,7 +1112,7 @@ namespace Poe
         for (int i = 1; i <= numSubdivisions; ++i) {
             auto tmpIndices = std::move(indices);
             indices.clear();
-            for (int j = 0; j < static_cast<int>(tmpIndices.size()); j += 3) {
+            for (size_t j = 0; j < tmpIndices.size(); j += 3) {
                 unsigned i1 = tmpIndices[j];
                 unsigned i2 = tmpIndices[j + 1];
                 unsigned i3 = tmpIndices[j + 2];
@@ -1159,7 +1162,7 @@ namespace Poe
         }
 
         std::vector<float> interleavedData;
-        for (int i = 0, j = 0; i < static_cast<int>(vertices.size()); i += 3, j += 2){
+        for (size_t i = 0, j = 0; i < vertices.size(); i += 3, j += 2){
             add_data(interleavedData, vertices[i], vertices[i + 1], vertices[i + 2]);
             add_data(interleavedData, normals[i], normals[i + 1], normals[i + 2]);
             add_data(interleavedData, texcoords[j], texcoords[j + 1]);
@@ -1204,12 +1207,12 @@ namespace Poe
         mDirectory = mPath.substr(0, mPath.find_last_of('/'));
         LoadNode(scene->mRootNode, scene);
 #ifdef _DEBUG
-        int numVertices{}, numIndices{};
+        size_t numVertices{}, numIndices{};
         for (const StaticMesh& mesh : mMeshes) {
             numVertices += mesh.GetNumVertices();
             numIndices += mesh.GetNumIndices();
         }
-        int numMeshes = static_cast<int>(mMeshes.size());
+        size_t numMeshes = mMeshes.size();
         DebugUI::PushLog(stdout, "[DEBUG] Loaded %s (%d vertices, %d indices, %d mesh%s, %d texture%s)\n", mPath.c_str(), numVertices, numIndices, numMeshes, numMeshes > 1 ? "es" : "", mNumTextures, mNumTextures > 1 ? "s" : "");
 #else
         int numMeshes = static_cast<int>(mMeshes.size());
@@ -1245,13 +1248,13 @@ namespace Poe
         if (material != nullptr)
             textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 
-        int numIndices{};
-        for (int i = 0; i < static_cast<int>(mesh->mNumFaces); ++i)
+        size_t numIndices{};
+        for (size_t i = 0; i < mesh->mNumFaces; ++i)
             for (int j = 0; j < static_cast<int>(mesh->mFaces[i].mNumIndices); ++j)
                 ++numIndices;
 
         StaticMesh staticMesh(mNumInstances,
-                              static_cast<int>(mesh->mNumVertices) * 8,
+                              mesh->mNumVertices * 8,
                               numIndices, infos, textures);
 
         float* vboPtr = staticMesh.GetVboWritePtr();
@@ -1284,9 +1287,9 @@ namespace Poe
     std::vector<std::reference_wrapper<const Texture2D>> StaticModel::Load2DTextures(aiMaterial* material, aiTextureType type, std::string_view typeName)
     {
         std::vector<std::reference_wrapper<const Texture2D>> textures;
-        for (int i = 0; i < static_cast<int>(material->GetTextureCount(type)); ++i) {
+        for (size_t i = 0; i < material->GetTextureCount(type); ++i) {
             aiString str_ai;
-            material->GetTexture(type, i, &str_ai);
+            material->GetTexture(type, static_cast<unsigned>(i), &str_ai);
             std::string str{ str_ai.C_Str() };
 
             Texture2DParams params{};
@@ -1361,7 +1364,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Shader& ShaderLoader::Load(int type, std::string_view shaderUrl)
+    Shader& ShaderLoader::Load(unsigned type, std::string_view shaderUrl)
     {
         auto iter = mShaders.find(shaderUrl.data());
         if (iter == mShaders.end()) {
@@ -1635,7 +1638,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Renderbuffer::Renderbuffer(int type, int width, int height)
+    Renderbuffer::Renderbuffer(unsigned type, int width, int height)
         : mType{type}, mWidth{width}, mHeight{height}
     {
         glCreateRenderbuffers(1, &mId);
@@ -1668,7 +1671,7 @@ namespace Poe
     ////////////////////////////////////////
     bool Framebuffer::Check() const
     {
-        int status = glCheckNamedFramebufferStatus(mId, GL_FRAMEBUFFER);
+        unsigned status = glCheckNamedFramebufferStatus(mId, GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE)
             DebugUI::PushLog(stderr, "ERROR: framebuffer %u is not complete", mId);
         return status == GL_FRAMEBUFFER_COMPLETE;
@@ -1718,7 +1721,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Texture2DMultiSample::Texture2DMultiSample(int width, int height, int type, int numSamples)
+    Texture2DMultiSample::Texture2DMultiSample(int width, int height, unsigned type, int numSamples)
         : mWidth{width}, mHeight{height}, mType{type}, mNumSamples{numSamples}
     {
         assert(mNumSamples > 0);
@@ -1752,7 +1755,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    RenderbufferMultiSample::RenderbufferMultiSample(int type, int width, int height, int numSamples)
+    RenderbufferMultiSample::RenderbufferMultiSample(unsigned type, int width, int height, int numSamples)
         : mType{type}, mWidth{width}, mHeight{height}, mNumSamples{numSamples}
     {
         assert(numSamples > 0);

@@ -17,11 +17,12 @@
 #pragma once
 
 #include "Constants.hpp"
+#include "Suppress.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define GLM_FORCE_INLINE
+SUPPRESS_WARNINGS()
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -38,6 +39,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/type_ptr.hpp>
+ENABLE_WARNINGS()
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -64,12 +66,12 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mMode;
-        int mNumElements;
+        unsigned mMode;
+        size_t mNumElements;
 
     public:
-        VertexBuffer(int numElements, int mode);
-        VertexBuffer(const std::vector<float>& vertices, int mode);
+        VertexBuffer(size_t numElements, unsigned mode);
+        VertexBuffer(const std::vector<float>& vertices, unsigned mode);
 
         ~VertexBuffer() { glDeleteBuffers(1, &mId); }
 
@@ -83,8 +85,8 @@ namespace Poe
         void UnBind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
         unsigned GetId() const { return mId; }
-        int GetMode() const { return mMode; }
-        int GetNumElements() const { return mNumElements; }
+        unsigned GetMode() const { return mMode; }
+        size_t GetNumElements() const { return mNumElements; }
 
         float* GetWritePtr() const
         { return reinterpret_cast<float*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
@@ -99,12 +101,12 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mMode;
-        int mNumElements;
+        unsigned mMode;
+        size_t mNumElements;
 
     public:
-        IndexBuffer(int numElements, int mode);
-        IndexBuffer(const std::vector<unsigned>& indices, int mode);
+        IndexBuffer(size_t numElements, unsigned mode);
+        IndexBuffer(const std::vector<unsigned>& indices, unsigned mode);
 
         ~IndexBuffer() { glDeleteBuffers(1, &mId); }
 
@@ -118,8 +120,8 @@ namespace Poe
         void UnBind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
         unsigned GetId() const { return mId; }
-        int GetMode() const { return mMode; }
-        int GetNumElements() const { return mNumElements; }
+        unsigned GetMode() const { return mMode; }
+        size_t GetNumElements() const { return mNumElements; }
 
         unsigned* GetWritePtr() const
         { return reinterpret_cast<unsigned*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
@@ -134,12 +136,12 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mSize;
-        int mMode;
-        int mBindLoc;
+        size_t mSize;
+        unsigned mMode;
+        unsigned mBindLoc;
 
     public:
-        UniformBuffer(int size, int mode, int bindLoc);
+        UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
         ~UniformBuffer() { glDeleteBuffers(1, &mId); }
 
@@ -159,9 +161,9 @@ namespace Poe
         { glNamedBufferSubData(mId, offset, size, data); }
 
         unsigned GetId() const { return mId; }
-        int GetSize() const { return mSize; }
-        int GetMode() const { return mMode; }
-        int GetBindLoc() const { return mBindLoc; }
+        size_t GetSize() const { return mSize; }
+        unsigned GetMode() const { return mMode; }
+        unsigned GetBindLoc() const { return mBindLoc; }
     };
 
     ////////////////////////////////////////
@@ -353,11 +355,11 @@ namespace Poe
     ////////////////////////////////////////
     struct VertexInfo
     {
-        int loc;
+        unsigned loc;
         int numElements;
-        int dataType;
+        unsigned dataType;
         int stride;
-        int offset;
+        unsigned offset;
     };
 
     ////////////////////////////////////////
@@ -381,10 +383,10 @@ namespace Poe
         void Bind() const { glBindVertexArray(mId); }
         void UnBind() const { glBindVertexArray(0); }
 
-        void Draw(int mode = GL_TRIANGLES) const
+        void Draw(unsigned mode = GL_TRIANGLES) const
         { glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr); }
 
-        void DrawInstanced(int mode = GL_TRIANGLES, int numInstances = 1) const
+        void DrawInstanced(unsigned mode = GL_TRIANGLES, int numInstances = 1) const
         { glDrawElementsInstanced(mode, mNumIndices, GL_UNSIGNED_INT, nullptr, numInstances); }
 
         unsigned GetId() const { return mId; }
@@ -396,10 +398,10 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mType;
+        unsigned mType;
 
     public:
-        Shader(int type, const std::string& source);
+        Shader(unsigned type, const std::string& source);
 
         ~Shader() { glDeleteShader(mId); }
 
@@ -410,7 +412,7 @@ namespace Poe
         Shader& operator=(Shader&&);
 
         unsigned GetId() const { return mId; }
-        int GetType() const { return mType; }
+        unsigned GetType() const { return mType; }
     };
 
     ////////////////////////////////////////
@@ -499,7 +501,7 @@ namespace Poe
         std::unordered_map<std::string, Shader> mShaders;
 
     public:
-        Shader& Load(int type, std::string_view shaderUrl);
+        Shader& Load(unsigned type, std::string_view shaderUrl);
     };
 
     ////////////////////////////////////////
@@ -557,15 +559,15 @@ namespace Poe
     ////////////////////////////////////////
     struct Texture2DParams
     {
-        int textureFormat = GL_RGB;
-        int internalFormat = GL_RGB8;
+        unsigned textureFormat = GL_RGB;
+        unsigned internalFormat = GL_RGB8;
         bool generateMipmaps = true;
         float maxAnisotropy = 16.0f;
         int wrapS = GL_REPEAT;
         int wrapT = GL_REPEAT;
         int minF = GL_LINEAR_MIPMAP_LINEAR;
         int magF = GL_LINEAR;
-        int type = GL_UNSIGNED_BYTE;
+        unsigned type = GL_UNSIGNED_BYTE;
     };
 
     ////////////////////////////////////////
@@ -606,20 +608,20 @@ namespace Poe
         int GetNumChannels() const { return mNumChannels; }
         std::string GetUrl() const { return mUrl; }
 
-        int GetTextureFormat() const { return mParams.textureFormat; }
-        int GetInternalFormat() const { return mParams.internalFormat; }
+        unsigned GetTextureFormat() const { return mParams.textureFormat; }
+        unsigned GetInternalFormat() const { return mParams.internalFormat; }
         bool HasMipmaps() const { return mParams.generateMipmaps; }
         float GetMaxAnisotropy() const { return mParams.maxAnisotropy; }
         int GetWrapS() const { return mParams.wrapS; }
         int GetWrapT() const { return mParams.wrapT; }
         int GetMinF() const { return mParams.minF; }
         int GetMagF() const { return mParams.magF; }
-        int GetType() const { return mParams.type; }
+        unsigned GetType() const { return mParams.type; }
 
         int GetNumMipmaps() const { return mNumMipmaps; }
 
-        void Bind(int loc = 0) const { glBindTextureUnit(loc, mId); }
-        void UnBind(int loc = 0) const { glBindTextureUnit(loc, 0); }
+        void Bind(unsigned loc = 0) const { glBindTextureUnit(loc, mId); }
+        void UnBind(unsigned loc = 0) const { glBindTextureUnit(loc, 0); }
     };
 
     ////////////////////////////////////////
@@ -681,11 +683,11 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mType;
+        unsigned mType;
         int mWidth, mHeight;
 
     public:
-        Renderbuffer(int type, int width, int height);
+        Renderbuffer(unsigned type, int width, int height);
 
         ~Renderbuffer() { glDeleteRenderbuffers(1, &mId); }
 
@@ -699,7 +701,7 @@ namespace Poe
         void UnBind() const { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
 
         unsigned GetId() const { return mId; }
-        int GetType() const { return mType; }
+        unsigned GetType() const { return mType; }
         int GetWidth() const { return mWidth; }
         int GetHeight() const { return mHeight; }
     };
@@ -709,13 +711,13 @@ namespace Poe
     {
     private:
         unsigned mId;
-        int mType;
+        unsigned mType;
         int mWidth;
         int mHeight;
         int mNumSamples;
 
     public:
-        RenderbufferMultiSample(int type, int width, int height, int numSamples);
+        RenderbufferMultiSample(unsigned type, int width, int height, int numSamples);
 
         ~RenderbufferMultiSample() { glDeleteRenderbuffers(1, &mId); }
 
@@ -726,7 +728,7 @@ namespace Poe
         RenderbufferMultiSample& operator=(RenderbufferMultiSample&&);
 
         unsigned GetId() const { return mId; }
-        int GetType() const { return mType; }
+        unsigned GetType() const { return mType; }
         int GetWidth() const { return mWidth; }
         int GetHeight() const { return mHeight; }
         int GetNumSamples() const { return mNumSamples;  }
@@ -742,11 +744,11 @@ namespace Poe
         unsigned mId;
         int mWidth;
         int mHeight;
-        int mType;
+        unsigned mType;
         int mNumSamples;
 
     public:
-        Texture2DMultiSample(int width, int height, int type, int numSamples);
+        Texture2DMultiSample(int width, int height, unsigned type, int numSamples);
 
         ~Texture2DMultiSample() { glDeleteTextures(1, &mId); }
 
@@ -759,7 +761,7 @@ namespace Poe
         unsigned GetId() const { return mId; }
         int GetWidth() const { return mWidth; }
         int GetHeight() const { return mHeight; }
-        int GetType() const { return mType; }
+        unsigned GetType() const { return mType; }
         int GetNumSamples() const { return mNumSamples; }
 
         void Bind() const { glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId); }
@@ -837,8 +839,8 @@ namespace Poe
         { CreateInstances(mNumInstances); }
 
         StaticMesh(int numInstances,
-                   int numVertices,
-                   int numIndices,
+                   size_t numVertices,
+                   size_t numIndices,
                    const std::vector<VertexInfo>& infos)
             : mVbo(numVertices, GL_STATIC_DRAW),
               mEbo(numIndices, GL_STATIC_DRAW),
@@ -848,8 +850,8 @@ namespace Poe
         { CreateInstances(mNumInstances); }
 
         StaticMesh(int numInstances,
-                   int numVertices,
-                   int numIndices,
+                   size_t numVertices,
+                   size_t numIndices,
                    const std::vector<VertexInfo>& infos,
                    const std::vector<std::reference_wrapper<const Texture2D>>& textures)
             : mVbo(numVertices, GL_STATIC_DRAW),
@@ -863,22 +865,22 @@ namespace Poe
         void Bind() const { mVao.Bind(); }
         void UnBind() const { mVao.UnBind(); }
 
-        void Draw(int mode = GL_TRIANGLES) const
+        void Draw(unsigned mode = GL_TRIANGLES) const
         { mVao.Draw(mode); }
 
-        void DrawInstanced(int mode = GL_TRIANGLES) const
+        void DrawInstanced(unsigned mode = GL_TRIANGLES) const
         { mVao.DrawInstanced(mode, mNumInstances); }
 
         void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
         void AddTextures(const std::vector<std::reference_wrapper<const Texture2D>>& textures) { std::ranges::copy(textures, std::back_inserter(mTextures)); }
 
         void BindTextures() const
-        { int i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
+        { unsigned i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
         void UnBindTextures() const
-        { int i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
+        { unsigned i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
 
-        int GetNumVertices() const { return mVbo.GetNumElements(); }
-        int GetNumIndices() const { return mEbo.GetNumElements(); }
+        size_t GetNumVertices() const { return mVbo.GetNumElements(); }
+        size_t GetNumIndices() const { return mEbo.GetNumElements(); }
 
         float* GetVboWritePtr() const { return mVbo.GetWritePtr(); }
         unsigned* GetEboWritePtr() const { return mEbo.GetWritePtr(); }
@@ -898,7 +900,7 @@ namespace Poe
         int GetNumInstances() const { return mNumInstances; }
 
         void SetInstanceMatrix(const glm::mat4& modelMatrix, int instance = 0)
-        { mModelMatrixBuffer->Modify(instance * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(modelMatrix)); }
+        { mModelMatrixBuffer->Modify(instance * static_cast<int>(sizeof(glm::mat4)), sizeof(glm::mat4), glm::value_ptr(modelMatrix)); }
 
         void CreateInstances(std::initializer_list<glm::mat4> modelMatrices);
         void CreateInstances(const std::vector<glm::mat4>& modelMatrices);
@@ -1012,7 +1014,7 @@ namespace Poe
               mNumTextures{},
               mNumInstances{numInstances} { Load(); }
 
-        void Draw(int mode = GL_TRIANGLES) const
+        void Draw(unsigned mode = GL_TRIANGLES) const
         {
             for (const StaticMesh& staticMesh : mMeshes) {
                 staticMesh.Bind();
@@ -1021,7 +1023,7 @@ namespace Poe
             }
         }
 
-        void DrawInstanced(int mode = GL_TRIANGLES) const
+        void DrawInstanced(unsigned mode = GL_TRIANGLES) const
         {
             for (const StaticMesh& staticMesh : mMeshes) {
                 staticMesh.Bind();

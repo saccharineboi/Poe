@@ -17,17 +17,18 @@
 #pragma once
 
 #include "Constants.hpp"
+#include "Suppress.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define GLM_FORCE_INLINE
+SUPPRESS_WARNINGS()
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
+ENABLE_WARNINGS()
 
 namespace Poe
 {
