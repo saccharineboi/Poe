@@ -20,5 +20,5 @@ void main(void)
     vec4 emissiveColor = texture(uEmissiveTexture, vTexCoord * uTileMultiplier + uTileOffset);
     if (emissiveColor.a < 0.01f) discard;
 
-    color = mix(emissiveColor, uFogColor, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+    color.rgb = mix(emissiveColor.rgb, uFogColor.rgb, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
 }
