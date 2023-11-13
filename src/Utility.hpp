@@ -17,6 +17,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <cmath>
 
 namespace Poe::Utility
 {
@@ -34,4 +35,10 @@ namespace Poe::Utility
     template <typename T, typename TS>
     T Lerp(const T& x0, const T& x1, const TS s)
     { return x0 + (x1 - x0) * s; }
+
+    ////////////////////////////////////////
+    inline bool FloatEquals(float a, float b, float epsilon = 0.000001f)
+    {
+        return std::abs(a - b) >= epsilon;
+    }
 }
