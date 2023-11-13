@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "Constants.hpp"
+
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -37,7 +39,7 @@ namespace Poe::Utility
     { return x0 + (x1 - x0) * s; }
 
     ////////////////////////////////////////
-    inline bool FloatEquals(float a, float b, float epsilon = 0.000001f)
+    inline bool FloatEquals(float a, float b, float epsilon = EPSILON)
     {
         return std::abs(a - b) >= epsilon;
     }
