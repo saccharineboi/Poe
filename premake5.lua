@@ -91,6 +91,21 @@ end
 install_assimp()
 
 --------------------------------------------------
+function install_imgui()
+    os.execute("git submodule update --init --recursive")
+
+    os.execute("mkdir -p include/imgui")
+    os.execute("mkdir -p tp/imgui")
+
+    os.execute("cp submodules/imgui/*.h include/imgui")
+    os.execute("cp submodules/imgui/backends/imgui_impl_opengl3.h submodules/imgui/backends/imgui_impl_opengl3_loader.h submodules/imgui/backends/imgui_impl_glfw.h include/imgui")
+    os.execute("cp submodules/imgui/imgui.cpp submodules/imgui/imgui_draw.cpp submodules/imgui/imgui_tables.cpp submodules/imgui/imgui_widgets.cpp tp/imgui")
+    os.execute("cp submodules/imgui/backends/imgui_impl_opengl3.cpp submodules/imgui/backends/imgui_impl_glfw.cpp tp/imgui")
+end
+
+install_imgui()
+
+--------------------------------------------------
 workspace "poe"
     configurations { "debug", "release", "testing" }
     location "build"
@@ -104,18 +119,17 @@ workspace "poe"
 
         files {
             "tp/imgui/imgui.cpp",
-            "tp/imgui/imgui_demo.cpp",
             "tp/imgui/imgui_draw.cpp",
-            "tp/imgui/imgui_impl_glfw.cpp",
-            "tp/imgui/imgui_impl_opengl3.cpp",
             "tp/imgui/imgui_tables.cpp",
             "tp/imgui/imgui_widgets.cpp",
+            "tp/imgui/imgui_impl_glfw.cpp",
+            "tp/imgui/imgui_impl_opengl3.cpp"
         }
 
         includedirs { "include", "include/imgui" }
 
         filter "system:linux"
-            libdirs { "lib/linux64" }
+            libdirs { "lib" }
             links { "m", "glfw3", "pthread", "GL" }
 
         filter "configurations:debug"
@@ -138,7 +152,7 @@ workspace "poe"
         location "build/glad"
         targetdir "build/%{cfg.buildcfg}"
 
-        files { "tp/glad/glad.cpp" }
+        files { "tp/glad/glad.c" }
 
         includedirs { "include" }
 
@@ -174,7 +188,7 @@ workspace "poe"
         includedirs { "include", "src" }
 
         filter "system:linux"
-            libdirs { "lib/linux64" }
+            libdirs { "lib" }
             links { "m", "glfw3", "pthread", "GL", "assimp", "imgui", "glad" }
 
         filter "configurations:debug"
@@ -193,7 +207,6 @@ workspace "poe"
         filter { "system:linux", "action:gmake2" }
             buildoptions { "-std=c++20",
                            "-march=x86-64",
-                           "-msse4.2",
                            "-Wall",
                            "-Wextra",
                            "-Werror",
@@ -258,7 +271,7 @@ workspace "poe"
         includedirs { "include", "src" }
 
         filter "system:linux"
-            libdirs { "lib/linux64" }
+            libdirs { "lib" }
             links { "m", "glfw3", "pthread", "GL", "assimp", "imgui", "glad", "poe" }
 
         filter "configurations:debug"
@@ -277,7 +290,6 @@ workspace "poe"
         filter { "system:linux", "action:gmake2" }
             buildoptions { "-std=c++20",
                            "-march=x86-64",
-                           "-msse4.2",
                            "-Wall",
                            "-Wextra",
                            "-Werror",
