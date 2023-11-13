@@ -180,7 +180,7 @@ namespace CSItalyDemo
     }
 
     ////////////////////////////////////////
-    int Run(int argc, char** argv)
+    static int Run(int argc, char** argv)
     {
         InitGLFW();
         SetHints();
