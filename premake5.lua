@@ -106,6 +106,15 @@ end
 install_imgui()
 
 --------------------------------------------------
+function install_stb()
+    os.execute("git submodule update --init --recursive")
+    os.execute("mkdir -p include/stb")
+    os.execute("cp submodules/stb/*.h include/stb/")
+end
+
+install_stb()
+
+--------------------------------------------------
 workspace "poe"
     configurations { "debug", "release", "testing" }
     location "build"

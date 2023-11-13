@@ -12,3 +12,4 @@ include/glm/
 include/assimp/
 include/imgui
 tp/imgui
+include/stb
