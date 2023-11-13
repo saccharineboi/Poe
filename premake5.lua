@@ -305,3 +305,39 @@ workspace "poe"
 
         filter { "system:linux", "action:gmake2", "configurations:Debug" }
             buildoptions(compiler_ignore_options)
+
+    --------------------------------------------------
+    project "instanced_rendering"
+        kind "ConsoleApp"
+        language "C++"
+        location "build/poe"
+        targetdir "build/%{cfg.buildcfg}"
+
+        files {
+            "examples/InstancedRendering.cpp"
+        }
+
+        includedirs { "include", "src" }
+
+        filter "system:linux"
+            libdirs { "lib" }
+            links { "m", "glfw3", "pthread", "GL", "assimp", "imgui", "glad", "poe" }
+
+        filter "configurations:debug"
+            defines { "_DEBUG", "DEBUG" }
+            symbols "On"
+
+        filter "configurations:testing"
+            defines { "NDEBUG" }
+            symbols "On"
+            optimize "On"
+
+        filter "configurations:release"
+            defines { "NDEBUG" }
+            optimize "On"
+
+        filter { "system:linux", "action:gmake2" }
+            buildoptions(compiler_options)
+
+        filter { "system:linux", "action:gmake2", "configurations:Debug" }
+            buildoptions(compiler_ignore_options)
