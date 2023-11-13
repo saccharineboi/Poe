@@ -166,4 +166,9 @@ namespace Poe
         mPosition = mTargetPosition = position;
     }
 
+    ////////////////////////////////////////
+    void FirstPersonCamera::SetDirection(const glm::vec3& direction)
+    {
+        mDirection = direction;
+    }
 }

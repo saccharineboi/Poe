@@ -86,5 +86,6 @@ namespace Poe
 
         void SetAspectRatio(int width, int height);
         void SetPosition(const glm::vec3& position);
+        void SetDirection(const glm::vec3& direction);
     };
 }
