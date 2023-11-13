@@ -212,7 +212,7 @@ namespace CSItalyDemo
 
         Poe::ShaderLoader shaderLoader;
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
-        Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Cloudy);
+        Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Clear);
         Poe::PbrLightProgramInstanced pbrLightProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(0.0f, 180.0f, 100.0f));
