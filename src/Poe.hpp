@@ -1062,12 +1062,8 @@ namespace Poe
 
     ////////////////////////////////////////
     StaticModel LoadCsItaly(const std::string& rootPath, Texture2DLoader&);
+    StaticModel LoadSponza(const std::string& rootPath, Texture2DLoader&);
     StaticModel LoadDeDust(const std::string& rootPath, Texture2DLoader&);
-    StaticModel LoadBackpack(const std::string& rootPath, Texture2DLoader&);
-    StaticModel LoadViceCity(const std::string& rootPath, Texture2DLoader&);
-    StaticModel LoadGTA2Downtown(const std::string& rootPath, Texture2DLoader&);
-    StaticModel LoadGTA2Industrial(const std::string& rootPath, Texture2DLoader&);
-    StaticModel LoadGTA2Residential(const std::string& rootPath, Texture2DLoader&);
 
     ////////////////////////////////////////
     struct PostProcessStack

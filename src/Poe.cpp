@@ -1190,13 +1190,8 @@ namespace Poe
                                                  aiProcess_Triangulate |
                                                  aiProcess_GenNormals |
                                                  aiProcess_ImproveCacheLocality |
-                                                 aiProcess_ValidateDataStructure |
-                                                 aiProcess_ImproveCacheLocality |
                                                  aiProcess_RemoveRedundantMaterials |
-                                                 aiProcess_FixInfacingNormals |
-                                                 aiProcess_FindInvalidData |
                                                  aiProcess_GenUVCoords |
-                                                 aiProcess_TransformUVCoords |
                                                  aiProcess_OptimizeMeshes |
                                                  aiProcess_OptimizeGraph |
                                                  aiProcess_FlipUVs);
@@ -1322,45 +1317,21 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    StaticModel LoadSponza(const std::string& rootPath, Texture2DLoader& loader)
+    {
+        return StaticModel(0, rootPath + "/models/Sponza/scene.gltf", loader);
+    }
+
+    ////////////////////////////////////////
     StaticModel LoadCsItaly(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(0, rootPath + "/models/cs_italy/cs_italy.obj", loader);
+        return StaticModel(0, rootPath + "/models/cs_italy/scene.gltf", loader);
     }
 
     ////////////////////////////////////////
     StaticModel LoadDeDust(const std::string& rootPath, Texture2DLoader& loader)
     {
-        return StaticModel(0, rootPath + "/models/de_dust2/de_dust2.obj", loader);
-    }
-
-    ////////////////////////////////////////
-    StaticModel LoadBackpack(const std::string& rootPath, Texture2DLoader& loader)
-    {
-        return StaticModel(0, rootPath + "/models/backpack/backpack.obj", loader);
-    }
-
-    ////////////////////////////////////////
-    StaticModel LoadViceCity(const std::string& rootPath, Texture2DLoader& loader)
-    {
-        return StaticModel(0, rootPath + "/models/GTA1_Vice_City/GTA1 Vice City.dae", loader);
-    }
-
-    ////////////////////////////////////////
-    StaticModel LoadGTA2Downtown(const std::string& rootPath, Texture2DLoader& loader)
-    {
-        return StaticModel(0, rootPath + "/models/gta2_maps/Downtown.dae", loader);
-    }
-
-    ////////////////////////////////////////
-    StaticModel LoadGTA2Industrial(const std::string& rootPath, Texture2DLoader& loader)
-    {
-        return StaticModel(0, rootPath + "/models/gta2_maps/Industrial.dae", loader);
-    }
-
-    ////////////////////////////////////////
-    StaticModel LoadGTA2Residential(const std::string& rootPath, Texture2DLoader& loader)
-    {
-        return StaticModel(0, rootPath + "/models/gta2_maps/Residential.dae", loader);
+        return StaticModel(0, rootPath + "/models/de_dust/scene.gltf", loader);
     }
 
     ////////////////////////////////////////
