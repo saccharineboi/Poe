@@ -219,7 +219,7 @@ namespace CSItalyDemo
         auto staticModel = LoadCsItaly("..", texture2DLoader);
 
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(-180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
 
         Poe::PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
