@@ -41,6 +41,6 @@ namespace Poe::Utility
     ////////////////////////////////////////
     inline bool FloatEquals(float a, float b, float epsilon = EPSILON)
     {
-        return std::abs(a - b) >= epsilon;
+        return std::abs(a - b) <= epsilon;
     }
 }
