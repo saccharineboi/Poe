@@ -208,9 +208,9 @@ namespace Poe
     ////////////////////////////////////////
     struct TransformUB__DATA
     {
-        alignas(64) float projection_data[16];
-        alignas(64) float view_data[16];
-        alignas(64) float projView_data[16];
+        alignas(16) float projection_data[16];
+        alignas(16) float view_data[16];
+        alignas(16) float projView_data[16];
         alignas(16) float camDir_data[3];
 
         void SetProjectionData(const glm::mat4& projectionMatrix)
@@ -266,7 +266,7 @@ namespace Poe
     struct PbrLightMaterial__DATA
     {
         alignas(16) float albedo[3];
-        alignas(4) float metallic;
+        alignas(16) float metallic;
         alignas(4) float roughness;
         alignas(4) float ao;
 
