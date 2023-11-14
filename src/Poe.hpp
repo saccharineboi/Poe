@@ -90,6 +90,7 @@ namespace Poe
 
         float* GetWritePtr() const
         { return reinterpret_cast<float*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
+
         int Unmap() const { return glUnmapNamedBuffer(mId); }
 
         void Modify(int offset, int size, const void* data) const
@@ -125,6 +126,7 @@ namespace Poe
 
         unsigned* GetWritePtr() const
         { return reinterpret_cast<unsigned*>(glMapNamedBuffer(mId, GL_WRITE_ONLY)); }
+
         int Unmap() const { return glUnmapNamedBuffer(mId); }
 
         void Modify(int offset, int size, const void* data) const
