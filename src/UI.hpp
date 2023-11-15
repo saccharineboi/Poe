@@ -133,14 +133,26 @@ namespace Poe
             ImGui::NewLine();
         }
 
-        static void Draw_GlobalInfo_PostProcess(PostProcessProgram& program)
+        static void Draw_GlobalInfo_PostProcess(PostProcessUB& block)
         {
             ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Post-Process]");
-            ImGui::SliderFloat("Gamma", &program.mGamma, 0.1f, 5.0f);
-            ImGui::SliderFloat("Exposure", &program.mExposure, 0.1f, 5.0f);
-            ImGui::SliderFloat("Grayscale", &program.mGrayscaleWeight, 0.0f, 1.0f);
-            ImGui::SliderFloat("Kernel", &program.mKernelWeight, 0.0f, 1.0f);
+
+            float gamma{ block.GetGamma() };
+            float exposure{ block.GetExposure() };
+            float grayscaleWeight{ block.GetGrayscaleWeight() };
+            float kernelWeight{ block.GetKernelWeight() };
+
+            ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f);
+            ImGui::SliderFloat("Exposure", &exposure, 0.1f, 5.0f);
+            ImGui::SliderFloat("Grayscale", &grayscaleWeight, 0.0f, 1.0f);
+            ImGui::SliderFloat("Kernel", &kernelWeight, 0.0f, 1.0f);
             ImGui::NewLine();
+
+            block.SetGamma(gamma);
+            block.SetExposure(exposure);
+            block.SetGrayscaleWeight(grayscaleWeight);
+            block.SetKernelWeight(kernelWeight);
+            block.Update();
         }
 
         static void Draw_GlobalInfo_Fog(FogUB& fogBlock)

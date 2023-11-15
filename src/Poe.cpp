@@ -246,7 +246,7 @@ namespace Poe
 
     ////////////////////////////////////////
     PbrLightMaterialUB::PbrLightMaterialUB()
-        : mBuffer(sizeof(PbrLightMaterial__DATA), GL_DYNAMIC_DRAW, UniformBuffer::PBR_LIGHT_MATERIAL_BINDING)
+        : mBuffer(sizeof(PbrLightMaterial__DATA), GL_DYNAMIC_DRAW, UniformBuffer::PBR_LIGHT_MATERIAL_BLOCK_BINDING)
     {
         std::memset(&mData, 0, sizeof(PbrLightMaterial__DATA));
         mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData);
@@ -263,7 +263,7 @@ namespace Poe
 
     ////////////////////////////////////////
     DirLightUB::DirLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BINDING)
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING)
     {
         std::memset(&mLightsData, 0, DATA_SIZE);
         mBuffer.Modify(0, DATA_SIZE, mLightsData);
@@ -275,6 +275,14 @@ namespace Poe
         SetColor(ind, dirLight.mColor);
         SetDirection(ind, dirLight.mDirection);
         SetIntensity(ind, dirLight.mIntensity);
+    }
+
+    ////////////////////////////////////////
+    PostProcessUB::PostProcessUB()
+        : mBuffer(sizeof(PostProcessUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::POSTPROCESS_BLOCK_BINDING)
+    {
+        std::memset(&mData, 0, sizeof(PostProcessUB__DATA));
+        mBuffer.Modify(0, sizeof(PostProcessUB__DATA), &mData);
     }
 
     ////////////////////////////////////////
@@ -412,7 +420,7 @@ namespace Poe
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/post_process.frag") }
     {
         mProgram.Use();
-            mProgram.Uniform("uScreenTexture", 0);
+            glUniform1i(SCREEN_TEXTURE_LOC, 0);
         mProgram.Halt();
     }
 

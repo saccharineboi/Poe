@@ -145,8 +145,9 @@ namespace Poe
     public:
         static inline constexpr int FOG_BLOCK_BINDING{ 0 };
         static inline constexpr int TRANSFORM_BLOCK_BINDING{ 1 };
-        static inline constexpr int PBR_LIGHT_MATERIAL_BINDING{ 2 };
-        static inline constexpr int DIR_LIGHT_BINDING{ 3 };
+        static inline constexpr int PBR_LIGHT_MATERIAL_BLOCK_BINDING{ 2 };
+        static inline constexpr int DIR_LIGHT_BLOCK_BINDING{ 3 };
+        static inline constexpr int POSTPROCESS_BLOCK_BINDING{ 4 };
 
         UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
@@ -564,46 +565,13 @@ namespace Poe
         Program mProgram;
 
     public:
-        float mGamma{2.2f};
-        float mExposure{1.0f};
-        float mGrayscaleWeight{0.0f};
-        float mKernelWeight{0.0f};
-
         PostProcessProgram(const std::string& rootPath, ShaderLoader&);
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
         void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
 
-        static inline constexpr int GRAYSCALE_WEIGHT_LOC = 0;
-        static inline constexpr int KERNEL_WEIGHT_LOC = 1;
-        static inline constexpr int SCREEN_TEXTURE_LOC = 2;
-        static inline constexpr int GAMMA_LOC = 3;
-        static inline constexpr int EXPOSURE_LOC = 4;
-        static inline constexpr int KERNEL_LOC = 5;
-
-        void UpdateGrayscaleWeight() const { glUniform1f(GRAYSCALE_WEIGHT_LOC, mGrayscaleWeight); }
-        void UpdateKernelWeight() const { glUniform1f(KERNEL_WEIGHT_LOC, mKernelWeight); }
-        void UpdateGamma() const { glUniform1f(GAMMA_LOC, mGamma); }
-        void UpdateExposure() const { glUniform1f(EXPOSURE_LOC, mExposure); }
-
-        void SetKernel(const glm::mat3& m) const
-        { glUniformMatrix3fv(KERNEL_LOC, 1, GL_FALSE, glm::value_ptr(m)); }
-
-        void SetIdentityKernel() const
-        { SetKernel(glm::mat3{0.0f, 0.0f, 0.0f,
-                              0.0f, 1.0f, 0.0f,
-                              0.0f, 0.0f, 0.0f}); }
-
-        void SetSharpenKernel() const
-        { SetKernel(glm::mat3{-1.0f, -1.0f, -1.0f,
-                              -1.0f,  9.0f, -1.0f,
-                              -1.0f, -1.0f, -1.0f}); }
-
-        void SetEdgeDetectKernel() const
-        { SetKernel(glm::mat3{1.0f,  1.0f, 1.0f,
-                              1.0f, -8.0f, 1.0f,
-                              1.0f,  1.0f, 1.0f}); }
+        static inline constexpr int SCREEN_TEXTURE_LOC = 0;
     };
 
     ////////////////////////////////////////
