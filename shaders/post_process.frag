@@ -2,12 +2,16 @@
 
 in vec2 vTexCoord;
 
-layout (location = 0) uniform float uGrayscaleWeight;
-layout (location = 1) uniform float uKernelWeight;
-layout (location = 2) uniform sampler2D uScreenTexture;
-layout (location = 3) uniform float uGamma;
-layout (location = 4) uniform float uExposure;
-layout (location = 5) uniform mat3 uKernel;
+layout (location = 0) uniform sampler2D uScreenTexture;
+
+layout (std140, binding = 4) uniform PostProcessBlock
+{
+    float uGrayscaleWeight;
+    float uKernelWeight;
+    float uGamma;
+    float uExposure;
+    mat3 uKernel;
+};
 
 ////////////////////////////////////////
 vec3 makeGrayscale(vec3 col)
