@@ -223,6 +223,14 @@ namespace CSItalyDemo
 
         Poe::PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
 
+        Poe::PostProcessUB ppBlock;
+        ppBlock.SetExposure(1.0f);
+        ppBlock.SetGamma(2.2f);
+        ppBlock.SetKernel(glm::mat3(1.0f, 0.0f, 0.0f,
+                                    0.0f, 1.0f, 0.0,
+                                    0.0f, 0.0f, 1.0f));
+        ppBlock.Buffer().TurnOn();
+
         Poe::FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
@@ -310,18 +318,13 @@ namespace CSItalyDemo
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             ppStack.Program().Use();
-            ppStack.Program().UpdateGrayscaleWeight();
-            ppStack.Program().UpdateKernelWeight();
-            ppStack.Program().UpdateGamma();
-            ppStack.Program().UpdateExposure();
-            ppStack.Program().SetEdgeDetectKernel();
             ppStack.Program().Draw();
 
             Poe::DebugUI::NewFrame();
             Poe::DebugUI::Begin_GlobalInfo();
                 Poe::DebugUI::Draw_GlobalInfo_General();
                 Poe::DebugUI::Draw_GlobalInfo_Camera(mainCamera);
-                Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppStack.Program());
+                Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppBlock);
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
                 Poe::DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
                 Poe::DebugUI::Render_DirLightInfo(sun);
