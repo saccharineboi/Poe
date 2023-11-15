@@ -1409,11 +1409,11 @@ namespace Poe
                 break;
             case 3:
                 mParams.textureFormat = GL_RGB;
-                mParams.internalFormat = GL_SRGB8;
+                mParams.internalFormat = GL_RGB8;
                 break;
             case 4:
                 mParams.textureFormat = GL_RGBA;
-                mParams.internalFormat = GL_SRGB8_ALPHA8;
+                mParams.internalFormat = GL_RGBA8;
                 break;
         }
 
