@@ -226,11 +226,8 @@ namespace CSItalyDemo
         Poe::TransformUB transformBlock;
         transformBlock.Buffer().TurnOn();
 
-        Poe::EmissiveColorMaterial gridMaterial{ glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
+        Poe::EmissiveColorMaterial gridMaterial{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) };
         Poe::EmissiveTextureMaterial modelMaterial{ glm::vec2(1.0f), glm::vec2(0.0f) };
-
-        Poe::PbrLightMaterialUB pbrBlock;
-        pbrBlock.Buffer().TurnOn();
 
         Poe::DirLightUB dirLightBlock;
         dirLightBlock.Buffer().TurnOn();
@@ -249,6 +246,10 @@ namespace CSItalyDemo
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 glDisable(GL_CULL_FACE);
             }
+            else {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glEnable(GL_CULL_FACE);
+            }
 
             if (Poe::DebugUI::mEnableVsync)
                 glfwSwapInterval(1);
@@ -262,17 +263,16 @@ namespace CSItalyDemo
             transformBlock.Update();
             fogBlock.Update();
 
+            dirLightBlock.Set(0, sun);
+            dirLightBlock.Update();
+
             emissiveTextureProgram.Use();
             emissiveTextureProgram.SetMaterial(modelMaterial);
             emissiveTextureProgram.SetModelMatrix(model);
             staticModel.Draw();
 
-            dirLightBlock.Set(0, sun);
-            dirLightBlock.Update();
-
-            emissiveColorProgram.Use();
-
             if (Poe::DebugUI::mEnableGrid) {
+                emissiveColorProgram.Use();
                 emissiveColorProgram.SetMaterial(gridMaterial);
                 emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
                 grid.Bind();
@@ -282,14 +282,12 @@ namespace CSItalyDemo
             if (Poe::DebugUI::mEnableSkybox)
                 skybox.Draw();
 
-            if (Poe::DebugUI::mEnableWireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                glEnable(GL_CULL_FACE);
-            }
-
             ppStack.SecondPass();
             ppStack.BindColor0();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_CULL_FACE);
 
             ppStack.Program().Use();
             ppStack.Program().UpdateGrayscaleWeight();
