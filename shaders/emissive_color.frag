@@ -19,5 +19,6 @@ vec3 ApplyFog(vec3 inColor)
 out vec4 color;
 void main(void)
 {
-    color = ApplyFog(uColor, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+    color.rgb = ApplyFog(uColor.rgb);
+    color.a = uColor.a;
 }

@@ -26,4 +26,5 @@ void main(void)
     if (emissiveColor.a < 0.01f) discard;
 
     color.rgb = ApplyFog(emissiveColor.rgb);
+    color.a = emissiveColor.a;
 }
