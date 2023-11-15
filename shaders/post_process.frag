@@ -3,6 +3,7 @@
 in vec2 vTexCoord;
 
 layout (location = 0) uniform sampler2D uScreenTexture;
+layout (location = 1) uniform vec2 uTexelStretch;
 
 layout (std140, binding = 4) uniform PostProcessBlock
 {
@@ -27,7 +28,7 @@ vec3 applyKernel()
     vec3 res = vec3(0.0f);
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j)
-            res += texture(uScreenTexture, vTexCoord + vec2(OFFSET * (i - 1), OFFSET * (1 - j))).rgb * uKernel[i][j];
+            res += texture(uScreenTexture, (vTexCoord * uTexelStretch) + vec2(OFFSET * (i - 1), OFFSET * (1 - j))).rgb * uKernel[i][j];
     return res;
 }
 
@@ -46,7 +47,7 @@ vec3 applyExposure(vec3 col)
 out vec4 color;
 void main()
 {
-    vec3 texCol = texelFetch(uScreenTexture, ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 texCol = texelFetch(uScreenTexture, ivec2(gl_FragCoord.xy * uTexelStretch), 0).rgb;
     color.rgb = mix(texCol, applyKernel(), uKernelWeight);
     color.rgb = mix(color.rgb, makeGrayscale(color.rgb), uGrayscaleWeight);
     color.rgb = applyExposure(color.rgb);
