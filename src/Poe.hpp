@@ -572,6 +572,7 @@ namespace Poe
         void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
 
         static inline constexpr int SCREEN_TEXTURE_LOC = 0;
+        static inline constexpr int TEXELSTRETCH_LOC = 1;
     };
 
     ////////////////////////////////////////
@@ -810,6 +811,9 @@ namespace Poe
 
         void Blit(const Framebuffer& fb, int width, int height) const
         { glBlitNamedFramebuffer(mId, fb.GetId(), 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST); }
+
+        void Blit(const Framebuffer& fb, int width, int height, int outputWidth, int outputHeight) const
+        { glBlitNamedFramebuffer(mId, fb.GetId(), 0, 0, width, height, 0, 0, outputWidth, outputHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); }
 
         unsigned GetId() const { return mId; }
     };
@@ -1085,6 +1089,8 @@ namespace Poe
     private:
         int mWidth;
         int mHeight;
+        int mOutputWidth;
+        int mOutputHeight;
         int mNumSamples;
 
         PostProcessProgram mProgram;
@@ -1097,14 +1103,38 @@ namespace Poe
         Framebuffer mFbo;
 
     public:
-        PostProcessStack(const std::string& shaderRootPath, int width, int height, int numSamples, ShaderLoader&);
+        PostProcessStack(const std::string& shaderRootPath,
+                         int width, int height,
+                         int numSamples, ShaderLoader&);
 
-        void FirstPass() const { mFboMS.Bind(); }
-        void SecondPass() const { mFboMS.Blit(mFbo, mWidth, mHeight); mFbo.UnBind(); }
+        PostProcessStack(const std::string& shaderRootPath,
+                         int width, int height,
+                         int outputWidth, int outputHeight,
+                         int numSamples, ShaderLoader&);
+
+        void FirstPass() const { glViewport(0, 0, mWidth, mHeight); mFboMS.Bind(); }
+        void SecondPass() const { mFboMS.Blit(mFbo, mWidth, mHeight); mFbo.UnBind(); glViewport(0, 0, mOutputWidth, mOutputHeight); }
         void BindColor0() const { mColor0.Bind(); }
 
         PostProcessProgram& Program() { return mProgram; }
         const PostProcessProgram& Program() const { return mProgram; }
+
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetOutputWidth() const { return mOutputWidth; }
+        int GetOutputHeight() const { return mOutputHeight; }
+        int GetNumSamples() const { return mNumSamples; }
+
+        void Use() const
+        {
+            mProgram.Use();
+
+            float widthRatio{ static_cast<float>(mWidth) / static_cast<float>(mOutputWidth) };
+            float heightRatio{ static_cast<float>(mHeight) / static_cast<float>(mOutputHeight) };
+            glUniform2f(PostProcessProgram::TEXELSTRETCH_LOC, widthRatio, heightRatio);
+        }
+
+        void Draw() const { mProgram.Draw(); }
     };
 
     ////////////////////////////////////////

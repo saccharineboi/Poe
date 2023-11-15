@@ -1729,13 +1729,28 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    PostProcessStack::PostProcessStack(const std::string& shaderRootPath, int width, int height, int numSamples, ShaderLoader& loader)
-        : mWidth{width}, mHeight{height}, mNumSamples{numSamples},
+    PostProcessStack::PostProcessStack(const std::string& shaderRootPath,
+                                       int width, int height,
+                                       int numSamples, ShaderLoader& loader)
+        : mWidth{width}, mHeight{height}, mOutputWidth{width}, mOutputHeight{height}, mNumSamples{numSamples},
           mProgram(shaderRootPath, loader),
           mRboMS(GL_DEPTH24_STENCIL8, mWidth, mHeight, mNumSamples),
           mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
-          mColor0{CreateFramebufferTexture2D(mWidth, mHeight)},
+          mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
+          mFbo(mColor0) {}
+
+    ////////////////////////////////////////
+    PostProcessStack::PostProcessStack(const std::string& shaderRootPath,
+                                       int width, int height,
+                                       int outputWidth, int outputHeight,
+                                       int numSamples, ShaderLoader& loader)
+        : mWidth{width}, mHeight{height}, mOutputWidth{outputWidth}, mOutputHeight{outputHeight}, mNumSamples{numSamples},
+          mProgram(shaderRootPath, loader),
+          mRboMS(GL_DEPTH24_STENCIL8, mWidth, mHeight, mNumSamples),
+          mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
+          mFboMS(mColor0MS, mRboMS),
+          mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
           mFbo(mColor0) {}
 
     ////////////////////////////////////////
