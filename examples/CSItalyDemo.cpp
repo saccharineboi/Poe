@@ -195,7 +195,6 @@ namespace CSItalyDemo
         int fbWidth, fbHeight;
         glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
         glViewport(0, 0, fbWidth, fbHeight);
-        mainCamera.SetAspectRatio(fbWidth, fbHeight);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
@@ -218,7 +217,9 @@ namespace CSItalyDemo
         model = glm::rotate(model, glm::radians(-180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
 
-        Poe::PostProcessStack ppStack("..", fbWidth, fbHeight, 8, shaderLoader);
+        constexpr int fbSizeMultiplier{ 4 };
+        Poe::PostProcessStack ppStack("..", fbWidth / fbSizeMultiplier, fbHeight / fbSizeMultiplier, fbWidth, fbHeight, 8, shaderLoader);
+        mainCamera.SetAspectRatio(ppStack.GetWidth(), ppStack.GetHeight());
 
         Poe::PostProcessUB ppBlock;
         ppBlock.SetExposure(1.0f);
@@ -297,8 +298,8 @@ namespace CSItalyDemo
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glEnable(GL_CULL_FACE);
 
-            ppStack.Program().Use();
-            ppStack.Program().Draw();
+            ppStack.Use();
+            ppStack.Draw();
 
             Poe::DebugUI::NewFrame();
             Poe::DebugUI::Begin_GlobalInfo();
