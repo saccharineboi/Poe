@@ -202,11 +202,7 @@ namespace CSItalyDemo
         glEnable(GL_CULL_FACE);
         glDepthFunc(GL_LEQUAL);
 
-        // glEnable(GL_BLEND);
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
         auto grid = Poe::CreateGrid(100, 100, 0);
-        // grid.SetInstanceMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
 
         Poe::ShaderLoader shaderLoader;
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
@@ -235,13 +231,6 @@ namespace CSItalyDemo
 
         Poe::PbrLightMaterialUB pbrBlock;
         pbrBlock.Buffer().TurnOn();
-
-        Poe::PbrLightMaterial pbrLightMaterial{
-            glm::vec3(0.25f, 0.5f, 1.0f), // albedo
-            0.5f, // metallic
-            0.5f, // roughness
-            0.5f // ao
-        };
 
         Poe::DirLightUB dirLightBlock;
         dirLightBlock.Buffer().TurnOn();
@@ -316,7 +305,6 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_Camera(mainCamera);
                 Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppStack.Program());
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
-                Poe::DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
                 Poe::DebugUI::Render_DirLightInfo(sun);
             Poe::DebugUI::End_GlobalInfo();
             Poe::DebugUI::Render_LogInfo();
