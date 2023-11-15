@@ -70,8 +70,8 @@ namespace CSItalyDemo
     ////////////////////////////////////////
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
-        // mainCamera.mSpeed += static_cast<float>(yoffset) * 10.0f;
-        // mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 500.0f);
+        mainCamera.mSpeed += static_cast<float>(yoffset) * 10.0f;
+        mainCamera.mSpeed = glm::clamp(mainCamera.mSpeed, 1.0f, 500.0f);
     }
 
     ////////////////////////////////////////
