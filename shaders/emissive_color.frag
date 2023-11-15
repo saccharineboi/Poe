@@ -11,8 +11,13 @@ layout (std140, binding = 0) uniform FogBlock
     float uFogExp;
 };
 
+vec3 ApplyFog(vec3 inColor)
+{
+    return mix(inColor, uFogColor.rgb, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+}
+
 out vec4 color;
 void main(void)
 {
-    color = mix(uColor, uFogColor, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+    color = ApplyFog(uColor, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
 }
