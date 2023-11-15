@@ -218,7 +218,7 @@ namespace Poe
 
     ////////////////////////////////////////
     FogUB::FogUB(const glm::vec3& color, float distance, float exponent)
-        : mBuffer(sizeof(FogUB__DATA), GL_DYNAMIC_DRAW, 0)
+        : mBuffer(sizeof(FogUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::FOG_BLOCK_BINDING)
     {
         std::memset(&mData, 0, sizeof(FogUB__DATA));
         mData.SetColor(color);
@@ -229,7 +229,7 @@ namespace Poe
 
     ////////////////////////////////////////
     TransformUB::TransformUB()
-        : mBuffer(sizeof(TransformUB__DATA), GL_DYNAMIC_DRAW, 1)
+        : mBuffer(sizeof(TransformUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::TRANSFORM_BLOCK_BINDING)
     {
         std::memset(&mData, 0, sizeof(TransformUB__DATA));
         mBuffer.Modify(0, sizeof(TransformUB__DATA), &mData);
@@ -246,7 +246,7 @@ namespace Poe
 
     ////////////////////////////////////////
     PbrLightMaterialUB::PbrLightMaterialUB()
-        : mBuffer(sizeof(PbrLightMaterial__DATA), GL_DYNAMIC_DRAW, 2)
+        : mBuffer(sizeof(PbrLightMaterial__DATA), GL_DYNAMIC_DRAW, UniformBuffer::PBR_LIGHT_MATERIAL_BINDING)
     {
         std::memset(&mData, 0, sizeof(PbrLightMaterial__DATA));
         mBuffer.Modify(0, sizeof(PbrLightMaterial__DATA), &mData);
@@ -263,7 +263,7 @@ namespace Poe
 
     ////////////////////////////////////////
     DirLightUB::DirLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, 3)
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BINDING)
     {
         std::memset(&mLightsData, 0, DATA_SIZE);
         mBuffer.Modify(0, DATA_SIZE, mLightsData);

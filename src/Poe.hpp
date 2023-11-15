@@ -143,6 +143,11 @@ namespace Poe
         unsigned mBindLoc;
 
     public:
+        static inline constexpr int FOG_BLOCK_BINDING{ 0 };
+        static inline constexpr int TRANSFORM_BLOCK_BINDING{ 1 };
+        static inline constexpr int PBR_LIGHT_MATERIAL_BINDING{ 2 };
+        static inline constexpr int DIR_LIGHT_BINDING{ 3 };
+
         UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
         ~UniformBuffer() { glDeleteBuffers(1, &mId); }
@@ -200,6 +205,49 @@ namespace Poe
         void SetExponent(float exponent) { mData.exponent = exponent; }
 
         void Update() const { mBuffer.Modify(0, sizeof(FogUB__DATA), &mData); }
+    };
+
+    ////////////////////////////////////////
+    struct PostProcessUB__DATA
+    {
+        alignas(4) float grayscaleWeight;
+        alignas(4) float kernelWeight;
+        alignas(4) float gamma;
+        alignas(4) float exposure;
+        alignas(16) float kernel[9];
+    };
+
+    ////////////////////////////////////////
+    struct PostProcessUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        PostProcessUB__DATA mData;
+
+    public:
+        PostProcessUB();
+
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        float GetGrayscaleWeight() const { return mData.grayscaleWeight; }
+        float GetKernelWeight() const { return mData.kernelWeight; }
+        float GetGamma() const { return mData.gamma; }
+        float GetExposure() const { return mData.exposure; }
+        glm::mat3 GetKernel() const { return glm::mat3(mData.kernel[0], mData.kernel[1], mData.kernel[2],
+                                                       mData.kernel[3], mData.kernel[4], mData.kernel[5],
+                                                       mData.kernel[6], mData.kernel[7], mData.kernel[8]); }
+
+        void SetGrayscaleWeight(float weight) { mData.grayscaleWeight = weight; }
+        void SetKernelWeight(float weight) { mData.kernelWeight = weight; }
+        void SetGamma(float gamma) { mData.gamma = gamma; }
+        void SetExposure(float exposure) { mData.exposure = exposure; }
+        void SetKernel(const glm::mat3& kernel)
+        {
+            const float* ptr = glm::value_ptr(kernel);
+            std::memcpy(mData.kernel, ptr, 9 * sizeof(float));
+        }
+
+        void Update() const { mBuffer.Modify(0, sizeof(PostProcessUB__DATA), &mData); }
     };
 
     ////////////////////////////////////////
@@ -1125,8 +1173,7 @@ namespace Poe
     {
         EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
-        void SetModelMatrix(const glm::mat4& model) const override
-        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
+        void SetModelMatrix(const glm::mat4& model) const override {}
     };
 
     ////////////////////////////////////////
@@ -1134,7 +1181,8 @@ namespace Poe
     {
         EmissiveColorProgram(const std::string& rootPath, ShaderLoader&);
 
-        void SetModelMatrix(const glm::mat4& model) const override { }
+        void SetModelMatrix(const glm::mat4& model) const override
+        { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
     };
 
     ////////////////////////////////////////
