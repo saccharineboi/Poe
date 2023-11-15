@@ -595,7 +595,8 @@ namespace Poe
 
         template <typename T>
         Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams&);
-~Texture2D() { glDeleteTextures(1, &mId); }
+
+        ~Texture2D() { glDeleteTextures(1, &mId); }
 
         Texture2D(const Texture2D&) = delete;
         Texture2D& operator=(const Texture2D&) = delete;
