@@ -217,16 +217,13 @@ namespace CSItalyDemo
         model = glm::rotate(model, glm::radians(-180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
 
-        constexpr int fbSizeMultiplier{ 4 };
+        constexpr int fbSizeMultiplier{ 1 };
         Poe::PostProcessStack ppStack("..", fbWidth / fbSizeMultiplier, fbHeight / fbSizeMultiplier, fbWidth, fbHeight, 8, shaderLoader);
         mainCamera.SetAspectRatio(ppStack.GetWidth(), ppStack.GetHeight());
 
         Poe::PostProcessUB ppBlock;
         ppBlock.SetExposure(1.0f);
         ppBlock.SetGamma(2.2f);
-        ppBlock.SetKernel(glm::mat3(1.0f, 0.0f, 0.0f,
-                                    0.0f, 1.0f, 0.0,
-                                    0.0f, 0.0f, 1.0f));
         ppBlock.Buffer().TurnOn();
 
         Poe::FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);

@@ -228,9 +228,6 @@ namespace CSItalyDemo
         Poe::PostProcessUB ppBlock;
         ppBlock.SetExposure(1.0f);
         ppBlock.SetGamma(2.2f);
-        ppBlock.SetKernel(glm::mat3(1.0f, 0.0f, 0.0f,
-                                    0.0f, 1.0f, 0.0,
-                                    0.0f, 0.0f, 1.0f));
         ppBlock.Buffer().TurnOn();
 
         Poe::FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
