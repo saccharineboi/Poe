@@ -242,10 +242,46 @@ namespace Poe
         void SetKernelWeight(float weight) { mData.kernelWeight = weight; }
         void SetGamma(float gamma) { mData.gamma = gamma; }
         void SetExposure(float exposure) { mData.exposure = exposure; }
-        void SetKernel(const glm::mat3& kernel)
+        void SetKernel(const glm::mat3& kernel) { std::memcpy(mData.kernel, glm::value_ptr(kernel), sizeof(glm::mat3)); }
+
+        void SetIdentityKernel()
         {
-            const float* ptr = glm::value_ptr(kernel);
-            std::memcpy(mData.kernel, ptr, 9 * sizeof(float));
+            glm::mat3 kernel(0.0f, 0.0f, 0.0f,
+                             0.0f, 1.0f, 0.0f,
+                             0.0f, 0.0f, 0.0f);
+            std::memcpy(mData.kernel, glm::value_ptr(kernel), sizeof(glm::mat3));
+        }
+
+        void SetSharpenKernel()
+        {
+            glm::mat3 kernel(2.0f,  2.0f,  2.0f,
+                             2.0f, -15.0f, 2.0f,
+                             2.0f,  2.0f,  2.0f);
+            std::memcpy(mData.kernel, glm::value_ptr(kernel), sizeof(glm::mat3));
+        }
+
+        void SetBlurKernel()
+        {
+            glm::mat3 kernel(1.0f, 2.0f, 1.0f,
+                             2.0f, 4.0f, 2.0f,
+                             1.0f, 2.0f, 1.0f);
+            std::memcpy(mData.kernel, glm::value_ptr(kernel / 16.0f), sizeof(glm::mat3));
+        }
+
+        void SetEdgeDetectKernel()
+        {
+            glm::mat3 kernel(1.0f,  1.0f, 1.0f,
+                             1.0f, -8.0f, 1.0f,
+                             1.0f,  1.0f, 1.0f);
+            std::memcpy(mData.kernel, glm::value_ptr(kernel / 16.0f), sizeof(glm::mat3));
+        }
+
+        void SetEmbossKernel()
+        {
+            glm::mat3 kernel(-2.0f, -1.0f, 0.0f,
+                             -1.0f,  1.0f, 1.0f,
+                              0.0f,  1.0f, 2.0f);
+            std::memcpy(mData.kernel, glm::value_ptr(kernel / 16.0f), sizeof(glm::mat3));
         }
 
         void Update() const { mBuffer.Modify(0, sizeof(PostProcessUB__DATA), &mData); }

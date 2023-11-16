@@ -282,6 +282,7 @@ namespace Poe
         : mBuffer(sizeof(PostProcessUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::POSTPROCESS_BLOCK_BINDING)
     {
         std::memset(&mData, 0, sizeof(PostProcessUB__DATA));
+        mData.kernel[4] = 1.0f; // identity kernel
         mBuffer.Modify(0, sizeof(PostProcessUB__DATA), &mData);
     }
 

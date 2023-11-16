@@ -145,6 +145,30 @@ namespace Poe
             ImGui::SliderFloat("Gamma", &gamma, 0.1f, 5.0f);
             ImGui::SliderFloat("Exposure", &exposure, 0.1f, 5.0f);
             ImGui::SliderFloat("Grayscale", &grayscaleWeight, 0.0f, 1.0f);
+
+            static int currentKernel{};
+            static const char* kernelNames[]{ "Identity", "Sharpen", "Blur", "EdgeDetect", "Emboss" };
+            if (ImGui::Combo("Kernel Type", &currentKernel, kernelNames, sizeof(kernelNames) / sizeof(char*)))
+            {
+                switch (currentKernel) {
+                    case 0:
+                        block.SetIdentityKernel();
+                        break;
+                    case 1:
+                        block.SetSharpenKernel();
+                        break;
+                    case 2:
+                        block.SetBlurKernel();
+                        break;
+                    case 3:
+                        block.SetEdgeDetectKernel();
+                        break;
+                    case 4:
+                        block.SetEmbossKernel();
+                        break;
+                }
+            }
+
             ImGui::SliderFloat("Kernel", &kernelWeight, 0.0f, 1.0f);
             ImGui::NewLine();
 
