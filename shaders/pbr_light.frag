@@ -2,6 +2,10 @@
 
 #define PI 3.14159265359f
 
+#define NUM_DIR_LIGHTS 2
+#define NUM_POINT_LIGHTS 4
+#define NUM_SPOT_LIGHTS 4
+
 in VS_OUT
 {
     vec2 vTexCoord;
@@ -25,7 +29,6 @@ layout (std140, binding = 2) uniform PBR_MaterialBlock
     float uAO;
 };
 
-#define NUM_DIR_LIGHTS 2
 struct DirLight_t
 {
     vec3 color;
