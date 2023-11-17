@@ -1,6 +1,10 @@
 #version 460 core
 
-in vec2 vTexCoord;
+in VS_OUT
+{
+    vec2 vTexCoord;
+}
+fs_in;
 
 layout (location = 0) uniform sampler2D uScreenTexture;
 layout (location = 1) uniform vec2 uTexelStretch;
@@ -28,7 +32,7 @@ vec3 applyKernel()
     vec3 res = vec3(0.0f);
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j)
-            res += texture(uScreenTexture, (vTexCoord * uTexelStretch) + vec2(OFFSET * (i - 1), OFFSET * (1 - j))).rgb * uKernel[i][j];
+            res += texture(uScreenTexture, (fs_in.vTexCoord * uTexelStretch) + vec2(OFFSET * (i - 1), OFFSET * (1 - j))).rgb * uKernel[i][j];
     return res;
 }
 

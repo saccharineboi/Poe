@@ -1,7 +1,11 @@
 #version 460 core
 
-in vec3 vEyeSpace;
-in vec2 vTexCoord;
+in VS_OUT
+{
+   vec3 vEyeSpace;
+   vec2 vTexCoord;
+}
+fs_in;
 
 layout (location = 0) uniform sampler2D uEmissiveTexture;
 layout (location = 1) uniform vec2 uTileMultiplier;
@@ -25,12 +29,12 @@ layout (std140, binding = 4) uniform PostProcessBlock
 
 vec3 ApplyFog(vec3 inColor)
 {
-    return mix(inColor, uFogColor.rgb, clamp(pow(length(vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+    return mix(inColor, uFogColor.rgb, clamp(pow(length(fs_in.vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
 }
 
 vec4 FixGamma()
 {
-    vec4 emissiveColor = texture(uEmissiveTexture, vTexCoord * uTileMultiplier + uTileOffset);
+    vec4 emissiveColor = texture(uEmissiveTexture, fs_in.vTexCoord * uTileMultiplier + uTileOffset);
     return vec4(pow(emissiveColor.rgb, vec3(uGamma)), emissiveColor.a);
 }
 

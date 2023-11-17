@@ -11,10 +11,14 @@ layout (std140, binding = 1) uniform TransformBlock
     vec3 uCamDir;
 };
 
-out vec3 vEyeSpace;
+out VS_OUT
+{
+    vec3 vEyeSpace;
+}
+vs_out;
 
 void main(void)
 {
     gl_Position = uProjView * aModel * vec4(aPos, 1.0f);
-    vEyeSpace = vec3(uView * aModel * vec4(aPos, 1.0f));
+    vs_out.vEyeSpace = vec3(uView * aModel * vec4(aPos, 1.0f));
 }

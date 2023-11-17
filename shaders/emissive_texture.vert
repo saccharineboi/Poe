@@ -13,12 +13,16 @@ layout (std140, binding = 1) uniform TransformBlock
 
 layout (location = 3) uniform mat4 uModel;
 
-out vec3 vEyeSpace;
-out vec2 vTexCoord;
+out VS_OUT
+{
+    vec3 vEyeSpace;
+    vec2 vTexCoord;
+}
+vs_out;
 
 void main(void)
 {
     gl_Position = uProjView * uModel * vec4(aPos, 1.0f);
-    vEyeSpace = vec3(uView * uModel * vec4(aPos, 1.0f));
-    vTexCoord = aTexCoord;
+    vs_out.vEyeSpace = vec3(uView * uModel * vec4(aPos, 1.0f));
+    vs_out.vTexCoord = aTexCoord;
 }

@@ -21,10 +21,14 @@ const vec2 texcoords[6] = vec2[](
     vec2(0.0f, 0.0f)
 );
 
-out vec2 vTexCoord;
+out VS_OUT
+{
+    vec2 vTexCoord;
+}
+vs_out;
 
 void main()
 {
     gl_Position = vec4(positions[gl_VertexID], 0.0f, 1.0f);
-    vTexCoord = texcoords[gl_VertexID];
+    vs_out.vTexCoord = texcoords[gl_VertexID];
 }

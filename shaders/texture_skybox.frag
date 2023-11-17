@@ -1,6 +1,10 @@
 #version 460 core
 
-in vec3 vTexCoord;
+in VS_OUT
+{
+    vec3 vTexCoord;
+}
+fs_in;
 
 layout (location = 0) uniform samplerCube uSkybox;
 
@@ -16,6 +20,6 @@ layout (std140, binding = 4) uniform PostProcessBlock
 out vec4 color;
 void main()
 {
-    color = texture(uSkybox, vTexCoord); 
+    color = texture(uSkybox, fs_in.vTexCoord);
     color.rgb = pow(color.rgb, vec3(uGamma));
 }
