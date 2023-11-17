@@ -148,6 +148,9 @@ namespace Poe
         static inline constexpr int PBR_LIGHT_MATERIAL_BLOCK_BINDING{ 2 };
         static inline constexpr int DIR_LIGHT_BLOCK_BINDING{ 3 };
         static inline constexpr int POSTPROCESS_BLOCK_BINDING{ 4 };
+        static inline constexpr int BLINN_PHONG_MATERIAL_BLOCK_BINDING{ 5 };
+        static inline constexpr int POINT_LIGHT_BLOCK_BINDING{ 6 };
+        static inline constexpr int SPOT_LIGHT_BLOCK_BINDING{ 7 };
 
         UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
@@ -299,16 +302,16 @@ namespace Poe
         alignas(16) float camDir_data[3];
 
         void SetProjectionData(const glm::mat4& projectionMatrix)
-        { std::memcpy(projection_data, glm::value_ptr(projectionMatrix), 64); }
+        { std::memcpy(projection_data, glm::value_ptr(projectionMatrix), sizeof(glm::mat4)); }
 
         void SetViewData(const glm::mat4& viewMatrix)
-        { std::memcpy(view_data, glm::value_ptr(viewMatrix), 64); }
+        { std::memcpy(view_data, glm::value_ptr(viewMatrix), sizeof(glm::mat4)); }
 
         void SetProjViewData(const glm::mat4& projViewMatrix)
-        { std::memcpy(projView_data, glm::value_ptr(projViewMatrix), 64); }
+        { std::memcpy(projView_data, glm::value_ptr(projViewMatrix), sizeof(glm::mat4)); }
 
         void SetCamDirData(const glm::vec3& camDir)
-        { std::memcpy(camDir_data, glm::value_ptr(camDir), 12); }
+        { std::memcpy(camDir_data, glm::value_ptr(camDir), sizeof(glm::vec3)); }
     };
 
     ////////////////////////////////////////
@@ -388,6 +391,32 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct PointLight
+    {
+        glm::vec3 mColor;
+        glm::vec3 mDirection;
+        glm::vec3 mPosition;
+        float constant;
+        float linear;
+        float quadratic;
+        float intensity;
+    };
+
+    ////////////////////////////////////////
+    struct SpotLight
+    {
+        glm::vec3 mColor;
+        glm::vec3 mDirection;
+        glm::vec3 mPosition;
+        float innerCutoff;
+        float outerCutoff;
+        float constant;
+        float linear;
+        float quadratic;
+        float intensity;
+    };
+
+    ////////////////////////////////////////
     struct DirLight__DATA
     {
         alignas(16) float color[3];
@@ -396,16 +425,30 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    inline constexpr int NUM_DIR_LIGHTS = 2;
+    struct PointLight__DATA
+    {
+        alignas(16) float color[3];
+        alignas(16) float direction[3];
+        alignas(16) float position[3];
+        alignas(4) float radius;
+        alignas(4) float intensity;
+    };
+
+    ////////////////////////////////////////
+    inline constexpr int NUM_DIR_LIGHTS{ 2 };
+    inline constexpr int NUM_POINT_LIGHTS{ 4 };
+    inline constexpr int NUM_SPOT_LIGHTS{ 4 };
+
+    ////////////////////////////////////////
     struct alignas(16) DirLightListElem__DATA
     {
         DirLight__DATA data;
 
         void SetColor(const glm::vec3& color)
-        { std::memcpy(data.color, glm::value_ptr(color), 12); }
+        { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
 
         void SetDirection(const glm::vec3& dir)
-        { std::memcpy(data.direction, glm::value_ptr(dir), 12); }
+        { std::memcpy(data.direction, glm::value_ptr(dir), sizeof(glm::vec3)); }
 
         void SetIntensity(float intensity)
         { data.intensity = intensity; }
@@ -861,9 +904,12 @@ namespace Poe
         VertexBuffer mVbo;
         IndexBuffer mEbo;
         VAO mVao;
-        std::vector<std::reference_wrapper<const Texture2D>> mTextures;
         std::unique_ptr<VertexBuffer> mModelMatrixBuffer;
         int mNumInstances;
+
+        std::vector<std::reference_wrapper<const Texture2D>> mAmbientTextures;
+        std::vector<std::reference_wrapper<const Texture2D>> mDiffuseTextures;
+        std::vector<std::reference_wrapper<const Texture2D>> mSpecularTextures;
 
         void ReconfigureMatrixBuffer();
 
@@ -880,38 +926,12 @@ namespace Poe
         { CreateInstances(mNumInstances); }
 
         StaticMesh(int numInstances,
-                   const std::vector<float>& vertices,
-                   const std::vector<unsigned>& indices,
-                   const std::vector<VertexInfo>& infos,
-                   const std::vector<std::reference_wrapper<const Texture2D>>& textures)
-            : mVbo(vertices, GL_STATIC_DRAW),
-              mEbo(indices, GL_STATIC_DRAW),
-              mVao(mVbo, mEbo, infos),
-              mTextures{textures},
-              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{numInstances}
-        { CreateInstances(mNumInstances); }
-
-        StaticMesh(int numInstances,
                    size_t numVertices,
                    size_t numIndices,
                    const std::vector<VertexInfo>& infos)
             : mVbo(numVertices, GL_STATIC_DRAW),
               mEbo(numIndices, GL_STATIC_DRAW),
               mVao(mVbo, mEbo, infos),
-              mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
-              mNumInstances{numInstances}
-        { CreateInstances(mNumInstances); }
-
-        StaticMesh(int numInstances,
-                   size_t numVertices,
-                   size_t numIndices,
-                   const std::vector<VertexInfo>& infos,
-                   const std::vector<std::reference_wrapper<const Texture2D>>& textures)
-            : mVbo(numVertices, GL_STATIC_DRAW),
-              mEbo(numIndices, GL_STATIC_DRAW),
-              mVao(mVbo, mEbo, infos),
-              mTextures{textures},
               mModelMatrixBuffer{new VertexBuffer(16, GL_DYNAMIC_DRAW)},
               mNumInstances{numInstances}
         { CreateInstances(mNumInstances); }
@@ -925,13 +945,58 @@ namespace Poe
         void DrawInstanced(unsigned mode = GL_TRIANGLES) const
         { mVao.DrawInstanced(mode, mNumInstances); }
 
-        void AddTexture(const Texture2D& t) { mTextures.push_back(t); }
-        void AddTextures(const std::vector<std::reference_wrapper<const Texture2D>>& textures) { std::ranges::copy(textures, std::back_inserter(mTextures)); }
+        void AddAmbientTexture(const Texture2D& t)
+        { mAmbientTextures.push_back(t); }
+
+        void AddDiffuseTexture(const Texture2D& t)
+        { mDiffuseTextures.push_back(t); }
+
+        void AddSpecularTexture(const Texture2D& t)
+        { mSpecularTextures.push_back(t); }
 
         void BindTextures() const
-        { unsigned i{}; for (const Texture2D& t : mTextures) t.Bind(i++); }
-        void UnBindTextures() const
-        { unsigned i{}; for (const Texture2D& t : mTextures) t.UnBind(i++); }
+        {
+            if (mAmbientTextures.size() > 0 && mDiffuseTextures.size() > 0 && mSpecularTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mAmbientTextures[0]).Bind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(1);
+                static_cast<const Texture2D&>(mSpecularTextures[0]).Bind(2);
+            }
+            else if (mDiffuseTextures.size() > 0 && mSpecularTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(1);
+                static_cast<const Texture2D&>(mSpecularTextures[0]).Bind(2);
+            }
+            else if (mDiffuseTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(1);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).Bind(2);
+            }
+        }
+
+        void UnbindTextures() const
+        {
+            if (mAmbientTextures.size() > 0 && mDiffuseTextures.size() > 0 && mSpecularTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mAmbientTextures[0]).UnBind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(1);
+                static_cast<const Texture2D&>(mSpecularTextures[0]).UnBind(2);
+            }
+            else if (mDiffuseTextures.size() > 0 && mSpecularTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(1);
+                static_cast<const Texture2D&>(mSpecularTextures[0]).UnBind(2);
+            }
+            else if (mDiffuseTextures.size() > 0)
+            {
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(0);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(1);
+                static_cast<const Texture2D&>(mDiffuseTextures[0]).UnBind(2);
+            }
+        }
 
         size_t GetNumVertices() const { return mVbo.GetNumElements(); }
         size_t GetNumIndices() const { return mEbo.GetNumElements(); }

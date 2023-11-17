@@ -1247,19 +1247,27 @@ namespace Poe
             { 2, 3, GL_FLOAT, static_cast<int>(8 * sizeof(float)), 3 * sizeof(float) }
         };
 
-        std::vector<std::reference_wrapper<const Texture2D>> textures;
+        std::vector<std::reference_wrapper<const Texture2D>> ambientTextures;
+        std::vector<std::reference_wrapper<const Texture2D>> diffuseTextures;
+        std::vector<std::reference_wrapper<const Texture2D>> specularTextures;
+
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
         if (material != nullptr)
-            textures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        {
+            ambientTextures = Load2DTextures(material, aiTextureType_AMBIENT, "texture_ambient");
+            diffuseTextures = Load2DTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+            specularTextures = Load2DTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        }
 
         size_t numIndices{};
         for (size_t i = 0; i < mesh->mNumFaces; ++i)
             for (int j = 0; j < static_cast<int>(mesh->mFaces[i].mNumIndices); ++j)
                 ++numIndices;
 
-        StaticMesh staticMesh(mNumInstances,
-                              mesh->mNumVertices * 8,
-                              numIndices, infos, textures);
+        StaticMesh staticMesh(mNumInstances, mesh->mNumVertices * 8, numIndices, infos);
+        std::ranges::for_each(ambientTextures, [&](const Texture2D& t){ staticMesh.AddAmbientTexture(t); });
+        std::ranges::for_each(diffuseTextures, [&](const Texture2D& t){ staticMesh.AddDiffuseTexture(t); });
+        std::ranges::for_each(specularTextures, [&](const Texture2D& t){ staticMesh.AddSpecularTexture(t); });
 
         float* vboPtr = staticMesh.GetVboWritePtr();
 
