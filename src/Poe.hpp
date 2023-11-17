@@ -400,6 +400,13 @@ namespace Poe
         float linear;
         float quadratic;
         float intensity;
+
+        void SetRadius(float radius)
+        {
+            constant = 1.0f;
+            linear = 4.5f / radius;
+            quadratic = 75.0f / (radius * radius);
+        }
     };
 
     ////////////////////////////////////////
@@ -414,6 +421,13 @@ namespace Poe
         float linear;
         float quadratic;
         float intensity;
+
+        void SetRadius(float radius)
+        {
+            constant = 1.0f;
+            linear = 4.5f / radius;
+            quadratic = 75.0f / (radius * radius);
+        }
     };
 
     ////////////////////////////////////////
