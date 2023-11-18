@@ -269,7 +269,7 @@ namespace CSItalyDemo
             transformBlock.Update();
             fogBlock.Update();
 
-            dirLightBlock.Set(0, sun);
+            dirLightBlock.Set(0, mainCamera.mView, sun);
             dirLightBlock.Update();
 
             emissiveTextureProgram.Use();

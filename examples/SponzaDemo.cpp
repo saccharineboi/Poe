@@ -277,7 +277,7 @@ namespace CSItalyDemo
             emissiveTextureProgram.SetModelMatrix(model);
             staticModel.Draw();
 
-            dirLightBlock.Set(0, sun);
+            dirLightBlock.Set(0, mainCamera.mView, sun);
             dirLightBlock.Update();
 
             emissiveColorProgram.Use();

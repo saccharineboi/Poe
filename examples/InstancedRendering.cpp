@@ -282,7 +282,7 @@ namespace CSItalyDemo
             pbrBlock.Set(pbrLightMaterial);
             pbrBlock.Update();
 
-            dirLightBlock.Set(0, sun);
+            dirLightBlock.Set(0, mainCamera.mView, sun);
             dirLightBlock.Update();
 
             cube.Bind();
