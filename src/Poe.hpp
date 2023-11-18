@@ -1752,14 +1752,6 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct BlinnPhongMaterial
-    {
-        glm::vec2 mTexOffset;
-        glm::vec2 mTexMultiplier;
-        float mAmbientFactor;
-    };
-
-    ////////////////////////////////////////
     struct AbstractBlinnPhongProgram
     {
     protected:
@@ -1784,6 +1776,15 @@ namespace Poe
 
         virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
         virtual void SetNormalMatrix(const glm::mat3& normalMatrix) const = 0;
+
+        void SetTexOffset(const glm::vec2& texOffset) const
+        { glUniform2fv(TEX_OFFSET_LOC, 1, glm::value_ptr(texOffset)); }
+
+        void SetTexMultiplier(const glm::vec2& texMultiplier) const
+        { glUniform2fv(TEX_MULTIPLIER_LOC, 1, glm::value_ptr(texMultiplier)); }
+
+        void SetAmbientFactor(float factor) const
+        { glUniform1f(AMBIENT_FACTOR_LOC, factor); }
     };
 
     ////////////////////////////////////////
@@ -1796,13 +1797,6 @@ namespace Poe
 
         void SetNormalMatrix(const glm::mat3& normalMatrix) const override
         { glUniformMatrix3fv(NORMAL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(normalMatrix)); }
-
-        void SetMaterial(const BlinnPhongMaterial& m) const
-        {
-            glUniform2fv(TEX_OFFSET_LOC, 1, glm::value_ptr(m.mTexOffset));
-            glUniform2fv(TEX_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTexMultiplier));
-            glUniform1f(AMBIENT_FACTOR_LOC, m.mAmbientFactor);
-        }
     };
 
     ////////////////////////////////////////
@@ -1812,13 +1806,6 @@ namespace Poe
 
         void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
         void SetNormalMatrix(const glm::mat3& normalMatrix) const override {}
-
-        void SetMaterial(const BlinnPhongMaterial& m) const
-        {
-            glUniform2fv(TEX_OFFSET_LOC, 1, glm::value_ptr(m.mTexOffset));
-            glUniform2fv(TEX_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTexMultiplier));
-            glUniform1f(AMBIENT_FACTOR_LOC, m.mAmbientFactor);
-        }
     };
 
     ////////////////////////////////////////
