@@ -396,17 +396,8 @@ namespace Poe
         glm::vec3 mColor;
         glm::vec3 mDirection;
         glm::vec3 mPosition;
-        float constant;
-        float linear;
-        float quadratic;
-        float intensity;
-
-        void SetRadius(float radius)
-        {
-            constant = 1.0f;
-            linear = 4.5f / radius;
-            quadratic = 75.0f / (radius * radius);
-        }
+        float mRadius;
+        float mIntensity;
     };
 
     ////////////////////////////////////////
@@ -415,19 +406,10 @@ namespace Poe
         glm::vec3 mColor;
         glm::vec3 mDirection;
         glm::vec3 mPosition;
-        float innerCutoff;
-        float outerCutoff;
-        float constant;
-        float linear;
-        float quadratic;
-        float intensity;
-
-        void SetRadius(float radius)
-        {
-            constant = 1.0f;
-            linear = 4.5f / radius;
-            quadratic = 75.0f / (radius * radius);
-        }
+        float mInnerCutoff;
+        float mOuterCutoff;
+        float mRadius;
+        float mIntensity;
     };
 
     ////////////////////////////////////////
@@ -444,7 +426,23 @@ namespace Poe
         alignas(16) float color[3];
         alignas(16) float direction[3];
         alignas(16) float position[3];
-        alignas(4) float radius;
+        alignas(4) float constant;
+        alignas(4) float linear;
+        alignas(4) float quadratic;
+        alignas(4) float intensity;
+    };
+
+    ////////////////////////////////////////
+    struct SpotLight__DATA
+    {
+        alignas(16) float color[3];
+        alignas(16) float direction[3];
+        alignas(16) float position[3];
+        alignas(4) float innerCutoff;
+        alignas(4) float outerCutoff;
+        alignas(4) float constant;
+        alignas(4) float linear;
+        alignas(4) float quadratic;
         alignas(4) float intensity;
     };
 
@@ -461,11 +459,115 @@ namespace Poe
         void SetColor(const glm::vec3& color)
         { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
 
-        void SetDirection(const glm::vec3& dir)
-        { std::memcpy(data.direction, glm::value_ptr(dir), sizeof(glm::vec3)); }
+        void SetDirection(const glm::mat4& viewMatrix, const glm::vec3& dir)
+        { std::memcpy(data.direction, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(dir, 0.0f))), sizeof(glm::vec3)); }
 
         void SetIntensity(float intensity)
         { data.intensity = intensity; }
+
+        glm::vec3 GetColor() const
+        { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
+
+        glm::vec3 GetDirection() const
+        { return glm::vec3(data.direction[0], data.direction[1], data.direction[2]); }
+
+        float GetIntensity() const { return data.intensity; }
+    };
+
+    ////////////////////////////////////////
+    struct alignas(16) PointLightListElem__DATA
+    {
+        PointLight__DATA data;
+
+        void SetColor(const glm::vec3& color)
+        { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
+
+        void SetDirection(const glm::mat4& viewMatrix, const glm::vec3& dir)
+        { std::memcpy(data.direction, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(dir, 0.0f))), sizeof(glm::vec3)); }
+
+        void SetPosition(const glm::mat4& viewMatrix, const glm::vec3& pos)
+        { std::memcpy(data.position, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(pos, 1.0f))), sizeof(glm::vec3)); }
+
+        void SetConstant(float constant) { data.constant = constant; }
+        void SetLinear(float linear) { data.linear = linear; }
+        void SetQuadratic(float quadratic) { data.quadratic = quadratic;  }
+
+        void SetRadius(float radius)
+        {
+            data.constant = 1.0f;
+            data.linear = 4.5f / radius;
+            data.quadratic = 75.0f / (radius * radius);
+        }
+
+        void SetIntensity(float intensity) { data.intensity = intensity; }
+
+        glm::vec3 GetColor() const
+        { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
+
+        glm::vec3 GetDirection() const
+        { return glm::vec3(data.direction[0], data.direction[1], data.direction[2]); }
+
+        glm::vec3 GetPosition() const
+        { return glm::vec3(data.position[0], data.position[1], data.position[2]); }
+
+        float GetConstant() const { return data.constant; }
+        float GetLinear() const { return data.linear; }
+        float GetQuadratic() const { return data.quadratic; }
+
+        float GetRadius() const { return 4.5f / data.linear; }
+
+        float GetIntensity() const { return data.intensity; }
+    };
+
+    ////////////////////////////////////////
+    struct alignas(16) SpotLightListElem__DATA
+    {
+        SpotLight__DATA data;
+
+        void SetColor(const glm::vec3& color)
+        { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
+
+        void SetDirection(const glm::mat4& viewMatrix, const glm::vec3& dir)
+        { std::memcpy(data.direction, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(dir, 0.0f))), sizeof(glm::vec3)); }
+
+        void SetPosition(const glm::mat4& viewMatrix, const glm::vec3& pos)
+        { std::memcpy(data.position, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(pos, 1.0f))), sizeof(glm::vec3)); }
+
+        void SetInnerCutoff(float innerCutoff) { data.innerCutoff = innerCutoff; }
+        void SetOuterCutoff(float outerCutoff) { data.outerCutoff = outerCutoff; }
+
+        void SetConstant(float constant) { data.constant = constant; }
+        void SetLinear(float linear) { data.linear = linear; }
+        void SetQuadratic(float quadratic) { data.quadratic = quadratic;  }
+
+        void SetRadius(float radius)
+        {
+            data.constant = 1.0f;
+            data.linear = 4.5f / radius;
+            data.quadratic = 75.0f / (radius * radius);
+        }
+
+        void SetIntensity(float intensity) { data.intensity = intensity; }
+
+        glm::vec3 GetColor() const
+        { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
+
+        glm::vec3 GetDirection() const
+        { return glm::vec3(data.direction[0], data.direction[1], data.direction[2]); }
+
+        glm::vec3 GetPosition() const
+        { return glm::vec3(data.position[0], data.position[1], data.position[2]); }
+
+        float GetConstant() const { return data.constant; }
+        float GetLinear() const { return data.linear; }
+        float GetQuadratic() const { return data.quadratic; }
+
+        float GetRadius() const { return 4.5f / data.linear; }
+
+        float GetInnerCutoff() const { return data.innerCutoff; }
+        float GetOuterCutoff() const { return data.outerCutoff; }
+
+        float GetIntensity() const { return data.intensity; }
     };
 
     ////////////////////////////////////////
@@ -482,18 +584,269 @@ namespace Poe
         inline static constexpr int DATA_SIZE = sizeof(DirLightListElem__DATA) * NUM_DIR_LIGHTS;
 
         void SetColor(int ind, const glm::vec3& color)
-        { mLightsData[ind].SetColor(color); }
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            mLightsData[ind].SetColor(color);
+        }
 
-        void SetDirection(int ind, const glm::vec3& dir)
-        { mLightsData[ind].SetDirection(dir); }
+        void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            mLightsData[ind].SetDirection(viewMatrix, dir);
+        }
 
         void SetIntensity(int ind, float intensity)
-        { mLightsData[ind].SetIntensity(intensity); }
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            mLightsData[ind].SetIntensity(intensity);
+        }
 
         void Update() const
         { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
 
-        void Set(int ind, const DirLight& dirLight);
+        void Set(int ind, const glm::mat4& viewMatrix, const DirLight& dirLight)
+        {
+            SetColor(ind, dirLight.mColor);
+            SetDirection(ind, viewMatrix, dirLight.mDirection);
+            SetIntensity(ind, dirLight.mIntensity);
+        }
+
+        glm::vec3 GetColor(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            return mLightsData[ind].GetColor();
+        }
+
+        glm::vec3 GetDirection(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            return mLightsData[ind].GetDirection();
+        }
+
+        float GetIntensity(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            return mLightsData[ind].GetIntensity();
+        }
+
+        DirLight Get(int ind) const
+        {
+            return DirLight{ GetColor(ind),
+                             GetDirection(ind),
+                             GetIntensity(ind) };
+        }
+    };
+
+    ////////////////////////////////////////
+    struct PointLightUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        PointLightListElem__DATA mLightsData[NUM_POINT_LIGHTS];
+
+    public:
+        PointLightUB();
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        inline static constexpr int DATA_SIZE = sizeof(PointLightListElem__DATA) * NUM_POINT_LIGHTS;
+
+        void SetColor(int ind, const glm::vec3& color)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetColor(color);
+        }
+
+        void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetDirection(viewMatrix, dir);
+        }
+
+        void SetPosition(int ind, const glm::mat4& viewMatrix, const glm::vec3& pos)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetPosition(viewMatrix, pos);
+        }
+
+        void SetRadius(int ind, float radius)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetRadius(radius);
+        }
+
+        void SetIntensity(int ind, float intensity)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetIntensity(intensity);
+        }
+
+        void Set(int ind, const glm::mat4& viewMatrix, const PointLight& pl)
+        {
+            SetColor(ind, pl.mColor);
+            SetDirection(ind, viewMatrix, pl.mDirection);
+            SetPosition(ind, viewMatrix, pl.mPosition);
+            SetRadius(ind, pl.mRadius);
+            SetIntensity(ind, pl.mIntensity);
+        }
+
+        glm::vec3 GetColor(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetColor();
+        }
+
+        glm::vec3 GetDirection(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetDirection();
+        }
+
+        glm::vec3 GetPosition(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetPosition();
+        }
+
+        float GetRadius(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetRadius();
+        }
+
+        float GetIntensity(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetIntensity();
+        }
+
+        PointLight Get(int ind) const
+        {
+            return PointLight{ GetColor(ind),
+                               GetDirection(ind),
+                               GetPosition(ind),
+                               GetRadius(ind),
+                               GetIntensity(ind) };
+        }
+    };
+
+    ////////////////////////////////////////
+    struct SpotLightUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        SpotLightListElem__DATA mLightsData[NUM_SPOT_LIGHTS];
+
+    public:
+        SpotLightUB();
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        inline static constexpr int DATA_SIZE = sizeof(SpotLightListElem__DATA) * NUM_SPOT_LIGHTS;
+
+        void SetColor(int ind, const glm::vec3& color)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetColor(color);
+        }
+
+        void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetDirection(viewMatrix, dir);
+        }
+
+        void SetPosition(int ind, const glm::mat4& viewMatrix, const glm::vec3& pos)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetPosition(viewMatrix, pos);
+        }
+
+        void SetInnerCutoff(int ind, float innerCutoff)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetInnerCutoff(innerCutoff);
+        }
+
+        void SetOuterCutoff(int ind, float outerCutoff)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetOuterCutoff(outerCutoff);
+        }
+
+        void SetRadius(int ind, float radius)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetRadius(radius);
+        }
+
+        void SetIntensity(int ind, float intensity)
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            mLightsData[ind].SetIntensity(intensity);
+        }
+
+        void Set(int ind, const glm::mat4& viewMatrix, const SpotLight& sp)
+        {
+            SetColor(ind, sp.mColor);
+            SetDirection(ind, viewMatrix, sp.mDirection);
+            SetPosition(ind, viewMatrix, sp.mPosition);
+            SetInnerCutoff(ind, sp.mInnerCutoff);
+            SetOuterCutoff(ind, sp.mOuterCutoff);
+            SetRadius(ind, sp.mRadius);
+            SetIntensity(ind, sp.mIntensity);
+        }
+
+        glm::vec3 GetColor(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetColor();
+        }
+
+        glm::vec3 GetDirection(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetDirection();
+        }
+
+        glm::vec3 GetPosition(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetPosition();
+        }
+
+        float GetInnerCutoff(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetInnerCutoff();
+        }
+
+        float GetOuterCutoff(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetOuterCutoff();
+        }
+
+        float GetRadius(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetRadius();
+        }
+
+        float GetIntensity(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
+            return mLightsData[ind].GetIntensity();
+        }
+
+        SpotLight Get(int ind) const
+        {
+            return SpotLight{ GetColor(ind),
+                              GetDirection(ind),
+                              GetPosition(ind),
+                              GetInnerCutoff(ind),
+                              GetOuterCutoff(ind),
+                              GetRadius(ind),
+                              GetIntensity(ind) };
+        }
     };
 
     ////////////////////////////////////////

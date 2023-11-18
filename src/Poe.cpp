@@ -270,14 +270,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void DirLightUB::Set(int ind, const DirLight& dirLight)
-    {
-        SetColor(ind, dirLight.mColor);
-        SetDirection(ind, dirLight.mDirection);
-        SetIntensity(ind, dirLight.mIntensity);
-    }
-
-    ////////////////////////////////////////
     PostProcessUB::PostProcessUB()
         : mBuffer(sizeof(PostProcessUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::POSTPROCESS_BLOCK_BINDING)
     {
