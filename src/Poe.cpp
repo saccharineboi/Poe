@@ -1781,8 +1781,8 @@ namespace Poe
     EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveColorProgram(rootPath, loader, "/shaders/emissive_color.vert") {}
 
     ////////////////////////////////////////
-    EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture_instanced.vert"),
+    AbstractEmissiveTextureProgram::AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") }
     {
         mProgram.Use();
@@ -1791,14 +1791,10 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/emissive_texture.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") }
-    {
-        mProgram.Use();
-            glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
-        mProgram.Halt();
-    }
+    EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveTextureProgram(rootPath, loader, "/shaders/emissive_texture_instanced.vert") {}
+
+    ////////////////////////////////////////
+    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveTextureProgram(rootPath, loader, "/shaders/emissive_texture.vert") {}
 
     ////////////////////////////////////////
     void TexturedSkyboxProgram::Init()

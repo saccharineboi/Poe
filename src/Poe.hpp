@@ -1659,48 +1659,47 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct EmissiveTextureProgramInstanced
+    struct AbstractEmissiveTextureProgram
     {
-    private:
+    protected:
         Program mProgram;
 
     public:
-        EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader&);
+        AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&, const std::string& vshaderUrl);
 
-        static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
-        static inline constexpr int TILE_MULTIPLIER_LOC = 1;
-        static inline constexpr int TILE_OFFSET_LOC = 2;
-
-        void Use() const { mProgram.Use(); }
-        void Halt() const { mProgram.Halt(); }
-
-        void SetMaterial(const EmissiveTextureMaterial& m) const
-        { glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
-          glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset)); }
-    };
-
-    ////////////////////////////////////////
-    struct EmissiveTextureProgram
-    {
-    private:
-        Program mProgram;
-
-    public:
-        EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
+        virtual ~AbstractEmissiveTextureProgram() {}
 
         static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
         static inline constexpr int TILE_MULTIPLIER_LOC = 1;
         static inline constexpr int TILE_OFFSET_LOC = 2;
         static inline constexpr int MODEL_LOC = 3;
 
+        void SetMaterial(const EmissiveTextureMaterial& m) const
+        {
+            glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
+            glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset));
+        }
+
+        virtual void SetModelMatrix(const glm::mat4& model) const = 0;
+
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+    };
 
-        void SetMaterial(const EmissiveTextureMaterial& m) const
-        { glUniform2fv(TILE_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTileMultiplier));
-          glUniform2fv(TILE_OFFSET_LOC, 1, glm::value_ptr(m.mTileOffset)); }
+    ////////////////////////////////////////
+    struct EmissiveTextureProgramInstanced : public AbstractEmissiveTextureProgram
+    {
+        EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
-        void SetModelMatrix(const glm::mat4& model) const
+        void SetModelMatrix(const glm::mat4& model) const override {}
+    };
+
+    ////////////////////////////////////////
+    struct EmissiveTextureProgram : public AbstractEmissiveTextureProgram
+    {
+        EmissiveTextureProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& model) const override
         { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
     };
 
