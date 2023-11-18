@@ -2042,4 +2042,16 @@ namespace Poe
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/pbr_light.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/pbr_light.frag") }
     {}
+
+    ////////////////////////////////////////
+    BlinnPhongProgram::BlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/blinn_phong.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/blinn_phong.frag") }
+    {
+        mProgram.Use();
+            glUniform1i(MATERIAL_AMBIENT_TEXTURE_LOC, 0);
+            glUniform1i(MATERIAL_DIFFUSE_TEXTURE_LOC, 1);
+            glUniform1i(MATERIAL_SPECULAR_TEXTURE_LOC, 2);
+        mProgram.Halt();
+    }
 }

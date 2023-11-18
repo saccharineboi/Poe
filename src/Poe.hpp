@@ -1753,6 +1753,43 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct BlinnPhongProgram
+    {
+    private:
+        Program mProgram;
+
+    public:
+        BlinnPhongProgram(const std::string& rootPath, ShaderLoader&);
+
+        static inline constexpr int MODEL_MATRIX_LOC{ 0 };
+        static inline constexpr int NORMAL_MATRIX_LOC{ 1 };
+        static inline constexpr int TEX_OFFSET_LOC{ 2 };
+        static inline constexpr int TEX_MULTIPLIER_LOC{ 3 };
+        static inline constexpr int MATERIAL_AMBIENT_TEXTURE_LOC{ 4 };
+        static inline constexpr int MATERIAL_DIFFUSE_TEXTURE_LOC{ 5 };
+        static inline constexpr int MATERIAL_SPECULAR_TEXTURE_LOC{ 6 };
+        static inline constexpr int AMBIENT_FACTOR_LOC{ 7 };
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const
+        { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
+
+        void SetNormalMatrix(const glm::mat3& normalMatrix) const
+        { glUniformMatrix3fv(NORMAL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(normalMatrix)); }
+
+        void SetTexOffset(const glm::vec2& texOffset) const
+        { glUniform2f(TEX_OFFSET_LOC, texOffset.x, texOffset.y); }
+
+        void SetTexMultiplier(const glm::vec2& texMultiplier) const
+        { glUniform2f(TEX_MULTIPLIER_LOC, texMultiplier.x, texMultiplier.y); }
+
+        void SetAmbientFactor(float factor) const
+        { glUniform1f(AMBIENT_FACTOR_LOC, factor); }
+    };
+
+    ////////////////////////////////////////
     struct PbrLightProgramInstanced
     {
     private:
