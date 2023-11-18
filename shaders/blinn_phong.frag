@@ -158,6 +158,18 @@ vec3 FixGamma(vec3 givenColor)
     return pow(givenColor, vec3(uGamma));
 }
 
+layout (std140, binding = 0) uniform FogBlock
+{
+    vec4 uFogColor;
+    float uFogDistance;
+    float uFogExp;
+};
+
+vec3 ApplyFog(vec3 inColor)
+{
+    return mix(inColor, uFogColor.rgb, clamp(pow(length(fs_in.vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+}
+
 out vec4 color;
 void main()
 {
@@ -169,9 +181,10 @@ void main()
     vec3 viewDir = normalize(-fs_in.vFragPos);
 
     color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    color += computeDirLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
-    color += computePointLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
-    color += computeSpotLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
+    color += vec4(computeDirLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
+    color += vec4(computePointLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
+    color += vec4(computeSpotLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
 
-    color += uAmbientFactor * ambientTexColor * uMaterialAmbient;
+    color += vec4(uAmbientFactor * ambientTexColor * uMaterialAmbient, 0.0f);
+    color.rgb = ApplyFog(color.rgb);
 }
