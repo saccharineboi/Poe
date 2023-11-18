@@ -2040,8 +2040,8 @@ namespace Poe
     {}
 
     ////////////////////////////////////////
-    BlinnPhongProgram::BlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/blinn_phong.vert"),
+    AbstractBlinnPhongProgram::AbstractBlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/blinn_phong.frag") }
     {
         mProgram.Use();
@@ -2050,4 +2050,10 @@ namespace Poe
             glUniform1i(MATERIAL_SPECULAR_TEXTURE_LOC, 2);
         mProgram.Halt();
     }
+
+    ////////////////////////////////////////
+    BlinnPhongProgram::BlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractBlinnPhongProgram(rootPath, loader, "/shaders/blinn_phong.vert") {}
+
+    ////////////////////////////////////////
+    BlinnPhongProgramInstanced::BlinnPhongProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractBlinnPhongProgram(rootPath, loader, "/shaders/blinn_phong_instanced.vert") {}
 }

@@ -1752,13 +1752,23 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct BlinnPhongProgram
+    struct BlinnPhongMaterial
     {
-    private:
+        glm::vec2 mTexOffset;
+        glm::vec2 mTexMultiplier;
+        float mAmbientFactor;
+    };
+
+    ////////////////////////////////////////
+    struct AbstractBlinnPhongProgram
+    {
+    protected:
         Program mProgram;
 
     public:
-        BlinnPhongProgram(const std::string& rootPath, ShaderLoader&);
+        AbstractBlinnPhongProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
+
+        virtual ~AbstractBlinnPhongProgram() {}
 
         static inline constexpr int MODEL_MATRIX_LOC{ 0 };
         static inline constexpr int NORMAL_MATRIX_LOC{ 1 };
@@ -1772,20 +1782,43 @@ namespace Poe
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
 
-        void SetModelMatrix(const glm::mat4& modelMatrix) const
+        virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
+        virtual void SetNormalMatrix(const glm::mat3& normalMatrix) const = 0;
+    };
+
+    ////////////////////////////////////////
+    struct BlinnPhongProgram : public AbstractBlinnPhongProgram
+    {
+        BlinnPhongProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override
         { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
 
-        void SetNormalMatrix(const glm::mat3& normalMatrix) const
+        void SetNormalMatrix(const glm::mat3& normalMatrix) const override
         { glUniformMatrix3fv(NORMAL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(normalMatrix)); }
 
-        void SetTexOffset(const glm::vec2& texOffset) const
-        { glUniform2f(TEX_OFFSET_LOC, texOffset.x, texOffset.y); }
+        void SetMaterial(const BlinnPhongMaterial& m) const
+        {
+            glUniform2fv(TEX_OFFSET_LOC, 1, glm::value_ptr(m.mTexOffset));
+            glUniform2fv(TEX_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTexMultiplier));
+            glUniform1f(AMBIENT_FACTOR_LOC, m.mAmbientFactor);
+        }
+    };
 
-        void SetTexMultiplier(const glm::vec2& texMultiplier) const
-        { glUniform2f(TEX_MULTIPLIER_LOC, texMultiplier.x, texMultiplier.y); }
+    ////////////////////////////////////////
+    struct BlinnPhongProgramInstanced : public AbstractBlinnPhongProgram
+    {
+        BlinnPhongProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
-        void SetAmbientFactor(float factor) const
-        { glUniform1f(AMBIENT_FACTOR_LOC, factor); }
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
+        void SetNormalMatrix(const glm::mat3& normalMatrix) const override {}
+
+        void SetMaterial(const BlinnPhongMaterial& m) const
+        {
+            glUniform2fv(TEX_OFFSET_LOC, 1, glm::value_ptr(m.mTexOffset));
+            glUniform2fv(TEX_MULTIPLIER_LOC, 1, glm::value_ptr(m.mTexMultiplier));
+            glUniform1f(AMBIENT_FACTOR_LOC, m.mAmbientFactor);
+        }
     };
 
     ////////////////////////////////////////
