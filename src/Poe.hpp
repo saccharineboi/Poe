@@ -342,6 +342,108 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct BlinnPhongMaterial
+    {
+        glm::vec3 mAmbient;
+        glm::vec3 mDiffuse;
+        glm::vec3 mSpecular;
+        float mShininess;
+    };
+
+    ////////////////////////////////////////
+    struct BlinnPhongMaterial__DATA
+    {
+        alignas(16) float ambient[3];
+        alignas(16) float diffuse[3];
+        alignas(16) float specular[3];
+        alignas(16) float shininess;
+
+        void SetAmbient(const glm::vec3& ambientColor)
+        { std::memcpy(ambient, glm::value_ptr(ambientColor), sizeof(glm::vec3)); }
+
+        void SetDiffuse(const glm::vec3& diffuseColor)
+        { std::memcpy(diffuse, glm::value_ptr(diffuseColor), sizeof(glm::vec3)); }
+
+        void SetSpecular(const glm::vec3& specularColor)
+        { std::memcpy(specular, glm::value_ptr(specularColor), sizeof(glm::vec3)); }
+
+        void SetShininess(float s)
+        { shininess = s; }
+
+        void Set(const BlinnPhongMaterial& material)
+        {
+            SetAmbient(material.mAmbient);
+            SetDiffuse(material.mDiffuse);
+            SetSpecular(material.mSpecular);
+            SetShininess(material.mShininess);
+        }
+
+        glm::vec3 GetAmbient() const
+        { return glm::vec3(ambient[0], ambient[1], ambient[2]); }
+
+        glm::vec3 GetDiffuse() const
+        { return glm::vec3(diffuse[0], diffuse[1], diffuse[2]); }
+
+        glm::vec3 GetSpecular() const
+        { return glm::vec3(specular[0], specular[1], specular[2]); }
+
+        float GetShininess() const { return shininess; }
+
+        BlinnPhongMaterial Get() const
+        {
+            return BlinnPhongMaterial{ GetAmbient(),
+                                       GetDiffuse(),
+                                       GetSpecular(),
+                                       GetShininess() };
+        }
+    };
+
+    ////////////////////////////////////////
+    struct BlinnPhongMaterialUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        BlinnPhongMaterial__DATA mData;
+
+    public:
+        BlinnPhongMaterialUB();
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        void Update() const
+        { mBuffer.Modify(0, sizeof(BlinnPhongMaterial__DATA), &mData); }
+
+        void SetAmbient(const glm::vec3& ambient)
+        { mData.SetAmbient(ambient); }
+
+        void SetDiffuse(const glm::vec3& diffuse)
+        { mData.SetDiffuse(diffuse); }
+
+        void SetSpecular(const glm::vec3& specular)
+        { mData.SetSpecular(specular); }
+
+        void SetShininess(float shininess)
+        { mData.SetShininess(shininess); }
+
+        void Set(const BlinnPhongMaterial& material)
+        { mData.Set(material); }
+
+        glm::vec3 GetAmbient() const
+        { return mData.GetAmbient(); }
+
+        glm::vec3 GetDiffuse() const
+        { return mData.GetDiffuse(); }
+
+        glm::vec3 GetSpecular() const
+        { return mData.GetSpecular(); }
+
+        float GetShininess() const
+        { return mData.GetShininess(); }
+
+        BlinnPhongMaterial Get() const
+        { return mData.Get(); }
+    };
+
+    ////////////////////////////////////////
     struct PbrLightMaterial
     {
         glm::vec3 mAlbedo;

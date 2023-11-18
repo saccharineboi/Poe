@@ -262,6 +262,14 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    BlinnPhongMaterialUB::BlinnPhongMaterialUB()
+        : mBuffer(sizeof(BlinnPhongMaterial__DATA), GL_DYNAMIC_DRAW, UniformBuffer::BLINN_PHONG_MATERIAL_BLOCK_BINDING)
+    {
+        std::memset(&mData, 0, sizeof(BlinnPhongMaterial__DATA));
+        mBuffer.Modify(0, sizeof(BlinnPhongMaterial__DATA), &mData);
+    }
+
+    ////////////////////////////////////////
     DirLightUB::DirLightUB()
         : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING)
     {
