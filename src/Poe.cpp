@@ -270,6 +270,21 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    PointLightUB::PointLightUB()
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::POINT_LIGHT_BLOCK_BINDING)
+    {
+        std::memset(&mLightsData, 0, DATA_SIZE);
+        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+    }
+    ////////////////////////////////////////
+    SpotLightUB::SpotLightUB()
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::SPOT_LIGHT_BLOCK_BINDING)
+    {
+        std::memset(&mLightsData, 0, DATA_SIZE);
+        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+    }
+
+    ////////////////////////////////////////
     PostProcessUB::PostProcessUB()
         : mBuffer(sizeof(PostProcessUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::POSTPROCESS_BLOCK_BINDING)
     {
