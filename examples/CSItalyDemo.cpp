@@ -206,7 +206,7 @@ namespace CSItalyDemo
         Poe::ShaderLoader shaderLoader;
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         Poe::EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
-        Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Clear);
+        Poe::RealisticSkyboxProgram skybox("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
 
@@ -243,6 +243,9 @@ namespace CSItalyDemo
             glm::vec3(0.0f, 0.0f, -1.0f), // direction
             1.0f // intensity
         };
+
+        Poe::RealisticSkyboxUB skyboxBlock;
+        skyboxBlock.Buffer().TurnOn();
 
         while (!glfwWindowShouldClose(window)) {
             ppStack.FirstPass();
