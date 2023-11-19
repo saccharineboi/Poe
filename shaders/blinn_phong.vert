@@ -1,10 +1,10 @@
 #version 460 core
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNorm;
-layout (location = 2) in vec2 aTexCoord;
+layout (location = 1) in vec2 aTexCoord;
+layout (location = 2) in vec3 aNorm;
 
-layout (std140, binding = 1) TransformBlock
+layout (std140, binding = 1) uniform TransformBlock
 {
     mat4 uProjection;
     mat4 uView;

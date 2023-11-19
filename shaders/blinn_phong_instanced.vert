@@ -6,7 +6,7 @@ layout (location = 2) in vec2 aTexCoord;
 layout (location = 8) in mat4 aModel;
 layout (location = 12) in mat3 aNormMat;
 
-layout (std140, binding = 1) TransformBlock
+layout (std140, binding = 1) uniform TransformBlock
 {
     mat4 uProjection;
     mat4 uView;

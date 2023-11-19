@@ -4,7 +4,7 @@
 #define NUM_POINT_LIGHTS 4
 #define NUM_SPOT_LIGHTS 4
 
-out VS_OUT
+in VS_OUT
 {
     vec3 vFragPos;
     vec3 vNorm;
@@ -12,7 +12,7 @@ out VS_OUT
 }
 fs_in;
 
-layout (std140, binding = 1) TransformBlock
+layout (std140, binding = 1) uniform TransformBlock
 {
     mat4 uProjection;
     mat4 uView;
@@ -20,7 +20,7 @@ layout (std140, binding = 1) TransformBlock
     vec3 uCamDir;
 };
 
-layout (std140, binding = 5) BlinnPhongMaterialBlock
+layout (std140, binding = 5) uniform BlinnPhongMaterialBlock
 {
     vec3 uMaterialAmbient;
     vec3 uMaterialDiffuse;
@@ -43,7 +43,6 @@ layout (std140, binding = 3) uniform DirLightBlock
 struct PointLight_t
 {
     vec3 color;
-    vec3 direction;
     vec3 position;
     float constant;
     float linear;
@@ -167,24 +166,30 @@ layout (std140, binding = 0) uniform FogBlock
 
 vec3 ApplyFog(vec3 inColor)
 {
-    return mix(inColor, uFogColor.rgb, clamp(pow(length(fs_in.vEyeSpace) / uFogDistance, uFogExp), 0.0f, 1.0f));
+    return mix(inColor, uFogColor.rgb, clamp(pow(length(fs_in.vFragPos) / uFogDistance, uFogExp), 0.0f, 1.0f));
 }
 
 out vec4 color;
 void main()
 {
-    vec3 ambientTexColor = FixGamma(texture(uMaterialAmbientTexture, fs_in.vTexCoord).rgb);
-    vec3 diffuseTexColor = FixGamma(texture(uMaterialDiffuseTexture, fs_in.vTexCoord).rgb);
-    vec3 specularTexColor = FixGamma(texture(uMaterialSpecularTexture, fs_in.vTexCoord).rgb);
+    vec4 _ambientTexColor = texture(uMaterialAmbientTexture, fs_in.vTexCoord);
+    vec4 _diffuseTexColor = texture(uMaterialDiffuseTexture, fs_in.vTexCoord);
+    vec4 _specularTexColor = texture(uMaterialSpecularTexture, fs_in.vTexCoord);
+
+    if (_diffuseTexColor.a < 0.01f) discard;
+
+    vec3 ambientTexColor = FixGamma(_ambientTexColor.rgb);
+    vec3 diffuseTexColor = FixGamma(_diffuseTexColor.rgb);
+    vec3 specularTexColor = FixGamma(_specularTexColor.rgb);
 
     vec3 normal = normalize(fs_in.vNorm);
     vec3 viewDir = normalize(-fs_in.vFragPos);
 
     color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    color += vec4(computeDirLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
-    color += vec4(computePointLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
-    color += vec4(computeSpotLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor), 0.0f);
+    color.rgb += computeDirLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
+    color.rgb += computePointLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
+    color.rgb += computeSpotLight(normal, fs_in.vFragPos, viewDir, diffuseTexColor, specularTexColor);
 
-    color += vec4(uAmbientFactor * ambientTexColor * uMaterialAmbient, 0.0f);
+    color.rgb += uAmbientFactor * ambientTexColor * uMaterialAmbient;
     color.rgb = ApplyFog(color.rgb);
 }
