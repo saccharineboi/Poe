@@ -151,6 +151,7 @@ namespace Poe
         static inline constexpr int BLINN_PHONG_MATERIAL_BLOCK_BINDING{ 5 };
         static inline constexpr int POINT_LIGHT_BLOCK_BINDING{ 6 };
         static inline constexpr int SPOT_LIGHT_BLOCK_BINDING{ 7 };
+        static inline constexpr int REALISTIC_SKYBOX_BLOCK_BINDING{ 8 };
 
         UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
@@ -175,6 +176,177 @@ namespace Poe
         size_t GetSize() const { return mSize; }
         unsigned GetMode() const { return mMode; }
         unsigned GetBindLoc() const { return mBindLoc; }
+    };
+
+    ////////////////////////////////////////
+    struct RealisticSkyboxMaterial
+    {
+        glm::vec3 mRayleighScatteringCoefficient;
+        glm::vec3 mRayOrigin;
+        glm::vec3 mSunPosition;
+        float mSunIntensity;
+        float mPlanetRadius;
+        float mAtmosphereRadius;
+        float mMieScatteringCoefficient;
+        float mRayleighScaleHeight;
+        float mMieScaleHeight;
+        float mMiePreferredScatteringDirection;
+    };
+
+    ////////////////////////////////////////
+    struct RealisticSkyboxUB__DATA
+    {
+        alignas(16) float rayleighScatteringCoefficient[3];
+        alignas(16) float rayOrigin[3];
+        alignas(16) float sunPosition[3];
+        alignas(16) float sunIntensity;
+        alignas(4) float planetRadius;
+        alignas(4) float atmosphereRadius;
+        alignas(4) float mieScatteringCoefficient;
+        alignas(4) float rayleighScaleHeight;
+        alignas(4) float mieScaleHeight;
+        alignas(4) float miePreferredScatteringDirection;
+
+        void SetRayleighScatteringCoefficient(const glm::vec3& v)
+        { std::memcpy(rayleighScatteringCoefficient, glm::value_ptr(v), sizeof(glm::vec3)); }
+
+        void SetRayOrigin(const glm::vec3& v)
+        { std::memcpy(rayOrigin, glm::value_ptr(v), sizeof(glm::vec3)); }
+
+        void SetSunPosition(const glm::vec3& v)
+        { std::memcpy(sunPosition, glm::value_ptr(v), sizeof(glm::vec3)); }
+
+        void SetSunIntensity(float intensity)
+        { sunIntensity = intensity; }
+
+        void SetPlanetRadius(float radius)
+        { planetRadius = radius; }
+
+        void SetAtmosphereRadius(float radius)
+        { atmosphereRadius = radius; }
+
+        void SetMieScatteringCoefficient(float coefficient)
+        { mieScatteringCoefficient = coefficient; }
+
+        void SetRayleighScaleHeight(float height)
+        { rayleighScaleHeight = height; }
+
+        void SetMieScaleHeight(float height)
+        { mieScaleHeight = height; }
+
+        void SetMiePreferredScatteringDirection(float d)
+        { miePreferredScatteringDirection = d; }
+
+        void Set(const RealisticSkyboxMaterial& material)
+        {
+            SetRayleighScatteringCoefficient(material.mRayleighScatteringCoefficient);
+            SetRayOrigin(material.mRayOrigin);
+            SetSunPosition(material.mSunPosition);
+            SetSunIntensity(material.mSunIntensity);
+            SetPlanetRadius(material.mPlanetRadius);
+            SetAtmosphereRadius(material.mAtmosphereRadius);
+            SetMieScatteringCoefficient(material.mMieScatteringCoefficient);
+            SetRayleighScaleHeight(material.mRayleighScaleHeight);
+            SetMiePreferredScatteringDirection(material.mMiePreferredScatteringDirection);
+        }
+
+        glm::vec3 GetRayleighScatteringCoefficient() const
+        { return glm::vec3(rayleighScatteringCoefficient[0], rayleighScatteringCoefficient[1], rayleighScatteringCoefficient[2]); }
+
+        glm::vec3 GetRayOrigin() const
+        { return glm::vec3(rayOrigin[0], rayOrigin[1], rayOrigin[2]); }
+
+        glm::vec3 GetSunPosition() const
+        { return glm::vec3(sunPosition[0], sunPosition[1], sunPosition[2]); }
+
+        float GetSunIntensity() const { return sunIntensity; }
+        float GetPlanetRadius() const { return planetRadius; }
+        float GetAtmosphereRadius() const { return atmosphereRadius; }
+        float GetMieScatteringCoefficient() const { return mieScatteringCoefficient; }
+        float GetRayleighScaleHeight() const { return rayleighScaleHeight; }
+        float GetMieScaleHeight() const { return mieScaleHeight; }
+        float GetMiePreferredScatteringDirection() const { return miePreferredScatteringDirection; }
+
+        RealisticSkyboxMaterial Get() const
+        {
+            return RealisticSkyboxMaterial{ GetRayleighScatteringCoefficient(),
+                                            GetRayOrigin(),
+                                            GetSunPosition(),
+                                            GetSunIntensity(),
+                                            GetPlanetRadius(),
+                                            GetAtmosphereRadius(),
+                                            GetMieScatteringCoefficient(),
+                                            GetRayleighScaleHeight(),
+                                            GetMieScaleHeight(),
+                                            GetMiePreferredScatteringDirection() };
+        }
+    };
+
+    ////////////////////////////////////////
+    struct RealisticSkyboxUB
+    {
+    private:
+        UniformBuffer mBuffer;
+        RealisticSkyboxUB__DATA mData;
+
+    public:
+        RealisticSkyboxUB(); // default is earth atmosphere
+
+        const UniformBuffer& Buffer() const { return mBuffer; }
+
+        void SetRayleighScatteringCoefficient(const glm::vec3& v)
+        { mData.SetRayleighScatteringCoefficient(v); }
+
+        void SetRayOrigin(const glm::vec3& v)
+        { mData.SetRayOrigin(v); }
+
+        void SetSunPosition(const glm::vec3& v)
+        { mData.SetSunPosition(v); }
+
+        void SetSunIntensity(float intensity)
+        { mData.SetSunIntensity(intensity); }
+
+        void SetPlanetRadius(float radius)
+        { mData.SetPlanetRadius(radius); }
+
+        void SetAtmosphereRadius(float radius)
+        { mData.SetAtmosphereRadius(radius); }
+
+        void SetMieScatteringCoefficient(float coefficient)
+        { mData.SetMieScatteringCoefficient(coefficient); }
+
+        void SetRayleighScaleHeight(float height)
+        { mData.SetRayleighScaleHeight(height); }
+
+        void SetMieScaleHeight(float height)
+        { mData.SetMieScaleHeight(height); }
+
+        void SetMiePreferredScatteringDirection(float d)
+        { mData.SetMiePreferredScatteringDirection(d); }
+
+        void Set(const RealisticSkyboxMaterial& material)
+        { mData.Set(material); }
+
+        glm::vec3 GetRayleighScatteringCoefficient() const
+        { return mData.GetRayleighScatteringCoefficient(); }
+
+        glm::vec3 GetRayOrigin() const
+        { return mData.GetRayOrigin(); }
+
+        glm::vec3 GetSunPosition() const
+        { return mData.GetSunPosition(); }
+
+        float GetSunIntensity() const { return mData.GetSunIntensity(); }
+        float GetPlanetRadius() const { return mData.GetPlanetRadius(); }
+        float GetAtmosphereRadius() const { return mData.GetAtmosphereRadius(); }
+        float GetMieScatteringCoefficient() const { return mData.GetMieScatteringCoefficient(); }
+        float GetRayleighScaleHeight() const { return mData.GetRayleighScaleHeight(); }
+        float GetMieScaleHeight() const { return mData.GetMieScaleHeight(); }
+        float GetMiePreferredScatteringDirection() const { return mData.GetMiePreferredScatteringDirection(); }
+
+        RealisticSkyboxMaterial Get() const { return mData.Get(); }
+
+        void Update() const { mBuffer.Modify(0, sizeof(RealisticSkyboxUB__DATA), &mData); }
     };
 
     ////////////////////////////////////////

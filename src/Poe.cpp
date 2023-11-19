@@ -217,6 +217,26 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    RealisticSkyboxUB::RealisticSkyboxUB()
+        : mBuffer(sizeof(RealisticSkyboxUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::REALISTIC_SKYBOX_BLOCK_BINDING)
+    {
+        std::memset(&mData, 0, sizeof(RealisticSkyboxUB__DATA));
+
+        // default earth atmosphere settings
+        mData.SetRayleighScatteringCoefficient(glm::vec3(5.5e-6, 13e-6, 22.4e-6));
+        mData.SetRayOrigin(glm::vec3(0.0, 6372e3, 0.0));
+        mData.SetSunPosition(glm::vec3(0.0f, 0.1f, -1.0f)); // dawn
+
+        mData.SetSunIntensity(22.0f);
+        mData.SetPlanetRadius(6371e3);
+        mData.SetAtmosphereRadius(6471e3);
+        mData.SetMieScatteringCoefficient(static_cast<float>(21e-6));
+        mData.SetRayleighScaleHeight(8e3);
+        mData.SetMieScaleHeight(1.2e3);
+        mData.SetMiePreferredScatteringDirection(0.758f);
+    }
+
+    ////////////////////////////////////////
     FogUB::FogUB(const glm::vec3& color, float distance, float exponent)
         : mBuffer(sizeof(FogUB__DATA), GL_DYNAMIC_DRAW, UniformBuffer::FOG_BLOCK_BINDING)
     {
