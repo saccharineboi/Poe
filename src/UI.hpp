@@ -305,17 +305,13 @@ namespace Poe
 
         static void Render_DirLightInfo(DirLight& dirLight)
         {
-            ImGui::SetNextWindowSize({ 300, 175 });
+            ImGui::SetNextWindowSize({ 300, 125 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Directional Light #0");
 
             ImGui::ColorEdit3("Light Color", glm::value_ptr(dirLight.mColor));
-
-            ImGui::NewLine();
-            ImGui::InputFloat3("Direction", glm::value_ptr(dirLight.mDirection), "%.2f");
-
-            ImGui::NewLine();
-            ImGui::SliderFloat("Intensity", &dirLight.mIntensity, 0.1f, 20.0f);
+            ImGui::Text("Direction: %.2f %.2f %.2f", dirLight.mDirection.x, dirLight.mDirection.y, dirLight.mDirection.z);
+            ImGui::Text("Intensity: %.2f", dirLight.mIntensity);
 
             ImGui::End();
         }
