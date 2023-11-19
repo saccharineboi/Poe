@@ -304,6 +304,10 @@ namespace Poe
         : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::POINT_LIGHT_BLOCK_BINDING)
     {
         std::memset(&mLightsData, 0, DATA_SIZE);
+        for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
+        {
+            mLightsData[i].SetConstant(1.0f);
+        }
         mBuffer.Modify(0, DATA_SIZE, mLightsData);
     }
     ////////////////////////////////////////
@@ -311,6 +315,10 @@ namespace Poe
         : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::SPOT_LIGHT_BLOCK_BINDING)
     {
         std::memset(&mLightsData, 0, DATA_SIZE);
+        for (int i = 0; i < NUM_SPOT_LIGHTS; ++i)
+        {
+            mLightsData[i].SetConstant(1.0f);
+        }
         mBuffer.Modify(0, DATA_SIZE, mLightsData);
     }
 

@@ -528,7 +528,7 @@ namespace Poe
         alignas(16) float ambient[3];
         alignas(16) float diffuse[3];
         alignas(16) float specular[3];
-        alignas(16) float shininess;
+        alignas(4) float shininess;
 
         void SetAmbient(const glm::vec3& ambientColor)
         { std::memcpy(ambient, glm::value_ptr(ambientColor), sizeof(glm::vec3)); }
@@ -668,7 +668,6 @@ namespace Poe
     struct PointLight
     {
         glm::vec3 mColor;
-        glm::vec3 mDirection;
         glm::vec3 mPosition;
         float mRadius;
         float mIntensity;
@@ -698,7 +697,6 @@ namespace Poe
     struct PointLight__DATA
     {
         alignas(16) float color[3];
-        alignas(16) float direction[3];
         alignas(16) float position[3];
         alignas(4) float constant;
         alignas(4) float linear;
@@ -756,9 +754,6 @@ namespace Poe
         void SetColor(const glm::vec3& color)
         { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
 
-        void SetDirection(const glm::mat4& viewMatrix, const glm::vec3& dir)
-        { std::memcpy(data.direction, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(dir, 0.0f))), sizeof(glm::vec3)); }
-
         void SetPosition(const glm::mat4& viewMatrix, const glm::vec3& pos)
         { std::memcpy(data.position, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(pos, 1.0f))), sizeof(glm::vec3)); }
 
@@ -777,9 +772,6 @@ namespace Poe
 
         glm::vec3 GetColor() const
         { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
-
-        glm::vec3 GetDirection() const
-        { return glm::vec3(data.direction[0], data.direction[1], data.direction[2]); }
 
         glm::vec3 GetPosition() const
         { return glm::vec3(data.position[0], data.position[1], data.position[2]); }
@@ -930,12 +922,6 @@ namespace Poe
             mLightsData[ind].SetColor(color);
         }
 
-        void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetDirection(viewMatrix, dir);
-        }
-
         void SetPosition(int ind, const glm::mat4& viewMatrix, const glm::vec3& pos)
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
@@ -957,7 +943,6 @@ namespace Poe
         void Set(int ind, const glm::mat4& viewMatrix, const PointLight& pl)
         {
             SetColor(ind, pl.mColor);
-            SetDirection(ind, viewMatrix, pl.mDirection);
             SetPosition(ind, viewMatrix, pl.mPosition);
             SetRadius(ind, pl.mRadius);
             SetIntensity(ind, pl.mIntensity);
@@ -967,12 +952,6 @@ namespace Poe
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
             return mLightsData[ind].GetColor();
-        }
-
-        glm::vec3 GetDirection(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetDirection();
         }
 
         glm::vec3 GetPosition(int ind) const
@@ -996,11 +975,13 @@ namespace Poe
         PointLight Get(int ind) const
         {
             return PointLight{ GetColor(ind),
-                               GetDirection(ind),
                                GetPosition(ind),
                                GetRadius(ind),
                                GetIntensity(ind) };
         }
+
+        void Update() const
+        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
     };
 
     ////////////////////////////////////////
@@ -1121,6 +1102,9 @@ namespace Poe
                               GetRadius(ind),
                               GetIntensity(ind) };
         }
+
+        void Update() const
+        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
     };
 
     ////////////////////////////////////////
