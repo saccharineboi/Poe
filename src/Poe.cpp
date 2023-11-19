@@ -2084,4 +2084,9 @@ namespace Poe
 
     ////////////////////////////////////////
     BlinnPhongProgramInstanced::BlinnPhongProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractBlinnPhongProgram(rootPath, loader, "/shaders/blinn_phong_instanced.vert") {}
+
+    ////////////////////////////////////////
+    RealisticSkyboxProgram::RealisticSkyboxProgram(const std::string& rootPath, ShaderLoader& loader)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/realistic_skybox.vert"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/realistic_skybox.frag") } {}
 }

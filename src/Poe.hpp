@@ -2083,6 +2083,19 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct RealisticSkyboxProgram
+    {
+    private:
+        Program mProgram;
+
+    public:
+        RealisticSkyboxProgram(const std::string& rootPath, ShaderLoader&);
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+    };
+
+    ////////////////////////////////////////
     struct PbrLightProgramInstanced
     {
     private:
@@ -2093,6 +2106,9 @@ namespace Poe
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+
+        void Draw() const
+        { mProgram.Use(); glDrawArrays(GL_TRIANGLES, 0, 36); }
     };
 
     ////////////////////////////////////////
