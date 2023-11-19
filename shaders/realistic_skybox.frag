@@ -10,7 +10,7 @@ in VS_OUT
 }
 fs_in;
 
-layout (std140, binding = 8) RealisticSkyboxBlock
+layout (std140, binding = 8) uniform RealisticSkyboxBlock
 {
     vec3 uRayleighScatteringCoefficent;
     vec3 uRayOrigin;
