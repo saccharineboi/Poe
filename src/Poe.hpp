@@ -199,7 +199,7 @@ namespace Poe
         alignas(16) float rayleighScatteringCoefficient[3];
         alignas(16) float rayOrigin[3];
         alignas(16) float sunPosition[3];
-        alignas(16) float sunIntensity;
+        alignas(4) float sunIntensity;
         alignas(4) float planetRadius;
         alignas(4) float atmosphereRadius;
         alignas(4) float mieScatteringCoefficient;

@@ -234,6 +234,8 @@ namespace Poe
         mData.SetRayleighScaleHeight(8e3);
         mData.SetMieScaleHeight(1.2e3);
         mData.SetMiePreferredScatteringDirection(0.758f);
+
+        Update();
     }
 
     ////////////////////////////////////////
