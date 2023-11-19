@@ -52,6 +52,8 @@ namespace Poe
     {
         DebugUI() = delete;
 
+        inline static constexpr glm::vec4 HEADER_COLOR{ 0.0f, 1.0f, 1.0f, 1.0f };
+
         static void Init(GLFWwindow* window)
         {
             IMGUI_CHECKVERSION();
@@ -89,6 +91,7 @@ namespace Poe
         static void Begin_GlobalInfo()
         {
             ImGui::SetNextWindowSize({ 400, 0 });
+            ImGui::SetNextWindowPos({ 20, 20 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Poe Global Info (OpenGL 4.6 Core)");
         }
@@ -105,7 +108,7 @@ namespace Poe
 
         static void Draw_GlobalInfo_General()
         {
-            ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[General]");
+            ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[General]");
             ImGui::Text("%.2f MS, %.2f FPS", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Checkbox("Wireframe Mode", &mEnableWireframe);
             ImGui::Checkbox("Enable Skybox", &mEnableSkybox);
@@ -119,7 +122,7 @@ namespace Poe
 
         static void Draw_GlobalInfo_Camera(FirstPersonCamera& camera)
         {
-            ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Camera]");
+            ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Camera]");
             ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.mPosition.x, camera.mPosition.y, camera.mPosition.z);
             ImGui::Text("Direction: (%.2f, %.2f, %.2f)", camera.mDirection.x, camera.mDirection.y, camera.mDirection.z);
             ImGui::SliderFloat("Speed", &camera.mSpeed, 1.0f, 500.0f);
@@ -135,7 +138,7 @@ namespace Poe
 
         static void Draw_GlobalInfo_PostProcess(PostProcessUB& block)
         {
-            ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Post-Process]");
+            ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Post-Process]");
 
             float gamma{ block.GetGamma() };
             float exposure{ block.GetExposure() };
@@ -181,7 +184,7 @@ namespace Poe
 
         static void Draw_GlobalInfo_Fog(FogUB& fogBlock)
         {
-            ImGui::TextColored({ 0.0f, 1.0f, 1.0f, 1.0f }, "[Fog Settings]");
+            ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Fog Settings]");
             float fogDistance = fogBlock.GetDistance();
             ImGui::SliderFloat("Distance", &fogDistance, 1.0f, 1000.0f);
             if (!Utility::FloatEquals(fogDistance, fogBlock.GetDistance()))
