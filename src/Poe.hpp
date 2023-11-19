@@ -2093,6 +2093,9 @@ namespace Poe
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
+
+        void Draw() const
+        { mProgram.Use(); glDrawArrays(GL_TRIANGLES, 0, 36); }
     };
 
     ////////////////////////////////////////
@@ -2106,9 +2109,6 @@ namespace Poe
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
-
-        void Draw() const
-        { mProgram.Use(); glDrawArrays(GL_TRIANGLES, 0, 36); }
     };
 
     ////////////////////////////////////////
