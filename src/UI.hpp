@@ -123,8 +123,8 @@ namespace Poe
         static void Draw_GlobalInfo_Camera(FirstPersonCamera& camera)
         {
             ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Camera]");
-            ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.mPosition.x, camera.mPosition.y, camera.mPosition.z);
-            ImGui::Text("Direction: (%.2f, %.2f, %.2f)", camera.mDirection.x, camera.mDirection.y, camera.mDirection.z);
+            ImGui::InputFloat3("Position", glm::value_ptr(camera.mTargetPosition), "%.2f");
+            ImGui::InputFloat3("Direction", glm::value_ptr(camera.mDirection), "%.2f");
             ImGui::SliderFloat("Speed", &camera.mSpeed, 1.0f, 500.0f);
             float degrees = glm::degrees(camera.mFovy);
             ImGui::SliderFloat("FovY", &degrees, 1.0f, 180.0f);
@@ -230,34 +230,36 @@ namespace Poe
 
         static void Render_LogInfo()
         {
-            ImGui::SetNextWindowSize({ 800, 0 });
+            ImGui::SetNextWindowSize({ 600, 0 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
 
-            ImGui::Begin("stdout");
-            ImGui::BeginChild("stdout logs", { -1, 600 });
-            for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
-                ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
-            ImGui::EndChild();
-            ImGui::End();
+            if (mCoutLogs.size() > 0)
+            {
+                ImGui::Begin("stdout", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::BeginChild("stdout logs", { -1, 400 });
+                for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
+                    ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
+                ImGui::EndChild();
+                ImGui::End();
+            }
 
-            ImGui::SetNextWindowSize({ 800, 0 });
-            ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-
-            ImGui::Begin("stderr");
-            ImGui::BeginChild("stderr logs", { -1, 600 });
-            for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
-                ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
-            ImGui::EndChild();
-            ImGui::End();
+            if (mCerrLogs.size() > 0)
+            {
+                ImGui::Begin("stderr", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::BeginChild("stderr logs", { -1, 400 });
+                for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
+                    ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
+                ImGui::EndChild();
+                ImGui::End();
+            }
         }
 
         static void Render_EmissiveColorMaterialInfo(EmissiveColorMaterial& mat)
         {
+            ImGui::SetNextWindowSize({ 300, 150 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Emissive Color Material");
-            float color4[] { mat.mColor.x, mat.mColor.y, mat.mColor.z, mat.mColor.w };
-            ImGui::ColorEdit3("Color", color4);
-            std::memcpy(glm::value_ptr(mat.mColor), color4, 16);
+            ImGui::ColorEdit3("Color", glm::value_ptr(mat.mColor));
             ImGui::End();
         }
 
@@ -266,9 +268,7 @@ namespace Poe
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("PBR Light Material");
 
-            float albedo[] { material.mAlbedo.x, material.mAlbedo.y, material.mAlbedo.z };
-            ImGui::ColorEdit3("Albedo", albedo);
-            std::memcpy(glm::value_ptr(material.mAlbedo), albedo, 12);
+            ImGui::ColorEdit3("Albedo", glm::value_ptr(material.mAlbedo));
 
             ImGui::NewLine();
 
@@ -279,23 +279,42 @@ namespace Poe
             ImGui::End();
         }
 
+        static void Render_SkyboxInfo(RealisticSkyboxUB& block)
+        {
+            ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+            ImGui::SetNextWindowSize({ 750, 330 });
+            ImGui::Begin("Atmospheric Scattering");
+
+            RealisticSkyboxMaterial material{ block.Get() };
+
+            ImGui::InputFloat3("Ray Origin", glm::value_ptr(material.mRayOrigin), "%.2f");
+            ImGui::InputFloat3("Sun Position", glm::value_ptr(material.mSunPosition), "%.2f");
+            ImGui::SliderFloat("Sun Intensity", &material.mSunIntensity, 0.0f, 100.0f);
+            ImGui::InputFloat("Planet Radius", &material.mPlanetRadius);
+            ImGui::InputFloat("Atmosphere Radius", &material.mAtmosphereRadius);
+            ImGui::InputFloat3("Rayleigh Scattering Coefficient", glm::value_ptr(material.mRayleighScatteringCoefficient), "%.2f");
+            ImGui::InputFloat("Mie Scattering Coefficient", &material.mMieScatteringCoefficient);
+            ImGui::InputFloat("Rayleigh Scale Height", &material.mRayleighScaleHeight);
+            ImGui::InputFloat("Mie Scale Height", &material.mMieScaleHeight);
+            ImGui::InputFloat("Mie Preferred Scattering Direction", &material.mMiePreferredScatteringDirection);
+
+            block.Set(material);
+            block.Update();
+            ImGui::End();
+        }
+
         static void Render_DirLightInfo(DirLight& dirLight)
         {
+            ImGui::SetNextWindowSize({ 300, 175 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Directional Light #0");
 
-            float color3[] { dirLight.mColor.x, dirLight.mColor.y, dirLight.mColor.z };
-            ImGui::ColorEdit3("Light Color", color3);
-            std::memcpy(glm::value_ptr(dirLight.mColor), color3, 12);
+            ImGui::ColorEdit3("Light Color", glm::value_ptr(dirLight.mColor));
 
             ImGui::NewLine();
-
-            ImGui::SliderFloat("X", &dirLight.mDirection.x, -1.0f, 1.0f);
-            ImGui::SliderFloat("Y", &dirLight.mDirection.y, -1.0f, 1.0f);
-            ImGui::SliderFloat("Z", &dirLight.mDirection.z, -1.0f, 1.0f);
+            ImGui::InputFloat3("Direction", glm::value_ptr(dirLight.mDirection), "%.2f");
 
             ImGui::NewLine();
-
             ImGui::SliderFloat("Intensity", &dirLight.mIntensity, 0.1f, 20.0f);
 
             ImGui::End();

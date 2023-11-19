@@ -225,7 +225,7 @@ namespace Poe
         // default earth atmosphere settings
         mData.SetRayleighScatteringCoefficient(glm::vec3(5.5e-6, 13e-6, 22.4e-6));
         mData.SetRayOrigin(glm::vec3(0.0, 6372e3, 0.0));
-        mData.SetSunPosition(glm::vec3(0.0f, 0.1f, -1.0f)); // dawn
+        mData.SetSunPosition(glm::vec3(0.0f, 1.0f, -1.0f));
 
         mData.SetSunIntensity(22.0f);
         mData.SetPlanetRadius(6371e3);
