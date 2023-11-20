@@ -194,7 +194,6 @@ namespace CSItalyDemo
 
         int fbWidth, fbHeight;
         glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-        glViewport(0, 0, fbWidth, fbHeight);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
@@ -207,6 +206,7 @@ namespace CSItalyDemo
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         Poe::RealisticSkyboxProgram skybox("..", shaderLoader);
         Poe::BlinnPhongProgram blinnPhongProgram("..", shaderLoader);
+        Poe::DepthProgram depthProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
 
@@ -254,16 +254,20 @@ namespace CSItalyDemo
         blinnPhongBlock.Update();
 
         Poe::DirLight sun{
-            glm::vec3(1.0f, 1.0f, 1.0f), // color
-            glm::vec3(0.0f, 0.0f, -1.0f), // direction
-            1.0f // intensity
+            glm::vec3(1.0f, 1.0f, 1.0f),    // color
+            glm::vec3(0.0f, 0.0f, -1.0f),   // direction
+            1.0f,                           // intensity,
+            glm::mat4(1.0f),                // light matrix
+            false                           // cast shadows
         };
 
         Poe::PointLight playerLight{
             glm::vec3(1.0f, 1.0f, 0.0f),    // color
             glm::vec3(0.0f),                // position
             50.0f,                          // radius
-            10.0f                           // intensity
+            10.0f,                          // intensity
+            glm::mat4(1.0f),                // light matrix
+            false                           // cast shadows
         };
 
         Poe::SpotLight flashlight{
@@ -273,7 +277,9 @@ namespace CSItalyDemo
             glm::cos(glm::radians(20.0f)),  // inner cutoff
             glm::cos(glm::radians(30.0f)),  // outer cutoff
             20.0f,                          // radius
-            10.0f                           // intensity
+            10.0f,                          // intensity
+            glm::mat4(1.0f),                // light matrix
+            false                           // cast shadows
         };
 
         Poe::RealisticSkyboxUB skyboxBlock;
@@ -285,6 +291,18 @@ namespace CSItalyDemo
         Poe::Framebuffer depthFBO(depthMap, GL_DEPTH_ATTACHMENT);
 
         while (!glfwWindowShouldClose(window)) {
+            
+            depthProgram.Use();
+            glm::mat4 lightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 300.0f) *
+                                    glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            glViewport(0, 0, depthMap.GetWidth(), depthMap.GetHeight());
+            depthFBO.Bind();
+                glClear(GL_DEPTH_BUFFER_BIT);
+                depthProgram.SetModelMatrix(model);
+                depthProgram.SetLightMatrix(lightMatrix);
+                staticModel.Draw();
+            depthFBO.UnBind();
+
             ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 

@@ -251,9 +251,11 @@ namespace CSItalyDemo
         dirLightBlock.Buffer().TurnOn();
 
         Poe::DirLight sun{
-            glm::vec3(1.0f, 0.9f, 0.8f), // color
-            glm::normalize(glm::vec3(0.0f, -0.3f, 1.0f)), // direction
-            5.0f // intensity
+            glm::vec3(1.0f, 1.0f, 1.0f),    // color
+            glm::vec3(0.0f, 0.0f, -1.0f),   // direction
+            1.0f,                           // intensity,
+            glm::mat4(1.0f),                // light matrix
+            false                           // cast shadows
         };
 
         while (!glfwWindowShouldClose(window)) {
