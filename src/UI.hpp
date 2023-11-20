@@ -311,20 +311,21 @@ namespace Poe
 
         static void Render_DirLightInfo(DirLight& dirLight)
         {
-            ImGui::SetNextWindowSize({ 300, 125 });
+            ImGui::SetNextWindowSize({ 300, 140 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Directional Light #0", nullptr, ImGuiWindowFlags_NoResize);
 
             ImGui::ColorEdit3("Light Color", glm::value_ptr(dirLight.mColor));
             ImGui::Text("Direction: %.2f %.2f %.2f", dirLight.mDirection.x, dirLight.mDirection.y, dirLight.mDirection.z);
             ImGui::Text("Intensity: %.2f", dirLight.mIntensity);
+            ImGui::Checkbox("Cast Shadows", &dirLight.mCastShadows);
 
             ImGui::End();
         }
 
         static void Render_PointLightInfo(PointLight& pointLight)
         {
-            ImGui::SetNextWindowSize({ 350, 150 });
+            ImGui::SetNextWindowSize({ 350, 175 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Point Light #0", nullptr, ImGuiWindowFlags_NoResize);
 
@@ -332,13 +333,14 @@ namespace Poe
             ImGui::Text("Light Pos: %.2f %.2f %.2f", pointLight.mPosition.x, pointLight.mPosition.y, pointLight.mPosition.z);
             ImGui::SliderFloat("Light Intensity", &pointLight.mIntensity, 0.0f, 100.0f);
             ImGui::SliderFloat("Light Radius", &pointLight.mRadius, 0.0f, 100.0f);
+            ImGui::Checkbox("Cast Shadows", &pointLight.mCastShadows);
 
             ImGui::End();
         }
 
         static void Render_SpotLightInfo(SpotLight& spotLight)
         {
-            ImGui::SetNextWindowSize({ 350, 220 });
+            ImGui::SetNextWindowSize({ 350, 250 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Spot Light #0", nullptr, ImGuiWindowFlags_NoResize);
 
@@ -349,6 +351,7 @@ namespace Poe
             ImGui::SliderFloat("Inner Cutoff", &spotLight.mInnerCutoff, 0.0f, PI);
             ImGui::SliderFloat("Outer Cutoff", &spotLight.mOuterCutoff, 0.0f, PI);
             ImGui::SliderFloat("Radius", &spotLight.mRadius, 0.0f, 100.0f);
+            ImGui::Checkbox("Cast Shadows", &spotLight.mCastShadows);
 
             ImGui::End();
         }
