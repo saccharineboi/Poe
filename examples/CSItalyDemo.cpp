@@ -205,15 +205,15 @@ namespace CSItalyDemo
 
         Poe::ShaderLoader shaderLoader;
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
-        Poe::EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         Poe::RealisticSkyboxProgram skybox("..", shaderLoader);
+        Poe::BlinnPhongProgram blinnPhongProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
 
         Poe::Texture2DLoader texture2DLoader;
         auto staticModel = LoadCsItaly("..", texture2DLoader);
 
-        auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
 
@@ -233,10 +233,25 @@ namespace CSItalyDemo
         transformBlock.Buffer().TurnOn();
 
         Poe::EmissiveColorMaterial gridMaterial{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) };
-        Poe::EmissiveTextureMaterial modelMaterial{ glm::vec2(1.0f), glm::vec2(0.0f) };
 
         Poe::DirLightUB dirLightBlock;
         dirLightBlock.Buffer().TurnOn();
+
+        Poe::PointLightUB pointLightBlock;
+        pointLightBlock.Buffer().TurnOn();
+
+        Poe::SpotLightUB spotLightBlock;
+        spotLightBlock.Buffer().TurnOn();
+
+        Poe::BlinnPhongMaterialUB blinnPhongBlock;
+        blinnPhongBlock.Buffer().TurnOn();
+
+        Poe::BlinnPhongMaterial blinnPhongMaterial{ glm::vec3(1.0f, 1.0f, 1.0f),
+                                                    glm::vec3(1.0f, 1.0f, 1.0f),
+                                                    glm::vec3(1.0f, 1.0f, 1.0f),
+                                                    32.0f };
+        blinnPhongBlock.Set(blinnPhongMaterial);
+        blinnPhongBlock.Update();
 
         Poe::DirLight sun{
             glm::vec3(1.0f, 0.9f, 0.8f), // color
@@ -272,24 +287,38 @@ namespace CSItalyDemo
             transformBlock.Update();
             fogBlock.Update();
 
+            sun.mDirection = glm::normalize(-skyboxBlock.GetSunPosition());
+            sun.mIntensity = glm::max(0.0f, skyboxBlock.GetSunIntensity() * glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), glm::normalize(skyboxBlock.GetSunPosition())));
             dirLightBlock.Set(0, mainCamera.mView, sun);
             dirLightBlock.Update();
 
-            emissiveTextureProgram.Use();
-            emissiveTextureProgram.SetMaterial(modelMaterial);
-            emissiveTextureProgram.SetModelMatrix(model);
+            pointLightBlock.SetColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
+            pointLightBlock.SetPosition(0, mainCamera.mView, mainCamera.mPosition);
+            pointLightBlock.SetRadius(0, 100.0f);
+            pointLightBlock.SetIntensity(0, 10.0f);
+            pointLightBlock.Update();
+
+            glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.mView * model))); 
+
+            blinnPhongProgram.Use();
+            blinnPhongProgram.SetModelMatrix(model);
+            blinnPhongProgram.SetNormalMatrix(normal);
+            blinnPhongProgram.SetAmbientFactor(0.1f);
+            blinnPhongProgram.SetTexMultiplier(glm::vec2(1.0f));
+            blinnPhongProgram.SetTexOffset(glm::vec2(0.0f));
             staticModel.Draw();
 
             if (Poe::DebugUI::mEnableGrid) {
                 emissiveColorProgram.Use();
                 emissiveColorProgram.SetMaterial(gridMaterial);
-                emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
+                emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(100.0f)));
                 grid.Bind();
                 grid.Draw(GL_LINES);
             }
 
-            if (Poe::DebugUI::mEnableSkybox)
+            if (Poe::DebugUI::mEnableSkybox) {
                 skybox.Draw();
+            }
 
             ppStack.SecondPass();
             ppStack.BindColor0();
@@ -308,6 +337,7 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppBlock);
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
                 Poe::DebugUI::Render_DirLightInfo(sun);
+                Poe::DebugUI::Render_SkyboxInfo(skyboxBlock);
             Poe::DebugUI::End_GlobalInfo();
             Poe::DebugUI::Render_LogInfo();
 
