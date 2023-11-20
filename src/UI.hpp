@@ -202,6 +202,12 @@ namespace Poe
             ImGui::NewLine();
         }
 
+        static void Draw_GlobalIlluminationInfo(float& ambientFactor)
+        {
+            ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Global Illumination]");
+            ImGui::SliderFloat("Ambient Factor", &ambientFactor, 0.0f, 1.0f);
+        }
+
         static inline constexpr int MAX_COUT_LOGS = 500;
         static inline constexpr int MAX_CERR_LOGS = 500;
 
