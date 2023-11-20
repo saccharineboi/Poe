@@ -1,5 +1,9 @@
 #version 460 core
 
+#define NUM_DIR_LIGHTS 2
+#define NUM_POINT_LIGHTS 4
+#define NUM_SPOT_LIGHTS 4
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
 layout (location = 2) in vec3 aNorm;
@@ -17,13 +21,91 @@ layout (location = 1) uniform mat3 uNorm;
 layout (location = 2) uniform vec2 uTexOffset;
 layout (location = 3) uniform vec2 uTexMultiplier;
 
+struct DirLight_t
+{
+    vec3 color;
+    vec3 direction;
+    float intensity;
+    mat4 lightSpace;
+    bool castShadows;
+};
+
+layout (std140, binding = 3) uniform DirLightBlock
+{
+    DirLight_t uDirLights[NUM_DIR_LIGHTS];
+};
+
+struct PointLight_t
+{
+    vec3 color;
+    vec3 position;
+    float constant;
+    float linear;
+    float quadratic;
+    float intensity;
+    mat4 lightSpace;
+    bool castShadows;
+};
+
+layout (std140, binding = 6) uniform PointLightBlock
+{
+    PointLight_t uPointLights[NUM_POINT_LIGHTS];
+};
+
+struct SpotLight_t
+{
+    vec3 color;
+    vec3 direction;
+    vec3 position;
+    float innerCutoff;
+    float outerCutoff;
+    float constant;
+    float linear;
+    float quadratic;
+    float intensity;
+    mat4 lightSpace;
+    bool castShadows;
+};
+
+layout (std140, binding = 7) uniform SpotLightBlock
+{
+    SpotLight_t uSpotLights[NUM_SPOT_LIGHTS];
+};
+
 out VS_OUT
 {
     vec3 vFragPos;
+    vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS];
+    vec4 vFragPosInPointLightSpace[NUM_POINT_LIGHTS];
+    vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
     vec3 vNorm;
     vec2 vTexCoord;
 }
 vs_out;
+
+void ComputeDirLightSpace()
+{
+    for (int i = 0; i < NUM_DIR_LIGHTS; ++i)
+    {
+        vs_out.vFragPosInDirLightSpace[i] = uDirLights[i].lightSpace * uModel * vec4(aPos, 1.0f);
+    }
+}
+
+void ComputePointLightSpace()
+{
+    for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
+    {
+        vs_out.vFragPosInPointLightSpace[i] = uPointLights[i].lightSpace * uModel * vec4(aPos, 1.0f);
+    }
+}
+
+void ComputeSpotLightSpace()
+{
+    for (int i = 0; i < NUM_SPOT_LIGHTS; ++i)
+    {
+        vs_out.vFragPosInSpotLightSpace[i] = uSpotLights[i].lightSpace * uModel * vec4(aPos, 1.0f);
+    }
+}
 
 void main()
 {
@@ -31,4 +113,8 @@ void main()
     vs_out.vFragPos = vec3(uView * uModel * vec4(aPos, 1.0f));
     vs_out.vNorm = uNorm * aNorm;
     vs_out.vTexCoord = aTexCoord * uTexMultiplier + uTexOffset; 
+
+    ComputeDirLightSpace();
+    ComputePointLightSpace();
+    ComputeSpotLightSpace();
 }

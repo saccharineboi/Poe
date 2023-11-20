@@ -7,6 +7,9 @@
 in VS_OUT
 {
     vec3 vFragPos;
+    vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS];
+    vec4 vFragPosInPointLightSpace[NUM_POINT_LIGHTS];
+    vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
     vec3 vNorm;
     vec2 vTexCoord;
 }
@@ -33,6 +36,8 @@ struct DirLight_t
     vec3 color;
     vec3 direction;
     float intensity;
+    mat4 lightSpace;
+    bool castShadows;
 };
 
 layout (std140, binding = 3) uniform DirLightBlock
@@ -48,6 +53,8 @@ struct PointLight_t
     float linear;
     float quadratic;
     float intensity;
+    mat4 lightSpace;
+    bool castShadows;
 };
 
 layout (std140, binding = 6) uniform PointLightBlock
@@ -66,6 +73,8 @@ struct SpotLight_t
     float linear;
     float quadratic;
     float intensity;
+    mat4 lightSpace;
+    bool castShadows;
 };
 
 layout (std140, binding = 7) uniform SpotLightBlock
