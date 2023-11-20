@@ -235,7 +235,7 @@ namespace Poe
 
             if (mCoutLogs.size() > 0)
             {
-                ImGui::Begin("stdout", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::Begin("stdout", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stdout logs", { -1, 400 });
                 for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
                     ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
@@ -245,7 +245,7 @@ namespace Poe
 
             if (mCerrLogs.size() > 0)
             {
-                ImGui::Begin("stderr", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::Begin("stderr", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stderr logs", { -1, 400 });
                 for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
                     ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
@@ -258,7 +258,7 @@ namespace Poe
         {
             ImGui::SetNextWindowSize({ 300, 150 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Emissive Color Material");
+            ImGui::Begin("Emissive Color Material", nullptr, ImGuiWindowFlags_NoResize);
             ImGui::ColorEdit3("Color", glm::value_ptr(mat.mColor));
             ImGui::End();
         }
@@ -283,7 +283,7 @@ namespace Poe
         {
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::SetNextWindowSize({ 750, 330 });
-            ImGui::Begin("Atmospheric Scattering");
+            ImGui::Begin("Atmospheric Scattering", nullptr, ImGuiWindowFlags_NoResize);
 
             RealisticSkyboxMaterial material{ block.Get() };
 
@@ -307,11 +307,25 @@ namespace Poe
         {
             ImGui::SetNextWindowSize({ 300, 125 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Directional Light #0");
+            ImGui::Begin("Directional Light #0", nullptr, ImGuiWindowFlags_NoResize);
 
             ImGui::ColorEdit3("Light Color", glm::value_ptr(dirLight.mColor));
             ImGui::Text("Direction: %.2f %.2f %.2f", dirLight.mDirection.x, dirLight.mDirection.y, dirLight.mDirection.z);
             ImGui::Text("Intensity: %.2f", dirLight.mIntensity);
+
+            ImGui::End();
+        }
+
+        static void Render_PointLightInfo(PointLight& pointLight)
+        {
+            ImGui::SetNextWindowSize({ 350, 150 });
+            ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+            ImGui::Begin("Point Light #0", nullptr, ImGuiWindowFlags_NoResize);
+
+            ImGui::ColorEdit3("Light Color", glm::value_ptr(pointLight.mColor));
+            ImGui::Text("Light Pos: %.2f %.2f %.2f", pointLight.mPosition.x, pointLight.mPosition.y, pointLight.mPosition.z);
+            ImGui::SliderFloat("Light Intensity", &pointLight.mIntensity, 0.0f, 100.0f);
+            ImGui::SliderFloat("Light Radius", &pointLight.mRadius, 0.0f, 100.0f);
 
             ImGui::End();
         }
