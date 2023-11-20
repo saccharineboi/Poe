@@ -20,6 +20,7 @@
 #include "Utility.hpp"
 #include "Cameras.hpp"
 #include "Suppress.hpp"
+#include "Constants.hpp"
 
 #include <map>
 
@@ -1420,6 +1421,10 @@ namespace Poe
         glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, mParams.minF);
         glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, mParams.magF);
 
+        if (mParams.wrapS == GL_CLAMP_TO_BORDER || mParams.wrapT == GL_CLAMP_TO_BORDER) {
+            glTextureParameterfv(mId, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(mBorderColor));
+        }
+
         if (!Utility::FloatEquals(mParams.maxAnisotropy, 0.0f) && GLAD_GL_EXT_texture_filter_anisotropic) {
             float gpuMaxAnisotropy;
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
@@ -1427,7 +1432,9 @@ namespace Poe
         }
 
         if (mParams.internalFormat == GL_DEPTH_COMPONENT) {
-            glTextureStorage2D(mId, 1, GL_DEPTH_COMPONENT24, mWidth, mHeight);
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+            glTextureStorage2D(mId, 1, GL_DEPTH_COMPONENT16, mWidth, mHeight);
         }
         else if (mParams.generateMipmaps) {
             mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
@@ -1483,6 +1490,18 @@ namespace Poe
     template <typename T>
     Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params)
         : mUrl{"<None>"}, mParams{params}
+    {
+        mWidth = width;
+        mHeight = height;
+        mNumChannels = numChannels;
+
+        Create(data);
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    Texture2D::Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams& params, const glm::vec4& borderColor)
+        : mUrl{"<None>"}, mParams{params}, mBorderColor{borderColor}
     {
         mWidth = width;
         mHeight = height;
@@ -1550,14 +1569,14 @@ namespace Poe
     Texture2D CreateDepthMap(int width, int height)
     {
         Texture2DParams params{};
-        params.minF = params.magF = GL_NEAREST;
-        params.wrapS = params.wrapT = GL_REPEAT;
+        params.minF = params.magF = GL_LINEAR;
+        params.wrapS = params.wrapT = GL_CLAMP_TO_BORDER;
         params.generateMipmaps = false;
         params.type = GL_FLOAT;
         params.internalFormat = params.textureFormat = GL_DEPTH_COMPONENT;
         params.maxAnisotropy = 0.0f;
         float* data = nullptr;
-        return Texture2D(data, width, height, 1, params);
+        return Texture2D(data, width, height, 1, params, glm::vec4(1.0f));
     }
 
     ////////////////////////////////////////
@@ -2116,6 +2135,10 @@ namespace Poe
             glUniform1i(MATERIAL_AMBIENT_TEXTURE_LOC, 0);
             glUniform1i(MATERIAL_DIFFUSE_TEXTURE_LOC, 1);
             glUniform1i(MATERIAL_SPECULAR_TEXTURE_LOC, 2);
+
+            glUniform1i(DIR_LIGHT_DEPTH_MAP, DIR_LIGHT_DEPTH_MAP_BIND_POINT);
+            glUniform1i(POINT_LIGHT_DEPTH_MAP, POINT_LIGHT_DEPTH_MAP_BIND_POINT);
+            glUniform1i(SPOT_LIGHT_DEPTH_MAP, SPOT_LIGHT_DEPTH_MAP_BIND_POINT);
         mProgram.Halt();
     }
 

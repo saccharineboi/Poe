@@ -29,4 +29,9 @@ namespace Poe
     inline constexpr float R2D = 57.295779f;
     inline constexpr float D2R = 0.017453293f;
     inline constexpr float EPSILON = 0.000001f;
+
+    ////////////////////////////////////////
+    inline constexpr int DIR_LIGHT_DEPTH_MAP_BIND_POINT{ 13 };
+    inline constexpr int POINT_LIGHT_DEPTH_MAP_BIND_POINT{ 14 };
+    inline constexpr int SPOT_LIGHT_DEPTH_MAP_BIND_POINT{ 15 };
 }

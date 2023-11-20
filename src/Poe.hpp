@@ -1448,12 +1448,16 @@ namespace Poe
         void Create(T* data);
 
         int mNumMipmaps;
+        glm::vec4 mBorderColor;
 
     public:
         Texture2D(const std::string& url, const Texture2DParams&);
 
         template <typename T>
         Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams&);
+
+        template <typename T>
+        Texture2D(T* data, int width, int height, int numChannels, const Texture2DParams&, const glm::vec4&);
 
         ~Texture2D() { glDeleteTextures(1, &mId); }
 
@@ -1481,6 +1485,7 @@ namespace Poe
         unsigned GetType() const { return mParams.type; }
 
         int GetNumMipmaps() const { return mNumMipmaps; }
+        glm::vec4 GetBorderColor() const { return mBorderColor; }
 
         void Bind(unsigned loc = 0) const { glBindTextureUnit(loc, mId); }
         void UnBind(unsigned loc = 0) const { glBindTextureUnit(loc, 0); }
@@ -2168,6 +2173,10 @@ namespace Poe
         static inline constexpr int MATERIAL_DIFFUSE_TEXTURE_LOC{ 5 };
         static inline constexpr int MATERIAL_SPECULAR_TEXTURE_LOC{ 6 };
         static inline constexpr int AMBIENT_FACTOR_LOC{ 7 };
+
+        static inline constexpr int DIR_LIGHT_DEPTH_MAP{ 8 };
+        static inline constexpr int POINT_LIGHT_DEPTH_MAP{ 9 };
+        static inline constexpr int SPOT_LIGHT_DEPTH_MAP{ 10 };
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
