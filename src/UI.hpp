@@ -352,5 +352,19 @@ namespace Poe
 
             ImGui::End();
         }
+
+        static void Render_BlinnPhongMaterialInfo(BlinnPhongMaterial& material)
+        {
+            ImGui::SetNextWindowSize({ 350, 150 });
+            ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+            ImGui::Begin("Blinn Phong Material", nullptr, ImGuiWindowFlags_NoResize);
+
+            ImGui::ColorEdit3("Ambient Color", glm::value_ptr(material.mAmbient));
+            ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(material.mDiffuse));
+            ImGui::ColorEdit3("Specular Color", glm::value_ptr(material.mSpecular));
+            ImGui::InputFloat("Shininess", &material.mShininess);
+
+            ImGui::End();
+        }
     };
 }
