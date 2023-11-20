@@ -1352,6 +1352,7 @@ namespace Poe
     Texture2D CreateCheckerboardTexture2D(const glm::vec3& color0 = glm::vec3(0.75f),
                                           const glm::vec3& color1 = glm::vec3(0.25f));
     Texture2D CreateFramebufferTexture2D(int width, int height);
+    Texture2D CreateDepthMap(int width, int height);
 
     ////////////////////////////////////////
     struct Texture2DLoader
@@ -1495,6 +1496,7 @@ namespace Poe
 
     public:
         explicit Framebuffer(const Texture2D&);
+        Framebuffer(const Texture2D&, unsigned attachmentType);
         Framebuffer(const Texture2D&, const Renderbuffer&);
         Framebuffer(const Texture2DMultiSample&, const RenderbufferMultiSample&);
 

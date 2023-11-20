@@ -281,6 +281,9 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
+        Poe::Texture2D depthMap = Poe::CreateDepthMap(1024, 1024);
+        Poe::Framebuffer depthFBO(depthMap, GL_DEPTH_ATTACHMENT);
+
         while (!glfwWindowShouldClose(window)) {
             ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

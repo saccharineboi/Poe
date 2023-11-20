@@ -1420,21 +1420,25 @@ namespace Poe
         glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, mParams.minF);
         glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, mParams.magF);
 
-        if (GLAD_GL_EXT_texture_filter_anisotropic) {
+        if (!Utility::FloatEquals(mParams.maxAnisotropy, 0.0f) && GLAD_GL_EXT_texture_filter_anisotropic) {
             float gpuMaxAnisotropy;
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
             glTextureParameterf(mId, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
         }
 
-        if (mParams.generateMipmaps) {
+        if (mParams.internalFormat == GL_DEPTH_COMPONENT) {
+            glTextureStorage2D(mId, 1, GL_DEPTH_COMPONENT24, mWidth, mHeight);
+        }
+        else if (mParams.generateMipmaps) {
             mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
             glTextureStorage2D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight);
+            glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
         }
         else {
             mNumMipmaps = 0;
             glTextureStorage2D(mId, 1, mParams.internalFormat, mWidth, mHeight);
+            glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
         }
-        glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
 
         if (mParams.generateMipmaps) glGenerateTextureMipmap(mId);
         DebugUI::PushLog(stdout, "[DEBUG] Loaded 2D texture %s (%d:%d:%d, %d mipmaps)\n", mUrl.c_str(), mWidth, mHeight, mNumChannels, mNumMipmaps);
@@ -1540,6 +1544,20 @@ namespace Poe
         params.textureFormat = GL_RGBA;
         unsigned char* data = nullptr;
         return Texture2D(data, width, height, 3, params);
+    }
+
+    ////////////////////////////////////////
+    Texture2D CreateDepthMap(int width, int height)
+    {
+        Texture2DParams params{};
+        params.minF = params.magF = GL_NEAREST;
+        params.wrapS = params.wrapT = GL_REPEAT;
+        params.generateMipmaps = false;
+        params.type = GL_FLOAT;
+        params.internalFormat = params.textureFormat = GL_DEPTH_COMPONENT;
+        params.maxAnisotropy = 0.0f;
+        float* data = nullptr;
+        return Texture2D(data, width, height, 1, params);
     }
 
     ////////////////////////////////////////
@@ -1672,10 +1690,22 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Framebuffer::Framebuffer(const Texture2D& colorAttachment)
+    Framebuffer::Framebuffer(const Texture2D& attachment)
     {
         glCreateFramebuffers(1, &mId);
-        glNamedFramebufferTexture(mId, GL_COLOR_ATTACHMENT0, colorAttachment.GetId(), 0);
+        glNamedFramebufferTexture(mId, GL_COLOR_ATTACHMENT0, attachment.GetId(), 0);
+        Check();
+    }
+
+    ////////////////////////////////////////
+    Framebuffer::Framebuffer(const Texture2D& attachment, unsigned attachmentType)
+    {
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTexture(mId, attachmentType, attachment.GetId(), 0);
+        if (attachmentType == GL_DEPTH_ATTACHMENT && attachment.GetTextureFormat() == GL_DEPTH_COMPONENT) {
+            glNamedFramebufferDrawBuffer(mId, GL_NONE);
+            glNamedFramebufferReadBuffer(mId, GL_NONE);
+        }
         Check();
     }
 
