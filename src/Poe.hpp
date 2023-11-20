@@ -2069,6 +2069,46 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct AbstractDepthProgram
+    {
+    protected:
+        Program mProgram;
+
+    public:
+        AbstractDepthProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
+
+        virtual ~AbstractDepthProgram() {}
+
+        static inline constexpr int LIGHT_MATRIX_LOC{ 0 };
+        static inline constexpr int MODEL_MATRIX_LOC{ 1 };
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+
+        virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
+
+        void SetLightMatrix(const glm::mat4& lightMatrix) const
+        { glUniformMatrix4fv(LIGHT_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(lightMatrix)); }
+    };
+
+    ////////////////////////////////////////
+    struct DepthProgram : public AbstractDepthProgram
+    {
+        DepthProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override
+        { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
+    };
+
+    ////////////////////////////////////////
+    struct DepthProgramInstanced : public AbstractDepthProgram
+    {
+        DepthProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
+    };
+
+    ////////////////////////////////////////
     struct RealisticSkyboxProgram
     {
     private:
