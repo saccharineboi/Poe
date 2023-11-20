@@ -150,10 +150,10 @@ vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexCo
         float shadowComp = 0.0f;
         if (uDirLights[i].castShadows)
         {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i], normal, lightDir);
+            shadowComp = 1.0f - ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i], normal, lightDir);
         }
 
-        result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
+        result += (1.0f - shadowComp) * uDirLights[i].intensity * (diffuse + specular);
     }
     return result;
 }
