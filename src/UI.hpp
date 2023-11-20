@@ -335,5 +335,22 @@ namespace Poe
 
             ImGui::End();
         }
+
+        static void Render_SpotLightInfo(SpotLight& spotLight)
+        {
+            ImGui::SetNextWindowSize({ 350, 220 });
+            ImGui::SetNextWindowBgAlpha(BG_ALPHA);
+            ImGui::Begin("Spot Light #0", nullptr, ImGuiWindowFlags_NoResize);
+
+            ImGui::ColorEdit3("Light Color", glm::value_ptr(spotLight.mColor));
+            ImGui::Text("Light Direction: %.2f %.2f %.2f", spotLight.mDirection.x, spotLight.mDirection.y, spotLight.mDirection.z);
+            ImGui::Text("Light Position: %.2f %.2f %.2f", spotLight.mPosition.x, spotLight.mPosition.y, spotLight.mPosition.z);
+            ImGui::SliderFloat("Light Intensity", &spotLight.mIntensity, 0.0f, 100.0f);
+            ImGui::SliderFloat("Inner Cutoff", &spotLight.mInnerCutoff, 0.0f, PI);
+            ImGui::SliderFloat("Outer Cutoff", &spotLight.mOuterCutoff, 0.0f, PI);
+            ImGui::SliderFloat("Radius", &spotLight.mRadius, 0.0f, 100.0f);
+
+            ImGui::End();
+        }
     };
 }
