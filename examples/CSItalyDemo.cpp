@@ -288,24 +288,40 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
-        Poe::Texture2D depthMap = Poe::CreateDepthMap(2048, 2048);
-        Poe::Framebuffer depthFBO(depthMap, GL_DEPTH_ATTACHMENT);
+        Poe::Texture2D dirLightDepthMap = Poe::CreateDepthMap(2048, 2048);
+        Poe::Framebuffer dirLightDepthFBO(dirLightDepthMap, GL_DEPTH_ATTACHMENT);
+
+        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(2048, 2048);
+        Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);;
 
         while (!glfwWindowShouldClose(window)) {
             
             depthProgram.Use();
             sun.mLightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -200.0f, 200.0f) *
                                glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            glViewport(0, 0, depthMap.GetWidth(), depthMap.GetHeight());
-            depthFBO.Bind();
+            glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
+            dirLightDepthFBO.Bind();
                 glDisable(GL_CULL_FACE);
                 glClear(GL_DEPTH_BUFFER_BIT);
                 depthProgram.SetModelMatrix(model);
                 depthProgram.SetLightMatrix(sun.mLightMatrix);
                 staticModel.Draw();
                 glEnable(GL_CULL_FACE);
-            depthFBO.UnBind();
-            depthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
+            dirLightDepthFBO.UnBind();
+            dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
+
+            {
+                glm::mat4 shadowPerspective = glm::perspective(glm::radians(90.0f),
+                                                               static_cast<float>(pointLightDepthMap.GetWidth()) / static_cast<float>(pointLightDepthMap.GetHeight()),
+                                                               1.0f, playerLight.mRadius);
+
+                std::vector<glm::mat4> viewTransforms{ glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)) };
+            }
 
             ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
