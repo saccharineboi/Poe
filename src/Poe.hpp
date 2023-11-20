@@ -1511,6 +1511,21 @@ namespace Poe
     enum class CubemapFace { Front, Back, Left, Right, Top, Bottom };
 
     ////////////////////////////////////////
+    struct CubemapParams
+    {
+        unsigned textureFormat = GL_RGB;
+        unsigned internalFormat = GL_RGB8;
+        bool generateMipmaps = true;
+        float maxAnisotropy = 16.0f;
+        int wrapS = GL_REPEAT;
+        int wrapT = GL_REPEAT;
+        int wrapR = GL_REPEAT;
+        int minF = GL_LINEAR_MIPMAP_LINEAR;
+        int magF = GL_LINEAR;
+        unsigned type = GL_UNSIGNED_BYTE;
+    };
+
+    ////////////////////////////////////////
     struct Cubemap
     {
     private:
@@ -1519,9 +1534,11 @@ namespace Poe
         int mHeight;
         int mNumChannels;
         int mNumMipmaps;
+        CubemapParams mParams;
 
     public:
         Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
+        Cubemap(int width, int height, const CubemapParams&);
 
         ~Cubemap() { glDeleteTextures(1, &mId); }
 
@@ -1539,7 +1556,21 @@ namespace Poe
         int GetHeight() const { return mHeight; }
         int GetNumChannels() const { return mNumChannels; }
         int GetNumMipmaps() const { return mNumMipmaps; }
+
+        unsigned GetTextureFormat() const { return mParams.textureFormat; }
+        unsigned GetInternalFormat() const { return mParams.internalFormat; }
+        bool GetGenerateMipmaps() const { return mParams.generateMipmaps; }
+        float GetMaxAnisotropy() const { return mParams.maxAnisotropy; }
+        int GetWrapS() const { return mParams.wrapS; }
+        int GetWrapT() const { return mParams.wrapT; }
+        int GetWrapR() const { return mParams.wrapR; }
+        int GetMinF() const { return mParams.minF; }
+        int GetMagF() const { return mParams.magF; }
+        unsigned GetType() const { return mParams.type; }
     };
+
+    ////////////////////////////////////////
+    Cubemap CreateDepthCubemap(int width, int height);
 
     ////////////////////////////////////////
     struct Renderbuffer
@@ -1640,6 +1671,7 @@ namespace Poe
     public:
         explicit Framebuffer(const Texture2D&);
         Framebuffer(const Texture2D&, unsigned attachmentType);
+        Framebuffer(const Cubemap&, unsigned attachmentType);
         Framebuffer(const Texture2D&, const Renderbuffer&);
         Framebuffer(const Texture2DMultiSample&, const RenderbufferMultiSample&);
 

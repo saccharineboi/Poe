@@ -1593,6 +1593,7 @@ namespace Poe
 
     ////////////////////////////////////////
     Cubemap::Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces)
+        : mParams{}
     {
         assert(faces.size() == 6);
 
@@ -1645,8 +1646,55 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    Cubemap CreateDepthCubemap(int width, int height)
+    {
+        CubemapParams params;
+        params.generateMipmaps = false;
+        params.internalFormat = GL_DEPTH_COMPONENT16;
+        params.textureFormat = GL_DEPTH_COMPONENT;
+        params.minF = params.magF = GL_LINEAR;
+        params.wrapS = params.wrapT = params.wrapR = GL_CLAMP_TO_EDGE;
+        params.type = GL_FLOAT;
+        params.maxAnisotropy = 0.0f;
+        return Cubemap(width, height, params);
+    }
+
+    ////////////////////////////////////////
+    Cubemap::Cubemap(int width, int height, const CubemapParams& params)
+        : mWidth{width}, mHeight{height}, mNumChannels{}, mNumMipmaps{}, mParams{params}
+    {
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mId);
+
+        if (params.generateMipmaps) {
+            mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
+        }
+        else {
+            mNumMipmaps = 1;
+        }
+        glTextureStorage2D(mId, mNumMipmaps, params.internalFormat, mWidth, mHeight);
+
+        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, params.magF);
+        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, params.minF);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, params.wrapS);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, params.wrapT);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_R, params.wrapR);
+
+        if (params.textureFormat == GL_DEPTH_COMPONENT) {
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        }
+
+        for (int i = 0; i < 6; ++i) {
+            glTextureSubImage3D(mId, 0, 0, 0, i, mWidth, mHeight, 1, params.textureFormat, params.type, nullptr);
+        }
+        if (params.generateMipmaps) {
+            glGenerateTextureMipmap(mId);
+        }
+    }
+
+    ////////////////////////////////////////
     Cubemap::Cubemap(Cubemap&& other)
-        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mNumMipmaps{other.mNumMipmaps}
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mNumChannels{other.mNumChannels}, mNumMipmaps{other.mNumMipmaps}, mParams{other.mParams}
     {
         other.mId = 0;
     }
@@ -1662,6 +1710,7 @@ namespace Poe
             mHeight = other.mHeight;
             mNumChannels = other.mNumChannels;
             mNumMipmaps = other.mNumMipmaps;
+            mParams = other.mParams;
 
             other.mId = 0;
         }
@@ -1718,6 +1767,17 @@ namespace Poe
 
     ////////////////////////////////////////
     Framebuffer::Framebuffer(const Texture2D& attachment, unsigned attachmentType)
+    {
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTexture(mId, attachmentType, attachment.GetId(), 0);
+        if (attachmentType == GL_DEPTH_ATTACHMENT && attachment.GetTextureFormat() == GL_DEPTH_COMPONENT) {
+            glNamedFramebufferDrawBuffer(mId, GL_NONE);
+            glNamedFramebufferReadBuffer(mId, GL_NONE);
+        }
+        Check();
+    }
+
+    Framebuffer::Framebuffer(const Cubemap& attachment, unsigned attachmentType)
     {
         glCreateFramebuffers(1, &mId);
         glNamedFramebufferTexture(mId, attachmentType, attachment.GetId(), 0);
