@@ -19,6 +19,7 @@
 #include "UI.hpp"
 #include "Utility.hpp"
 #include "Cameras.hpp"
+#include "Constants.hpp"
 
 #include <chrono>
 #include <thread>
@@ -258,7 +259,7 @@ namespace CSItalyDemo
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
             glm::mat4(1.0f),                // light matrix
-            false                           // cast shadows
+            true                            // cast shadows
         };
 
         Poe::PointLight playerLight{
@@ -287,21 +288,24 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
-        Poe::Texture2D depthMap = Poe::CreateDepthMap(1024, 1024);
+        Poe::Texture2D depthMap = Poe::CreateDepthMap(2048, 2048);
         Poe::Framebuffer depthFBO(depthMap, GL_DEPTH_ATTACHMENT);
 
         while (!glfwWindowShouldClose(window)) {
             
             depthProgram.Use();
-            glm::mat4 lightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 300.0f) *
-                                    glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            sun.mLightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -200.0f, 200.0f) *
+                               glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             glViewport(0, 0, depthMap.GetWidth(), depthMap.GetHeight());
             depthFBO.Bind();
+                glDisable(GL_CULL_FACE);
                 glClear(GL_DEPTH_BUFFER_BIT);
                 depthProgram.SetModelMatrix(model);
-                depthProgram.SetLightMatrix(lightMatrix);
+                depthProgram.SetLightMatrix(sun.mLightMatrix);
                 staticModel.Draw();
+                glEnable(GL_CULL_FACE);
             depthFBO.UnBind();
+            depthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
 
             ppStack.FirstPass();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
