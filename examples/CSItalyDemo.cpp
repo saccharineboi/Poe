@@ -254,7 +254,7 @@ namespace CSItalyDemo
         blinnPhongBlock.Update();
 
         Poe::DirLight sun{
-            glm::vec3(1.0f, 0.9f, 0.8f), // color
+            glm::vec3(1.0f, 1.0f, 1.0f), // color
             glm::vec3(0.0f, 0.0f, -1.0f), // direction
             1.0f // intensity
         };
@@ -320,6 +320,9 @@ namespace CSItalyDemo
             spotLightBlock.Set(0, mainCamera.mView, flashlight);
             spotLightBlock.Update();
 
+            blinnPhongBlock.Set(blinnPhongMaterial);
+            blinnPhongBlock.Update();
+
             glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.mView * model))); 
 
             blinnPhongProgram.Use();
@@ -363,6 +366,7 @@ namespace CSItalyDemo
                 Poe::DebugUI::Render_PointLightInfo(playerLight);
                 Poe::DebugUI::Render_SpotLightInfo(flashlight);
                 Poe::DebugUI::Render_SkyboxInfo(skyboxBlock);
+                Poe::DebugUI::Render_BlinnPhongMaterialInfo(blinnPhongMaterial);
             Poe::DebugUI::End_GlobalInfo();
             Poe::DebugUI::Render_LogInfo();
 
