@@ -259,8 +259,27 @@ namespace CSItalyDemo
             1.0f // intensity
         };
 
+        Poe::PointLight playerLight{
+            glm::vec3(1.0f, 1.0f, 0.0f),    // color
+            glm::vec3(0.0f),                // position
+            50.0f,                          // radius
+            10.0f                           // intensity
+        };
+
+        Poe::SpotLight flashlight{
+            glm::vec3(1.0f),                // color
+            glm::vec3(0.0f),                // direction
+            glm::vec3(0.0f),                // position
+            glm::cos(glm::radians(20.0f)),  // inner cutoff
+            glm::cos(glm::radians(30.0f)),  // outer cutoff
+            20.0f,                          // radius
+            10.0f                           // intensity
+        };
+
         Poe::RealisticSkyboxUB skyboxBlock;
         skyboxBlock.Buffer().TurnOn();
+
+        float ambientFactor{0.1f};
 
         while (!glfwWindowShouldClose(window)) {
             ppStack.FirstPass();
@@ -292,18 +311,21 @@ namespace CSItalyDemo
             dirLightBlock.Set(0, mainCamera.mView, sun);
             dirLightBlock.Update();
 
-            pointLightBlock.SetColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
-            pointLightBlock.SetPosition(0, mainCamera.mView, mainCamera.mPosition);
-            pointLightBlock.SetRadius(0, 100.0f);
-            pointLightBlock.SetIntensity(0, 10.0f);
+            playerLight.mPosition = mainCamera.mPosition;
+            pointLightBlock.Set(0, mainCamera.mView, playerLight);
             pointLightBlock.Update();
+
+            flashlight.mPosition = mainCamera.mPosition;
+            flashlight.mDirection = mainCamera.mDirection;
+            spotLightBlock.Set(0, mainCamera.mView, flashlight);
+            spotLightBlock.Update();
 
             glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.mView * model))); 
 
             blinnPhongProgram.Use();
             blinnPhongProgram.SetModelMatrix(model);
             blinnPhongProgram.SetNormalMatrix(normal);
-            blinnPhongProgram.SetAmbientFactor(0.1f);
+            blinnPhongProgram.SetAmbientFactor(ambientFactor);
             blinnPhongProgram.SetTexMultiplier(glm::vec2(1.0f));
             blinnPhongProgram.SetTexOffset(glm::vec2(0.0f));
             staticModel.Draw();
@@ -336,7 +358,10 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_Camera(mainCamera);
                 Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppBlock);
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
+                Poe::DebugUI::Draw_GlobalIlluminationInfo(ambientFactor);
                 Poe::DebugUI::Render_DirLightInfo(sun);
+                Poe::DebugUI::Render_PointLightInfo(playerLight);
+                Poe::DebugUI::Render_SpotLightInfo(flashlight);
                 Poe::DebugUI::Render_SkyboxInfo(skyboxBlock);
             Poe::DebugUI::End_GlobalInfo();
             Poe::DebugUI::Render_LogInfo();
