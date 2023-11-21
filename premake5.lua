@@ -32,8 +32,10 @@ for _, program in ipairs(required_programs) do
 end
 
 --------------------------------------------------
+os.execute("git submodule update --init --recursive")
+
+--------------------------------------------------
 function install_glfw()
-    os.execute("git submodule update --init --recursive")
     os.execute("mkdir -p submodules/glfw/build")
 
     if not os.execute("cd submodules/glfw && cmake -B build") then
@@ -57,8 +59,6 @@ install_glfw()
 
 --------------------------------------------------
 function install_glm()
-    os.execute("git submodule update --init --recursive")
-
     os.execute("mkdir -p include")
     os.execute("cp -r submodules/glm/glm include/")
 end
@@ -67,7 +67,6 @@ install_glm()
 
 --------------------------------------------------
 function install_assimp()
-    os.execute("git submodule update --init --recursive")
     os.execute("mkdir -p submodules/assimp/build")
 
     if not os.execute("cd submodules/assimp && cmake -B build") then
@@ -92,8 +91,6 @@ install_assimp()
 
 --------------------------------------------------
 function install_imgui()
-    os.execute("git submodule update --init --recursive")
-
     os.execute("mkdir -p include/imgui")
     os.execute("mkdir -p tp/imgui")
 
@@ -107,7 +104,6 @@ install_imgui()
 
 --------------------------------------------------
 function install_stb()
-    os.execute("git submodule update --init --recursive")
     os.execute("mkdir -p include/stb")
     os.execute("cp submodules/stb/*.h include/stb/")
 end
