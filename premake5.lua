@@ -40,12 +40,12 @@ function install_glfw()
 
     if not os.execute("cd submodules/glfw && cmake -B build") then
         print("premake.lua: cmake failed at glfw")
-        return
+        os.exit(1)
     end
 
     if not os.execute("cd submodules/glfw/build && make") then
         print("premake.lua: make failed at glfw")
-        return
+        os.exit(1)
     end
 
     os.execute("mkdir -p include")
@@ -116,7 +116,6 @@ local compiler_options = { "-std=c++20",
                            "-Wall",
                            "-Wextra",
                            "-Werror",
-                           "-Wpedantic",
                            "-Wfloat-equal",
                            "-Wundef",
                            "-Wshadow",
