@@ -208,6 +208,7 @@ namespace CSItalyDemo
         Poe::RealisticSkyboxProgram skybox("..", shaderLoader);
         Poe::BlinnPhongProgram blinnPhongProgram("..", shaderLoader);
         Poe::DepthProgram depthProgram("..", shaderLoader);
+        Poe::DepthOmniProgram depthOmniProgram("..", shaderLoader);
 
         mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
 
@@ -264,11 +265,12 @@ namespace CSItalyDemo
 
         Poe::PointLight playerLight{
             glm::vec3(1.0f, 1.0f, 0.0f),    // color
-            glm::vec3(0.0f),                // position
+            glm::vec3(0.0f),                // world position
+            glm::vec3(0.0f),                // view position
             50.0f,                          // radius
             10.0f,                          // intensity
-            glm::mat4(1.0f),                // light matrix
-            false                           // cast shadows
+            false,                          // cast shadows,
+            50.0f                           // far plane
         };
 
         Poe::SpotLight flashlight{
@@ -295,32 +297,85 @@ namespace CSItalyDemo
         Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);;
 
         while (!glfwWindowShouldClose(window)) {
-            
-            depthProgram.Use();
-            sun.mLightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -200.0f, 200.0f) *
-                               glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
-            dirLightDepthFBO.Bind();
-                glDisable(GL_CULL_FACE);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                depthProgram.SetModelMatrix(model);
-                depthProgram.SetLightMatrix(sun.mLightMatrix);
-                staticModel.Draw();
-                glEnable(GL_CULL_FACE);
-            dirLightDepthFBO.UnBind();
-            dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
 
+            float dt = Poe::Utility::ComputeDeltaTime();
+            mainCamera.Update(dt);
+
+            transformBlock.Set(mainCamera);
+            transformBlock.Update();
+            fogBlock.Update();
+
+            sun.mDirection = glm::normalize(-skyboxBlock.GetSunPosition());
+            sun.mIntensity = glm::max(0.0f, skyboxBlock.GetSunIntensity() * glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), glm::normalize(skyboxBlock.GetSunPosition())));
+            dirLightBlock.Set(0, mainCamera.mView, sun);
+            dirLightBlock.Update();
+
+            playerLight.mWorldPosition = mainCamera.mPosition;
+            playerLight.mViewPosition = mainCamera.mView * glm::vec4(mainCamera.mPosition, 1.0f);
+            pointLightBlock.Set(0, playerLight);
+            pointLightBlock.Update();
+
+            flashlight.mPosition = mainCamera.mPosition;
+            flashlight.mDirection = mainCamera.mDirection;
+            spotLightBlock.Set(0, mainCamera.mView, flashlight);
+            spotLightBlock.Update();
+
+            blinnPhongBlock.Set(blinnPhongMaterial);
+            blinnPhongBlock.Update();
+
+            // directional light shadow pass
             {
-                glm::mat4 shadowPerspective = glm::perspective(glm::radians(90.0f),
-                                                               static_cast<float>(pointLightDepthMap.GetWidth()) / static_cast<float>(pointLightDepthMap.GetHeight()),
-                                                               1.0f, playerLight.mRadius);
+                depthProgram.Use();
+                sun.mLightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -200.0f, 200.0f) *
+                                   glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
+                dirLightDepthFBO.Bind();
+                    glDisable(GL_CULL_FACE);
+                    glClear(GL_DEPTH_BUFFER_BIT);
+                    depthProgram.SetModelMatrix(model);
+                    depthProgram.SetLightMatrix(sun.mLightMatrix);
+                    staticModel.Draw();
+                    glEnable(GL_CULL_FACE);
+                dirLightDepthFBO.UnBind();
+                dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
 
-                std::vector<glm::mat4> viewTransforms{ glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                                       glm::lookAt(playerLight.mPosition, playerLight.mPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)) };
+                depthProgram.Halt();
+            }
+
+            // point light shadow pass
+            {
+                depthOmniProgram.Use();
+
+                glViewport(0, 0, pointLightDepthMap.GetWidth(), pointLightDepthMap.GetHeight());
+                pointLightDepthFBO.Bind();
+                    glDisable(GL_CULL_FACE);
+                    glClear(GL_DEPTH_BUFFER_BIT);
+
+                    depthOmniProgram.SetModelMatrix(model);
+                    depthOmniProgram.SetFarPlane(playerLight.mFarPlane);
+                    depthOmniProgram.SetLightPositionInWorldSpace(playerLight.mWorldPosition);
+
+                    glm::mat4 shadowPerspective = glm::perspective(glm::radians(90.0f),
+                                                                   static_cast<float>(pointLightDepthMap.GetWidth()) / static_cast<float>(pointLightDepthMap.GetHeight()),
+                                                                   1.0f, playerLight.mFarPlane);
+
+                    std::vector<glm::mat4> lightMatrices { glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                           glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                           glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+                                                           glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+                                                           glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+                                                           glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)) };
+                    for (glm::mat4& lightMatrix : lightMatrices) {
+                        lightMatrix = shadowPerspective * lightMatrix;
+                    }
+                    depthOmniProgram.SetLightMatrices(lightMatrices.data());
+
+                    staticModel.Draw();
+                    glEnable(GL_CULL_FACE);
+                pointLightDepthFBO.UnBind();
+                pointLightDepthMap.Bind(Poe::POINT_LIGHT_DEPTH_MAP_BIND_POINT);
+
+                depthOmniProgram.Halt();
             }
 
             ppStack.FirstPass();
@@ -339,30 +394,6 @@ namespace CSItalyDemo
                 glfwSwapInterval(1);
             else
                 glfwSwapInterval(0);
-
-            float dt = Poe::Utility::ComputeDeltaTime();
-            mainCamera.Update(dt);
-
-            transformBlock.Set(mainCamera);
-            transformBlock.Update();
-            fogBlock.Update();
-
-            sun.mDirection = glm::normalize(-skyboxBlock.GetSunPosition());
-            sun.mIntensity = glm::max(0.0f, skyboxBlock.GetSunIntensity() * glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), glm::normalize(skyboxBlock.GetSunPosition())));
-            dirLightBlock.Set(0, mainCamera.mView, sun);
-            dirLightBlock.Update();
-
-            playerLight.mPosition = mainCamera.mPosition;
-            pointLightBlock.Set(0, mainCamera.mView, playerLight);
-            pointLightBlock.Update();
-
-            flashlight.mPosition = mainCamera.mPosition;
-            flashlight.mDirection = mainCamera.mDirection;
-            spotLightBlock.Set(0, mainCamera.mView, flashlight);
-            spotLightBlock.Update();
-
-            blinnPhongBlock.Set(blinnPhongMaterial);
-            blinnPhongBlock.Update();
 
             glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.mView * model))); 
 
