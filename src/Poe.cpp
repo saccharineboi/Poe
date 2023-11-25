@@ -2220,6 +2220,18 @@ namespace Poe
     DepthProgramInstanced::DepthProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractDepthProgram(rootPath, loader, "/shaders/depth_instanced.vert") {}
 
     ////////////////////////////////////////
+    AbstractOmniDepthProgram::AbstractOmniDepthProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
+                    loader.Load(GL_GEOMETRY_SHADER, rootPath + "/shaders/depth_omni.geom"),
+                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/depth_omni.frag") } {}
+
+    ////////////////////////////////////////
+    DepthOmniProgram::DepthOmniProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractOmniDepthProgram(rootPath, loader, "/shaders/depth_omni.vert") {}
+
+    ////////////////////////////////////////
+    DepthOmniProgramInstanced::DepthOmniProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractOmniDepthProgram(rootPath, loader, "/shaders/depth_omni_instanced/vert") {}
+
+    ////////////////////////////////////////
     RealisticSkyboxProgram::RealisticSkyboxProgram(const std::string& rootPath, ShaderLoader& loader)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/realistic_skybox.vert"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/realistic_skybox.frag") } {}

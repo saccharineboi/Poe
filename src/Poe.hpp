@@ -670,11 +670,12 @@ namespace Poe
     struct PointLight
     {
         glm::vec3 mColor;
-        glm::vec3 mPosition;
+        glm::vec3 mWorldPosition;
+        glm::vec3 mViewPosition;
         float mRadius;
         float mIntensity;
-        glm::mat4 mLightMatrix;
         bool mCastShadows;
+        float mFarPlane;
     };
 
     ////////////////////////////////////////
@@ -705,12 +706,13 @@ namespace Poe
     struct PointLight__DATA
     {
         alignas(16) float color[3];
-        alignas(16) float position[3];
+        alignas(16) float worldPosition[3];
+        alignas(16) float viewPosition[3];
         alignas(4) float constant;
         alignas(4) float linear;
         alignas(4) float quadratic;
         alignas(4) float intensity;
-        alignas(16) float lightMatrix[4 * 4];
+        alignas(4) float farPlane;
         alignas(4) bool castShadows;
     };
 
@@ -780,8 +782,11 @@ namespace Poe
         void SetColor(const glm::vec3& color)
         { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
 
-        void SetPosition(const glm::mat4& viewMatrix, const glm::vec3& pos)
-        { std::memcpy(data.position, glm::value_ptr(glm::vec3(viewMatrix * glm::vec4(pos, 1.0f))), sizeof(glm::vec3)); }
+        void SetWorldPosition(const glm::vec3& pos)
+        { std::memcpy(data.worldPosition, glm::value_ptr(pos), sizeof(glm::vec3)); }
+
+        void SetViewPosition(const glm::vec3& pos)
+        { std::memcpy(data.viewPosition, glm::value_ptr(pos), sizeof(glm::vec3)); }
 
         void SetConstant(float constant) { data.constant = constant; }
         void SetLinear(float linear) { data.linear = linear; }
@@ -794,10 +799,9 @@ namespace Poe
             data.quadratic = 75.0f / (radius * radius);
         }
 
-        void SetIntensity(float intensity) { data.intensity = intensity; }
+        void SetFarPlane(float farPlane) { data.farPlane = farPlane; }
 
-        void SetLightMatrix(const glm::mat4& lightMatrix)
-        { std::memcpy(data.lightMatrix, glm::value_ptr(lightMatrix), sizeof(glm::mat4)); }
+        void SetIntensity(float intensity) { data.intensity = intensity; }
 
         void SetCastShadows(bool flag)
         { data.castShadows = flag; }
@@ -805,8 +809,11 @@ namespace Poe
         glm::vec3 GetColor() const
         { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
 
-        glm::vec3 GetPosition() const
-        { return glm::vec3(data.position[0], data.position[1], data.position[2]); }
+        glm::vec3 GetWorldPosition() const
+        { return glm::vec3(data.worldPosition[0], data.worldPosition[1], data.worldPosition[2]); }
+
+        glm::vec3 GetViewPosition() const
+        { return glm::vec3(data.viewPosition[0], data.viewPosition[1], data.viewPosition[2]); }
 
         float GetConstant() const { return data.constant; }
         float GetLinear() const { return data.linear; }
@@ -816,13 +823,9 @@ namespace Poe
 
         float GetIntensity() const { return data.intensity; }
 
-        glm::mat4 GetLightMatrix() const
-        { return glm::mat4(data.lightMatrix[0],  data.lightMatrix[1],  data.lightMatrix[2],  data.lightMatrix[3],
-                           data.lightMatrix[4],  data.lightMatrix[5],  data.lightMatrix[6],  data.lightMatrix[7],
-                           data.lightMatrix[8],  data.lightMatrix[9],  data.lightMatrix[10], data.lightMatrix[11],
-                           data.lightMatrix[12], data.lightMatrix[13], data.lightMatrix[14], data.lightMatrix[15]); }
-
         bool GetCastShadows() const { return data.castShadows; }
+
+        float GetFarPlane() const { return data.farPlane; }
     };
 
     ////////////////////////////////////////
@@ -1004,10 +1007,16 @@ namespace Poe
             mLightsData[ind].SetColor(color);
         }
 
-        void SetPosition(int ind, const glm::mat4& viewMatrix, const glm::vec3& pos)
+        void SetWorldPosition(int ind, const glm::vec3& pos)
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetPosition(viewMatrix, pos);
+            mLightsData[ind].SetWorldPosition(pos);
+        }
+
+        void SetViewPosition(int ind, const glm::vec3& pos)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetViewPosition(pos);
         }
 
         void SetRadius(int ind, float radius)
@@ -1022,25 +1031,26 @@ namespace Poe
             mLightsData[ind].SetIntensity(intensity);
         }
 
-        void SetLightMatrix(int ind, const glm::mat4& lightMatrix)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetLightMatrix(lightMatrix);
-        }
-
         void SetCastShadows(int ind, bool flag)
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
             mLightsData[ind].SetCastShadows(flag);
         }
 
-        void Set(int ind, const glm::mat4& viewMatrix, const PointLight& pl)
+        void SetFarPlane(int ind, float farPlane)
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            mLightsData[ind].SetFarPlane(farPlane);
+        }
+
+        void Set(int ind, const PointLight& pl)
         {
             SetColor(ind, pl.mColor);
-            SetPosition(ind, viewMatrix, pl.mPosition);
+            SetWorldPosition(ind, pl.mWorldPosition);
+            SetViewPosition(ind, pl.mViewPosition);
             SetRadius(ind, pl.mRadius);
             SetIntensity(ind, pl.mIntensity);
-            SetLightMatrix(ind, pl.mLightMatrix);
+            SetFarPlane(ind, pl.mFarPlane);
             SetCastShadows(ind, pl.mCastShadows);
         }
 
@@ -1050,10 +1060,16 @@ namespace Poe
             return mLightsData[ind].GetColor();
         }
 
-        glm::vec3 GetPosition(int ind) const
+        glm::vec3 GetWorldPosition(int ind) const
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetPosition();
+            return mLightsData[ind].GetWorldPosition();
+        }
+
+        glm::vec3 GetViewPosition(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetViewPosition();
         }
 
         float GetRadius(int ind) const
@@ -1068,26 +1084,27 @@ namespace Poe
             return mLightsData[ind].GetIntensity();
         }
 
-        glm::mat4 GetLightMatrix(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetLightMatrix();
-        }
-
         bool GetCastShadows(int ind) const
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
             return mLightsData[ind].GetCastShadows();
+        }
+
+        float GetFarPlane(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
+            return mLightsData[ind].GetFarPlane();
         }
 
         PointLight Get(int ind) const
         {
             return PointLight{ GetColor(ind),
-                               GetPosition(ind),
+                               GetWorldPosition(ind),
+                               GetViewPosition(ind),
                                GetRadius(ind),
                                GetIntensity(ind),
-                               GetLightMatrix(ind),
-                               GetCastShadows(ind) };
+                               GetCastShadows(ind),
+                               GetFarPlane(ind) };
         }
 
         void Update() const
@@ -1151,13 +1168,13 @@ namespace Poe
 
         void SetLightMatrix(int ind, const glm::mat4& lightMatrix)
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
             mLightsData[ind].SetLightMatrix(lightMatrix);
         }
 
         void SetCastShadows(int ind, bool flag)
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
             mLightsData[ind].SetCastShadows(flag);
         }
 
@@ -1218,13 +1235,13 @@ namespace Poe
 
         glm::mat4 GetLightMatrix(int ind) const
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
             return mLightsData[ind].GetLightMatrix();
         }
 
         bool GetCastShadows(int ind) const
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
             return mLightsData[ind].GetCastShadows();
         }
 
@@ -1548,8 +1565,17 @@ namespace Poe
         Cubemap(Cubemap&&);
         Cubemap& operator=(Cubemap&&);
 
-        void Bind() const { glBindTexture(GL_TEXTURE_CUBE_MAP, mId); }
-        void Unbind() const { glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }
+        void Bind(unsigned ind = 0) const
+        {
+            glActiveTexture(GL_TEXTURE0 + ind);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, mId);
+        }
+
+        void Unbind(unsigned ind = 0) const
+        {
+            glActiveTexture(GL_TEXTURE0 + ind);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        }
 
         unsigned GetId() const { return mId; }
         int GetWidth() const { return mWidth; }
@@ -2283,6 +2309,63 @@ namespace Poe
     struct DepthProgramInstanced : public AbstractDepthProgram
     {
         DepthProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
+    };
+
+    ////////////////////////////////////////
+    struct AbstractOmniDepthProgram
+    {
+    protected:
+        Program mProgram;
+
+    public:
+        AbstractOmniDepthProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
+
+        virtual ~AbstractOmniDepthProgram() {}
+
+        static inline constexpr int MODEL_MAX_LOC{ 0 };
+        static inline constexpr int LIGHT_MATRICES_LOC{ 1 };
+        static inline constexpr int FAR_PLANE_LOC{ 25 };
+        static inline constexpr int LIGHT_POS_LOC{ 26 };
+
+        void Use() const { mProgram.Use(); }
+        void Halt() const { mProgram.Halt(); }
+
+        virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
+
+        void SetLightMatrices(const glm::mat4* lightMatrices) const
+        {
+            assert(nullptr != lightMatrices);
+            glUniformMatrix4fv(static_cast<int>(LIGHT_MATRICES_LOC), 6, GL_FALSE, glm::value_ptr(lightMatrices[0]));
+        }
+
+        void SetFarPlane(float farPlane) const
+        {
+            glUniform1f(FAR_PLANE_LOC, farPlane);
+        }
+
+        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const
+        {
+            glUniform3fv(LIGHT_POS_LOC, 1, glm::value_ptr(lightPos));
+        }
+    };
+
+    ////////////////////////////////////////
+    struct DepthOmniProgram : public AbstractOmniDepthProgram
+    {
+        DepthOmniProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override
+        {
+            glUniformMatrix4fv(MODEL_MAX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        }
+    };
+
+    ////////////////////////////////////////
+    struct DepthOmniProgramInstanced : public AbstractOmniDepthProgram
+    {
+        DepthOmniProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
         void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
     };

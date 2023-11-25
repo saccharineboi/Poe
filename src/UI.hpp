@@ -325,12 +325,13 @@ namespace Poe
 
         static void Render_PointLightInfo(PointLight& pointLight)
         {
-            ImGui::SetNextWindowSize({ 350, 175 });
+            ImGui::SetNextWindowSize({ 350, 200 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
             ImGui::Begin("Point Light #0", nullptr, ImGuiWindowFlags_NoResize);
 
             ImGui::ColorEdit3("Light Color", glm::value_ptr(pointLight.mColor));
-            ImGui::Text("Light Pos: %.2f %.2f %.2f", pointLight.mPosition.x, pointLight.mPosition.y, pointLight.mPosition.z);
+            ImGui::Text("Light World Pos: %.2f %.2f %.2f", pointLight.mWorldPosition.x, pointLight.mWorldPosition.y, pointLight.mWorldPosition.z);
+            ImGui::Text("Light View Pos: %.2f %.2f %.2f", pointLight.mViewPosition.x, pointLight.mViewPosition.y, pointLight.mViewPosition.z);
             ImGui::SliderFloat("Light Intensity", &pointLight.mIntensity, 0.0f, 100.0f);
             ImGui::SliderFloat("Light Radius", &pointLight.mRadius, 0.0f, 100.0f);
             ImGui::Checkbox("Cast Shadows", &pointLight.mCastShadows);
