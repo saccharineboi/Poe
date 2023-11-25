@@ -38,12 +38,13 @@ layout (std140, binding = 3) uniform DirLightBlock
 struct PointLight_t
 {
     vec3 color;
-    vec3 position;
+    vec3 worldPosition;
+    vec3 viewPosition;
     float constant;
     float linear;
     float quadratic;
     float intensity;
-    mat4 lightSpace;
+    float farPlane;
     bool castShadows;
 };
 
@@ -75,8 +76,8 @@ layout (std140, binding = 7) uniform SpotLightBlock
 out VS_OUT
 {
     vec3 vFragPos;
+    vec3 vFragPosWorld;
     vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS];
-    vec4 vFragPosInPointLightSpace[NUM_POINT_LIGHTS];
     vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
     vec3 vNorm;
     vec2 vTexCoord;
@@ -88,14 +89,6 @@ void ComputeDirLightSpace()
     for (int i = 0; i < NUM_DIR_LIGHTS; ++i)
     {
         vs_out.vFragPosInDirLightSpace[i] = uDirLights[i].lightSpace * uModel * vec4(aPos, 1.0f);
-    }
-}
-
-void ComputePointLightSpace()
-{
-    for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
-    {
-        vs_out.vFragPosInPointLightSpace[i] = uPointLights[i].lightSpace * uModel * vec4(aPos, 1.0f);
     }
 }
 
@@ -111,10 +104,10 @@ void main()
 {
     gl_Position = uProjView * uModel * vec4(aPos, 1.0f);
     vs_out.vFragPos = vec3(uView * uModel * vec4(aPos, 1.0f));
+    vs_out.vFragPosWorld = vec3(uModel * vec4(aPos, 1.0f));
     vs_out.vNorm = uNorm * aNorm;
     vs_out.vTexCoord = aTexCoord * uTexMultiplier + uTexOffset; 
 
     ComputeDirLightSpace();
-    ComputePointLightSpace();
     ComputeSpotLightSpace();
 }

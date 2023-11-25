@@ -10,8 +10,8 @@
 in VS_OUT
 {
     vec3 vFragPos;
+    vec3 vFragPosWorld;
     vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS];
-    vec4 vFragPosInPointLightSpace[NUM_POINT_LIGHTS];
     vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
     vec3 vNorm;
     vec2 vTexCoord;
@@ -37,7 +37,7 @@ layout (std140, binding = 5) uniform BlinnPhongMaterialBlock
 struct DirLight_t
 {
     vec3 color;
-    vec3 direction;
+    vec3 direction; // in view space
     float intensity;
     mat4 lightSpace;
     bool castShadows;
@@ -51,12 +51,13 @@ layout (std140, binding = 3) uniform DirLightBlock
 struct PointLight_t
 {
     vec3 color;
-    vec3 position;
+    vec3 worldPosition;
+    vec3 viewPosition;
     float constant;
     float linear;
     float quadratic;
     float intensity;
-    mat4 lightSpace;
+    float farPlane;
     bool castShadows;
 };
 
@@ -68,8 +69,8 @@ layout (std140, binding = 6) uniform PointLightBlock
 struct SpotLight_t
 {
     vec3 color;
-    vec3 direction;
-    vec3 position;
+    vec3 direction; // view space
+    vec3 position; // view space
     float innerCutoff;
     float outerCutoff;
     float constant;
@@ -101,7 +102,7 @@ layout (location = 6) uniform sampler2D uMaterialSpecularTexture;
 layout (location = 7) uniform float uAmbientFactor;
 
 layout (location = 8)  uniform sampler2DShadow uDirLightDepthMap;
-layout (location = 9)  uniform sampler2DShadow uPointLightDepthMap;
+layout (location = 9)  uniform samplerCubeShadow uPointLightDepthMap;
 layout (location = 10) uniform sampler2DShadow uSpotLightDepthMap;
 
 float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
@@ -112,17 +113,13 @@ float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightD
         return 0.0f;
     }
     float bias = max(SHADOW_BIAS_MAX * (1.0f - dot(normal, lightDir)), SHADOW_BIAS_MIN);
-    float closestDepth = texture(uDirLightDepthMap, vec3(projCoords.xy, projCoords.z - bias));
-    return closestDepth;
+    return texture(uDirLightDepthMap, vec3(projCoords.xy, projCoords.z - bias));
 }
 
-float ComputeShadowForPointLights(vec4 fragPosLightSpace)
+float ComputeShadowForPointLights(vec3 lightPos, float farPlane, vec3 normal, vec3 lightDir)
 {
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5f + 0.5f;
-    float closestDepth = texture(uPointLightDepthMap, projCoords);
-    float currentDepth = projCoords.z;
-    return currentDepth > closestDepth ? 1.0f : 0.0f;
+    vec3 fragToLight = fs_in.vFragPosWorld - lightPos;
+    return texture(uPointLightDepthMap, vec4(fragToLight, length(fragToLight) / farPlane - 0.005f));
 }
 
 float ComputeShadowForSpotLights(vec4 fragPosLightSpace)
@@ -147,13 +144,13 @@ vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexCo
         float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
         vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
 
-        float shadowComp = 0.0f;
+        float shadowComp = 1.0f;
         if (uDirLights[i].castShadows)
         {
-            shadowComp = 1.0f - ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i], normal, lightDir);
+            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i], normal, lightDir);
         }
 
-        result += (1.0f - shadowComp) * uDirLights[i].intensity * (diffuse + specular);
+        result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
     }
     return result;
 }
@@ -163,7 +160,7 @@ vec3 computePointLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTex
     vec3 result = vec3(0.0f);
     for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
     {
-        vec3 lightDir = normalize(uPointLights[i].position - pixelPos);
+        vec3 lightDir = normalize(uPointLights[i].viewPosition - pixelPos);
         float diff = max(dot(normal, lightDir), 0.0f);
         vec3 diffuse = diff * uPointLights[i].color * uMaterialDiffuse * diffuseTexColor;
 
@@ -171,16 +168,16 @@ vec3 computePointLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTex
         float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
         vec3 specular = spec * uPointLights[i].color * specularTexColor * uMaterialSpecular;
 
-        float dist = length(uPointLights[i].position - pixelPos);
+        float dist = length(uPointLights[i].viewPosition - pixelPos);
         float attenuation = 1.0f / (uPointLights[i].constant + dist * uPointLights[i].linear + dist * dist * uPointLights[i].quadratic);
 
-        float shadowComp = 0.0f;
+        float shadowComp = 1.0f;
         if (uPointLights[i].castShadows)
         {
-            shadowComp = ComputeShadowForPointLights(fs_in.vFragPosInPointLightSpace[i]);
+            shadowComp = ComputeShadowForPointLights(uPointLights[i].worldPosition, uPointLights[i].farPlane, normal, lightDir);
         }
 
-        result += (1.0f - shadowComp) * uPointLights[i].intensity * attenuation * (diffuse + specular);
+        result += shadowComp * uPointLights[i].intensity * attenuation * (diffuse + specular);
     }
     return result;
 }
