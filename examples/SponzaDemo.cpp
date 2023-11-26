@@ -212,7 +212,7 @@ namespace CSItalyDemo
         Poe::EmissiveTextureProgram emissiveTextureProgram("..", shaderLoader);
         Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Clear);
 
-        mainCamera.SetPosition(glm::vec3(0.0f, 15.0f, 0.0f));
+        mainCamera.mTargetPosition = mainCamera.mPosition = glm::vec3(0.0f, 15.0f, 0.0f);
 
         Poe::Texture2DLoader texture2DLoader;
         auto staticModel = LoadSponza("..", texture2DLoader);
@@ -279,7 +279,7 @@ namespace CSItalyDemo
             emissiveTextureProgram.SetModelMatrix(model);
             staticModel.Draw();
 
-            dirLightBlock.Set(0, mainCamera.mView, sun);
+            dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
             dirLightBlock.Update();
 
             emissiveColorProgram.Use();

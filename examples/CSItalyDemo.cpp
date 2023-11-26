@@ -210,7 +210,7 @@ namespace CSItalyDemo
         Poe::DepthProgram depthProgram("..", shaderLoader);
         Poe::DepthOmniProgram depthOmniProgram("..", shaderLoader);
 
-        mainCamera.SetPosition(glm::vec3(-65.0f, -10.0f, 180.0f));
+        mainCamera.mPosition = mainCamera.mTargetPosition = glm::vec3(-65.0f, -10.0f, 180.0f);
 
         Poe::Texture2DLoader texture2DLoader;
         auto staticModel = LoadCsItaly("..", texture2DLoader);
@@ -294,7 +294,7 @@ namespace CSItalyDemo
         Poe::Framebuffer dirLightDepthFBO(dirLightDepthMap, GL_DEPTH_ATTACHMENT);
 
         Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(2048, 2048);
-        Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);;
+        Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);
 
         while (!glfwWindowShouldClose(window)) {
 
@@ -307,17 +307,17 @@ namespace CSItalyDemo
 
             sun.mDirection = glm::normalize(-skyboxBlock.GetSunPosition());
             sun.mIntensity = glm::max(0.0f, skyboxBlock.GetSunIntensity() * glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), glm::normalize(skyboxBlock.GetSunPosition())));
-            dirLightBlock.Set(0, mainCamera.mView, sun);
+            dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
             dirLightBlock.Update();
 
             playerLight.mWorldPosition = mainCamera.mPosition;
-            playerLight.mViewPosition = mainCamera.mView * glm::vec4(mainCamera.mPosition, 1.0f);
+            playerLight.mViewPosition = mainCamera.GetViewMatrix() * glm::vec4(mainCamera.mPosition, 1.0f);
             pointLightBlock.Set(0, playerLight);
             pointLightBlock.Update();
 
             flashlight.mPosition = mainCamera.mPosition;
             flashlight.mDirection = mainCamera.mDirection;
-            spotLightBlock.Set(0, mainCamera.mView, flashlight);
+            spotLightBlock.Set(0, mainCamera.GetViewMatrix(), flashlight);
             spotLightBlock.Update();
 
             blinnPhongBlock.Set(blinnPhongMaterial);
@@ -395,7 +395,7 @@ namespace CSItalyDemo
             else
                 glfwSwapInterval(0);
 
-            glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.mView * model))); 
+            glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(mainCamera.GetViewMatrix() * model)));
 
             blinnPhongProgram.Use();
             blinnPhongProgram.SetModelMatrix(model);

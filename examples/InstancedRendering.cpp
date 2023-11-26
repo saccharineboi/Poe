@@ -214,7 +214,7 @@ namespace CSItalyDemo
         Poe::TexturedSkyboxProgram skybox("..", shaderLoader, Poe::DefaultSkyboxTexture::Clear);
         Poe::PbrLightProgramInstanced pbrLightProgram("..", shaderLoader);
 
-        mainCamera.SetPosition(glm::vec3(0.0f, 180.0f, 100.0f));
+        mainCamera.mPosition = mainCamera.mTargetPosition = glm::vec3(0.0f, 180.0f, 100.0f);
 
         auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -284,7 +284,7 @@ namespace CSItalyDemo
             pbrBlock.Set(pbrLightMaterial);
             pbrBlock.Update();
 
-            dirLightBlock.Set(0, mainCamera.mView, sun);
+            dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
             dirLightBlock.Update();
 
             cube.Bind();
