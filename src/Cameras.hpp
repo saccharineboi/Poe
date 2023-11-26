@@ -30,8 +30,31 @@ SUPPRESS_WARNINGS()
 #include <glm/mat4x4.hpp>
 ENABLE_WARNINGS()
 
+#include <vector>
+
 namespace Poe
 {
+    ////////////////////////////////////////
+    enum class CameraProjectionType { Orthographic, Perspective };
+
+    ////////////////////////////////////////
+    struct AbstractCamera
+    {
+    protected:
+        CameraProjectionType mProjectionType;
+
+        glm::mat4 mProjectionMatrix;
+        glm::mat4 mViewMatrix;
+
+    public:
+        explicit AbstractCamera(CameraProjectionType type);
+
+        virtual ~AbstractCamera() {}
+
+        glm::mat4 GetProjectionMatrix() const { return mProjectionMatrix; }
+        glm::mat4 GetViewMatrix() const { return mViewMatrix; }
+    };
+
     ////////////////////////////////////////
     struct FirstPersonCameraState
     {
@@ -55,37 +78,39 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    struct FirstPersonCamera
+    struct FirstPersonCamera : public AbstractCamera
     {
+    private:
         FirstPersonCameraState mState;
         FirstPersonCameraInputConfig mInputConfig;
 
-        bool mIsMouseCaptured = false;
+    public:
+        bool mIsMouseCaptured;
 
-        float mFovy = PIH;
-        float mAspectRatio = 16.0f / 9.0f;
-        float mNear = 0.3f;
-        float mFar = 1000.0f;
+        glm::vec3 mPosition;
+        glm::vec3 mDirection;
+        glm::vec3 mUp;
 
-        float mSpeed = 100.0f;
-        float mSensitivity = 0.0025f;
-        float mSmoothness = 10.0f;
+        glm::vec3 mTargetPosition;
 
-        glm::mat4 mProjection = glm::mat4(1.0f);
-        glm::mat4 mView = glm::mat4(1.0f);
+        float mFovy;
+        float mAspectRatio;
+        float mNear;
+        float mFar;
 
-        glm::vec3 mPosition = glm::vec3(0.0f, 1.0f, 10.0f);
-        glm::vec3 mDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 mUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        float mSpeed;
+        float mSensitivity;
+        float mSmoothness;
 
-        glm::vec3 mTargetPosition = mPosition;
+        FirstPersonCamera();
 
         void UpdateInputConfig(int key, int action);
         void UpdateDirection(float mouseX, float mouseY);
         void Update(float dt);
 
-        void SetAspectRatio(int width, int height);
-        void SetPosition(const glm::vec3& position);
-        void SetDirection(const glm::vec3& direction);
+        void SetAspectRatio(int width, int height)
+        { mAspectRatio = static_cast<float>(width) / static_cast<float>(height); }
+
+        std::vector<glm::vec4> GetFrustumCornersInWorldSpace() const;
     };
 }

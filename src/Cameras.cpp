@@ -39,6 +39,28 @@
 namespace Poe
 {
     ////////////////////////////////////////
+    AbstractCamera::AbstractCamera(CameraProjectionType type)
+        : mProjectionType{type},
+          mProjectionMatrix(1.0f),
+          mViewMatrix(1.0f) {}
+
+    ////////////////////////////////////////
+    FirstPersonCamera::FirstPersonCamera()
+        : AbstractCamera(CameraProjectionType::Perspective),
+          mIsMouseCaptured{false},
+          mPosition{glm::vec3(0.0f, 1.0f, 10.0f)},
+          mDirection{glm::vec3(0.0f, 0.0f, -1.0f)},
+          mUp{glm::vec3(0.0f, 1.0f, 0.0f)},
+          mTargetPosition{mPosition},
+          mFovy{PIH},
+          mAspectRatio{16.0f / 9.0f},
+          mNear{0.3f},
+          mFar{1000.0f},
+          mSpeed{100.0f},
+          mSensitivity{0.0025f},
+          mSmoothness{10.0f} {}
+
+    ////////////////////////////////////////
     void FirstPersonCamera::UpdateInputConfig(int key, int action)
     {
         if (key == mInputConfig.moveForwardKey) {
@@ -113,8 +135,8 @@ namespace Poe
 
         mPosition = Utility::Lerp(mPosition, mTargetPosition, mSmoothness * dt);
 
-        mView = glm::lookAt(mPosition, mPosition + mDirection, mUp);
-        mProjection = glm::perspective(mFovy, mAspectRatio, mNear, mFar);
+        mViewMatrix = glm::lookAt(mPosition, mPosition + mDirection, mUp);
+        mProjectionMatrix = glm::perspective(mFovy, mAspectRatio, mNear, mFar);
     }
 
     ////////////////////////////////////////
@@ -155,20 +177,21 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    void FirstPersonCamera::SetAspectRatio(int width, int height)
+    std::vector<glm::vec4> FirstPersonCamera::GetFrustumCornersInWorldSpace() const
     {
-        mAspectRatio = static_cast<float>(width) / static_cast<float>(height);
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::SetPosition(const glm::vec3& position)
-    {
-        mPosition = mTargetPosition = position;
-    }
-
-    ////////////////////////////////////////
-    void FirstPersonCamera::SetDirection(const glm::vec3& direction)
-    {
-        mDirection = direction;
+        glm::mat4 invMatrix{ glm::inverse(mProjectionMatrix * mViewMatrix) };
+        std::vector<glm::vec4> frustumCorners;
+        for (float x = 0.0f; x < 2.0f; ++x) {
+            for (float y = 0.0f; y < 2.0f; ++y) {
+                for (float z = 0.0f; z < 2.0f; ++z) {
+                    glm::vec4 P{ invMatrix * glm::vec4(2.0f * x - 1.0f,
+                                                       2.0f * y - 1.0f,
+                                                       2.0f * z - 1.0f,
+                                                       1.0f) };
+                    frustumCorners.push_back(P);
+                }
+            }
+        }
+        return frustumCorners;
     }
 }

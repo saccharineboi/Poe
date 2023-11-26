@@ -261,9 +261,9 @@ namespace Poe
     ////////////////////////////////////////
     void TransformUB::Set(const FirstPersonCamera& camera)
     {
-        SetProjectionMatrix(camera.mProjection);
-        SetViewMatrix(camera.mView);
-        SetProjViewMatrix(camera.mProjection * camera.mView);
+        SetProjectionMatrix(camera.GetProjectionMatrix());
+        SetViewMatrix(camera.GetViewMatrix());
+        SetProjViewMatrix(camera.GetProjectionMatrix() * camera.GetViewMatrix());
         SetCamDir(camera.mDirection);
     }
 
