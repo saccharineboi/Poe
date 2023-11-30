@@ -7,14 +7,24 @@
 #define SHADOW_BIAS_MIN 0.005f
 #define SHADOW_BIAS_MAX 0.05f
 
+#define NUM_CASCADES 4
+
+#define EPSILON 0.000001f
+
 in VS_OUT
 {
     vec3 vFragPos;
     vec3 vFragPosWorld;
-    vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS];
-    vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
     vec3 vNorm;
     vec2 vTexCoord;
+
+    vec4 vFragPosInDirLightSpace0[NUM_DIR_LIGHTS];
+    vec4 vFragPosInDirLightSpace1[NUM_DIR_LIGHTS];
+    vec4 vFragPosInDirLightSpace2[NUM_DIR_LIGHTS];
+    vec4 vFragPosInDirLightSpace3[NUM_DIR_LIGHTS];
+    vec4 vFragPosInDirLightSpace4[NUM_DIR_LIGHTS];
+
+    vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
 }
 fs_in;
 
@@ -39,8 +49,13 @@ struct DirLight_t
     vec3 color;
     vec3 direction; // in view space
     float intensity;
-    mat4 lightSpace;
     bool castShadows;
+
+    mat4 lightSpace0;
+    mat4 lightSpace1;
+    mat4 lightSpace2;
+    mat4 lightSpace3;
+    mat4 lightSpace4;
 };
 
 layout (std140, binding = 3) uniform DirLightBlock
@@ -101,19 +116,43 @@ layout (location = 6) uniform sampler2D uMaterialSpecularTexture;
 
 layout (location = 7) uniform float uAmbientFactor;
 
-layout (location = 8)  uniform sampler2DShadow uDirLightDepthMap;
+layout (location = 8)  uniform sampler2DArrayShadow uDirLightDepthMap;
 layout (location = 9)  uniform samplerCubeShadow uPointLightDepthMap;
 layout (location = 10) uniform sampler2DShadow uSpotLightDepthMap;
 
-float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layer)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5f + 0.5f;
     if (projCoords.z > 1.0f) {
         return 0.0f;
     }
+
+    float biasModifier = 0.5f;
+    const float cascadeRanges[NUM_CASCADES] = { 20.0f, 50.0f, 100.0f, 500.0f };
+
     float bias = max(SHADOW_BIAS_MAX * (1.0f - dot(normal, lightDir)), SHADOW_BIAS_MIN);
-    return texture(uDirLightDepthMap, vec3(projCoords.xy, projCoords.z - bias));
+
+    if (layer == NUM_CASCADES)
+    {
+        bias *= 1.0f / (1000.0f * biasModifier);
+    }
+    else
+    {
+        bias *= 1.0f / (cascadeRanges[layer] * biasModifier);
+    }
+
+    vec2 texelSize = 1.0f / vec2(textureSize(uDirLightDepthMap, 0));
+    float shadow = 0.0f;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(uDirLightDepthMap, vec4(projCoords.xy + vec2(x, y) * texelSize, layer, projCoords.z - bias));
+            shadow += pcfDepth;
+        }
+    }
+    return shadow / 9.0f;
 }
 
 float ComputeShadowForPointLights(vec3 lightPos, float farPlane, vec3 normal, vec3 lightDir)
@@ -131,26 +170,56 @@ float ComputeShadowForSpotLights(vec4 fragPosLightSpace)
     return currentDepth > closestDepth ? 1.0f : 0.0f;
 }
 
+int ChooseCascade(float fragDepth)
+{
+    const float cascadeRanges[NUM_CASCADES] = { 20.0f, 50.0f, 100.0f, 500.0f };
+    for (int i = 0; i < NUM_CASCADES; ++i)
+    {
+        if (fragDepth < cascadeRanges[i])
+        {
+            return i;
+        }
+    }
+    return NUM_CASCADES;
+}
+
 vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexColor, vec3 specularTexColor)
 {
     vec3 result = vec3(0.0f);
     for (int i = 0; i < NUM_DIR_LIGHTS; ++i)
     {
-        vec3 lightDir = normalize(-uDirLights[i].direction);
-        float diff = max(dot(normal, lightDir), 0.0f);
-        vec3 diffuse = diff * uDirLights[i].color * diffuseTexColor * uMaterialDiffuse;
-
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
-        vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
-
-        float shadowComp = 1.0f;
-        if (uDirLights[i].castShadows)
+        if (uDirLights[i].intensity > EPSILON)
         {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i], normal, lightDir);
-        }
+            vec3 lightDir = normalize(-uDirLights[i].direction);
+            float diff = max(dot(normal, lightDir), 0.0f);
+            vec3 diffuse = diff * uDirLights[i].color * diffuseTexColor * uMaterialDiffuse;
 
-        result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
+            vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
+
+            float shadowComp = 1.0f;
+            if (uDirLights[i].castShadows)
+            {
+                int layer = ChooseCascade(length(fs_in.vFragPos));
+                if (layer == 0) {
+                    shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace0[i], normal, lightDir, layer);
+                }
+                else if (layer == 1) {
+                    shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace1[i], normal, lightDir, layer);
+                }
+                else if (layer == 2) {
+                    shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace2[i], normal, lightDir, layer);
+                }
+                else if (layer == 3) {
+                    shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace3[i], normal, lightDir, layer);
+                }
+                else if (layer == 4) {
+                    shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace4[i], normal, lightDir, layer);
+                }
+            }
+            result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
+        }
     }
     return result;
 }
@@ -160,24 +229,27 @@ vec3 computePointLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTex
     vec3 result = vec3(0.0f);
     for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
     {
-        vec3 lightDir = normalize(uPointLights[i].viewPosition - pixelPos);
-        float diff = max(dot(normal, lightDir), 0.0f);
-        vec3 diffuse = diff * uPointLights[i].color * uMaterialDiffuse * diffuseTexColor;
-
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
-        vec3 specular = spec * uPointLights[i].color * specularTexColor * uMaterialSpecular;
-
-        float dist = length(uPointLights[i].viewPosition - pixelPos);
-        float attenuation = 1.0f / (uPointLights[i].constant + dist * uPointLights[i].linear + dist * dist * uPointLights[i].quadratic);
-
-        float shadowComp = 1.0f;
-        if (uPointLights[i].castShadows)
+        if (uPointLights[i].intensity > EPSILON)
         {
-            shadowComp = ComputeShadowForPointLights(uPointLights[i].worldPosition, uPointLights[i].farPlane, normal, lightDir);
-        }
+            vec3 lightDir = normalize(uPointLights[i].viewPosition - pixelPos);
+            float diff = max(dot(normal, lightDir), 0.0f);
+            vec3 diffuse = diff * uPointLights[i].color * uMaterialDiffuse * diffuseTexColor;
 
-        result += shadowComp * uPointLights[i].intensity * attenuation * (diffuse + specular);
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
+            vec3 specular = spec * uPointLights[i].color * specularTexColor * uMaterialSpecular;
+
+            float dist = length(uPointLights[i].viewPosition - pixelPos);
+            float attenuation = 1.0f / (uPointLights[i].constant + dist * uPointLights[i].linear + dist * dist * uPointLights[i].quadratic);
+
+            float shadowComp = 1.0f;
+            if (uPointLights[i].castShadows)
+            {
+                shadowComp = ComputeShadowForPointLights(uPointLights[i].worldPosition, uPointLights[i].farPlane, normal, lightDir);
+            }
+
+            result += shadowComp * uPointLights[i].intensity * attenuation * (diffuse + specular);
+        }
     }
     return result;
 }
@@ -187,28 +259,30 @@ vec3 computeSpotLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexC
     vec3 result = vec3(0.0f);
     for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
     {
-        vec3 lightDir = normalize(uSpotLights[i].position - pixelPos);
-        float theta = dot(lightDir, normalize(-uSpotLights[i].direction));
-        float epsilon = uSpotLights[i].innerCutoff - uSpotLights[i].outerCutoff;
-        float intensity = clamp((theta - uSpotLights[i].outerCutoff) / epsilon, 0.0f, 1.0f);
-
-        float diff = max(dot(normal, lightDir), 0.0f);
-        vec3 diffuse = diff * uSpotLights[i].color * uMaterialDiffuse * diffuseTexColor;
-
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
-        vec3 specular = spec * uSpotLights[i].color * specularTexColor * uMaterialSpecular;
-
-        float dist = length(uSpotLights[i].position - pixelPos);
-        float attenuation = 1.0f / (uSpotLights[i].constant + dist * uSpotLights[i].linear + dist * dist * uSpotLights[i].quadratic);
-
-        float shadowComp = 0.0f;
-        if (uSpotLights[i].castShadows)
+        if (uSpotLights[i].intensity > EPSILON)
         {
-            shadowComp = ComputeShadowForSpotLights(fs_in.vFragPosInSpotLightSpace[i]);
-        }
+            vec3 lightDir = normalize(uSpotLights[i].position - pixelPos);
+            float theta = dot(lightDir, normalize(-uSpotLights[i].direction));
+            float epsilon = uSpotLights[i].innerCutoff - uSpotLights[i].outerCutoff;
+            float intensity = clamp((theta - uSpotLights[i].outerCutoff) / epsilon, 0.0f, 1.0f);
 
-        result += (1.0f - shadowComp) * intensity * attenuation * uSpotLights[i].intensity * (diffuse + specular);
+            float diff = max(dot(normal, lightDir), 0.0f);
+            vec3 diffuse = diff * uSpotLights[i].color * uMaterialDiffuse * diffuseTexColor;
+
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
+            vec3 specular = spec * uSpotLights[i].color * specularTexColor * uMaterialSpecular;
+
+            float dist = length(uSpotLights[i].position - pixelPos);
+            float attenuation = 1.0f / (uSpotLights[i].constant + dist * uSpotLights[i].linear + dist * dist * uSpotLights[i].quadratic);
+
+            float shadowComp = 0.0f;
+            if (uSpotLights[i].castShadows)
+            {
+                shadowComp = ComputeShadowForSpotLights(fs_in.vFragPosInSpotLightSpace[i]);
+            }
+            result += (1.0f - shadowComp) * intensity * attenuation * uSpotLights[i].intensity * (diffuse + specular);
+        }
     }
     return result;
 }
