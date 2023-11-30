@@ -106,15 +106,15 @@ namespace CSItalyDemo
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-        GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Poe", monitor, nullptr);
+        monitor = nullptr;
+
+        GLFWwindow* window = glfwCreateWindow(mode->width - 100, mode->height - 100, "Poe", monitor, nullptr);
         if (!window) {
             std::fprintf(stderr, "ERROR: couldn't create window\n");
             glfwTerminate();
             std::exit(EXIT_FAILURE);
         }
 
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(100ms);
         return window;
     }
 
@@ -228,7 +228,7 @@ namespace CSItalyDemo
         ppBlock.SetGamma(2.2f);
         ppBlock.Buffer().TurnOn();
 
-        Poe::FogUB fogBlock(glm::vec3(0.01f, 0.01f, 0.01f), 1000.0f, 2.0f);
+        Poe::FogUB fogBlock(glm::vec3(1.0f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
         Poe::TransformUB transformBlock;
@@ -259,7 +259,7 @@ namespace CSItalyDemo
             glm::vec3(1.0f, 1.0f, 1.0f),    // color
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
-            glm::mat4(1.0f),                // light matrix
+            std::vector<glm::mat4>(Poe::NUM_SHADOW_CASCADES + 1),       // light matrix
             true                            // cast shadows
         };
 
@@ -290,10 +290,13 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
-        Poe::Texture2D dirLightDepthMap = Poe::CreateDepthMap(2048, 2048);
-        Poe::Framebuffer dirLightDepthFBO(dirLightDepthMap, GL_DEPTH_ATTACHMENT);
+        Poe::Texture2DArray dirLightDepthMap = Poe::CreateCascadedDepthMap(Poe::SHADOW_SIZE, Poe::SHADOW_SIZE, Poe::NUM_SHADOW_CASCADES + 1);
+        std::vector<Poe::Framebuffer> dirLightDepthFBOs;
+        for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+            dirLightDepthFBOs.push_back(Poe::Framebuffer(dirLightDepthMap, GL_DEPTH_ATTACHMENT, i));
+        }
 
-        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(2048, 2048);
+        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(Poe::SHADOW_SIZE, Poe::SHADOW_SIZE);
         Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);
 
         while (!glfwWindowShouldClose(window)) {
@@ -325,21 +328,50 @@ namespace CSItalyDemo
 
             // directional light shadow pass
             {
-                depthProgram.Use();
-                sun.mLightMatrix = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, -200.0f, 200.0f) *
-                                   glm::lookAt(skyboxBlock.GetSunPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
-                dirLightDepthFBO.Bind();
-                    glDisable(GL_CULL_FACE);
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                    depthProgram.SetModelMatrix(model);
-                    depthProgram.SetLightMatrix(sun.mLightMatrix);
-                    staticModel.Draw();
-                    glEnable(GL_CULL_FACE);
-                dirLightDepthFBO.UnBind();
-                dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
+                std::vector<float> cascadeLevels{ mainCamera.mFar / 50.0f,
+                                                  mainCamera.mFar / 25.0f,
+                                                  mainCamera.mFar / 10.0f,
+                                                  mainCamera.mFar / 2.0f };
 
+                for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+
+                    std::vector<glm::vec4> frustumCorners = [&]() {
+                        if (i == 0) {
+                            return mainCamera.GetFrustumCornersInWorldSpace(mainCamera.mNear, cascadeLevels.front());
+                        }
+                        else if (i == Poe::NUM_SHADOW_CASCADES) {
+                            return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels.back(), mainCamera.mFar);
+                        }
+                        size_t ind = static_cast<size_t>(i);
+                        float zOffset{ 10.0f };
+                        return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels[ind - 1] - zOffset, cascadeLevels[ind] + zOffset);
+                    }();
+
+                    glm::vec3 frustumCenter = Poe::Utility::ComputeFrustumCenter(frustumCorners);
+
+                    glm::mat4 lightView = glm::lookAt(frustumCenter + skyboxBlock.GetSunPosition(), frustumCenter, glm::cross(skyboxBlock.GetSunPosition(), glm::vec3(1.0f, 0.0f, 0.0f)));
+                    glm::mat4 lightProjection = Poe::Utility::FitLightProjectionToFrustum(lightView, frustumCorners, 10.0f);
+
+                    sun.mLightMatrices[static_cast<size_t>(i)] = lightProjection * lightView;
+                }
+                dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
+                dirLightBlock.Update();
+
+                depthProgram.Use();
+                depthProgram.SetModelMatrix(model);
+
+                glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
+                glDisable(GL_CULL_FACE);
+                for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+                    dirLightDepthFBOs[static_cast<size_t>(i)].Bind();
+                        glClear(GL_DEPTH_BUFFER_BIT);
+                        depthProgram.SetLightMatrix(sun.mLightMatrices[static_cast<size_t>(i)]);
+                        staticModel.Draw();
+                    dirLightDepthFBOs[static_cast<size_t>(i)].UnBind();
+                }
+                glEnable(GL_CULL_FACE);
                 depthProgram.Halt();
+                dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
             }
 
             // point light shadow pass
@@ -408,7 +440,7 @@ namespace CSItalyDemo
             if (Poe::DebugUI::mEnableGrid) {
                 emissiveColorProgram.Use();
                 emissiveColorProgram.SetMaterial(gridMaterial);
-                emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(100.0f)));
+                emissiveColorProgram.SetModelMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)));
                 grid.Bind();
                 grid.Draw(GL_LINES);
             }
