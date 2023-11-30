@@ -1431,21 +1431,19 @@ namespace Poe
             glTextureParameterf(mId, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
         }
 
-        if (mParams.internalFormat == GL_DEPTH_COMPONENT) {
+        if (mParams.textureFormat == GL_DEPTH_COMPONENT) {
             glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
             glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-            glTextureStorage2D(mId, 1, GL_DEPTH_COMPONENT16, mWidth, mHeight);
         }
-        else if (mParams.generateMipmaps) {
+
+        if (mParams.generateMipmaps) {
             mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
-            glTextureStorage2D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight);
-            glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
         }
         else {
-            mNumMipmaps = 0;
-            glTextureStorage2D(mId, 1, mParams.internalFormat, mWidth, mHeight);
-            glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
+            mNumMipmaps = 1;
         }
+        glTextureStorage2D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight);
+        glTextureSubImage2D(mId, 0, 0, 0, mWidth, mHeight, mParams.textureFormat, mParams.type, data);
 
         if (mParams.generateMipmaps) glGenerateTextureMipmap(mId);
         DebugUI::PushLog(stdout, "[DEBUG] Loaded 2D texture %s (%d:%d:%d, %d mipmaps)\n", mUrl.c_str(), mWidth, mHeight, mNumChannels, mNumMipmaps);
@@ -1573,10 +1571,26 @@ namespace Poe
         params.wrapS = params.wrapT = GL_CLAMP_TO_BORDER;
         params.generateMipmaps = false;
         params.type = GL_FLOAT;
-        params.internalFormat = params.textureFormat = GL_DEPTH_COMPONENT;
+        params.textureFormat = GL_DEPTH_COMPONENT;
+        params.internalFormat = GL_DEPTH_COMPONENT32F;
         params.maxAnisotropy = 0.0f;
         float* data = nullptr;
         return Texture2D(data, width, height, 1, params, glm::vec4(1.0f));
+    }
+
+    ////////////////////////////////////////
+    Texture2DArray CreateCascadedDepthMap(int width, int height, int numCascades)
+    {
+        Texture2DArrayParams params{};
+        params.minF = params.magF = GL_LINEAR;
+        params.wrapS = params.wrapT = GL_CLAMP_TO_BORDER;
+        params.generateMipmaps = false;
+        params.type = GL_FLOAT;
+        params.textureFormat = GL_DEPTH_COMPONENT;
+        params.internalFormat = GL_DEPTH_COMPONENT32F;
+        params.maxAnisotropy = 0.0f;
+        std::vector<float*> data(static_cast<size_t>(numCascades));
+        return Texture2DArray(data, width, height, 1, params, glm::vec4(1.0f));
     }
 
     ////////////////////////////////////////
@@ -1589,6 +1603,151 @@ namespace Poe
             return t.first->second;
         }
         return iter->second;
+    }
+
+    ////////////////////////////////////////
+    Texture2DArray::Texture2DArray(const std::vector<std::string>& urls, const Texture2DArrayParams& params)
+        : mDepth{static_cast<int>(urls.size())}, mUrls{urls}, mParams{params}
+    {
+        std::vector<unsigned char*> textureDataPack;
+        for (const std::string& url : mUrls) {
+            unsigned char* data = stbi_load(url.c_str(), &mWidth, &mHeight, &mNumChannels, 0);
+            if (!data) {
+                DebugUI::PushLog(stderr, "[DEBUG] ERROR: couldn't load %s\n", url.c_str());
+                return;
+            }
+            textureDataPack.push_back(data);
+        }
+
+        switch (mNumChannels) {
+            case 1:
+                mParams.textureFormat = GL_RED;
+                mParams.internalFormat = GL_R8;
+                break;
+            case 2:
+                mParams.internalFormat = GL_RG8;
+                mParams.textureFormat = GL_RG;
+                break;
+            case 3:
+                mParams.textureFormat = GL_RGB;
+                mParams.internalFormat = GL_RGB8;
+                break;
+            case 4:
+                mParams.textureFormat = GL_RGBA;
+                mParams.internalFormat = GL_RGBA8;
+                break;
+        }
+
+        Create(textureDataPack);
+
+        for (unsigned char* dataPtr : textureDataPack) {
+            stbi_image_free(dataPtr);
+        }
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    void Texture2DArray::Create(const std::vector<T*>& data)
+    {
+        glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &mId);
+
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, mParams.wrapS);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, mParams.wrapT);
+        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, mParams.minF);
+        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, mParams.magF);
+
+        if (mParams.wrapS == GL_CLAMP_TO_BORDER || mParams.wrapT == GL_CLAMP_TO_BORDER) {
+            glTextureParameterfv(mId, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(mBorderColor));
+        }
+
+        if (!Utility::FloatEquals(mParams.maxAnisotropy, 0.0f) && GLAD_GL_EXT_texture_filter_anisotropic) {
+            float gpuMaxAnisotropy;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gpuMaxAnisotropy);
+            glTextureParameterf(mId, GL_TEXTURE_MAX_ANISOTROPY, mParams.maxAnisotropy <= gpuMaxAnisotropy ? mParams.maxAnisotropy : gpuMaxAnisotropy);
+        }
+
+        if (mParams.textureFormat == GL_DEPTH_COMPONENT) {
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        }
+
+        if (mParams.generateMipmaps) {
+            mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
+        }
+        else {
+            mNumMipmaps = 1;
+        }
+
+        glTextureStorage3D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight, mDepth);
+        for (int i = 0; i < static_cast<int>(data.size()); ++i) {
+            glTextureSubImage3D(mId, 0, 0, 0, i, mWidth, mHeight, 1, mParams.textureFormat, mParams.type, data[static_cast<size_t>(i)]);
+        }
+
+        if (mParams.generateMipmaps) glGenerateTextureMipmap(mId);
+
+        for (int i = 0; i < mDepth; ++i) {
+            DebugUI::PushLog(stdout, "[DEBUG] Loaded %dth texture of 2D texture array (%d:%d:%d:%d, %d mipmaps)\n", i, mWidth, mHeight, mDepth, mNumChannels, mNumMipmaps);
+        }
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    Texture2DArray::Texture2DArray(const std::vector<T*>& data, int width, int height, int numChannels, const Texture2DArrayParams& params)
+        : mParams{params}
+    {
+        for (size_t i = 0; i < data.size(); ++i) {
+            mUrls.push_back("<None>");
+        }
+        mWidth = width;
+        mHeight = height;
+        mDepth = static_cast<int>(data.size());
+        mNumChannels = numChannels;
+
+        Create(data);
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    Texture2DArray::Texture2DArray(const std::vector<T*>& data, int width, int height, int numChannels, const Texture2DArrayParams& params, const glm::vec4& borderColor)
+        : mParams{params}, mBorderColor{borderColor}
+    {
+        for (size_t i = 0; i < data.size(); ++i) {
+            mUrls.push_back("<None>");
+        }
+        mWidth = width;
+        mHeight = height;
+        mDepth = static_cast<int>(data.size());
+        mNumChannels = numChannels;
+
+        Create(data);
+    }
+
+    ////////////////////////////////////////
+    Texture2DArray::Texture2DArray(Texture2DArray&& other)
+        : mId{other.mId}, mWidth{other.mWidth}, mHeight{other.mHeight}, mDepth{other.mDepth}, mNumChannels{other.mNumChannels}, mUrls{std::move(other.mUrls)}, mParams{other.mParams}, mNumMipmaps{other.mNumMipmaps}
+    {
+        other.mId = 0;
+    }
+
+    ////////////////////////////////////////
+    Texture2DArray& Texture2DArray::operator=(Texture2DArray&& other)
+    {
+        if (this != &other) {
+            glDeleteTextures(1, &mId);
+
+            mId = other.mId;
+
+            mWidth = other.mWidth;
+            mHeight = other.mHeight;
+            mDepth = other.mDepth;
+            mNumChannels = other.mNumChannels;
+            mUrls = std::move(other.mUrls);
+            mParams = other.mParams;
+            mNumMipmaps = other.mNumMipmaps;
+
+            other.mId = 0;
+        }
+        return *this;
     }
 
     ////////////////////////////////////////
@@ -1650,7 +1809,7 @@ namespace Poe
     {
         CubemapParams params;
         params.generateMipmaps = false;
-        params.internalFormat = GL_DEPTH_COMPONENT16;
+        params.internalFormat = GL_DEPTH_COMPONENT32F;
         params.textureFormat = GL_DEPTH_COMPONENT;
         params.minF = params.magF = GL_LINEAR;
         params.wrapS = params.wrapT = params.wrapR = GL_CLAMP_TO_EDGE;
@@ -1777,6 +1936,19 @@ namespace Poe
         Check();
     }
 
+    ////////////////////////////////////////
+    Framebuffer::Framebuffer(const Texture2DArray& attachment, unsigned attachmentType, int layer)
+    {
+        glCreateFramebuffers(1, &mId);
+        glNamedFramebufferTextureLayer(mId, attachmentType, attachment.GetId(), 0, layer);
+        if (attachmentType == GL_DEPTH_ATTACHMENT && attachment.GetTextureFormat() == GL_DEPTH_COMPONENT) {
+            glNamedFramebufferDrawBuffer(mId, GL_NONE);
+            glNamedFramebufferReadBuffer(mId, GL_NONE);
+        }
+        Check();
+    }
+
+    ////////////////////////////////////////
     Framebuffer::Framebuffer(const Cubemap& attachment, unsigned attachmentType)
     {
         glCreateFramebuffers(1, &mId);

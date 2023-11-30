@@ -662,7 +662,7 @@ namespace Poe
         glm::vec3 mColor;
         glm::vec3 mDirection;
         float mIntensity;
-        glm::mat4 mLightMatrix;
+        std::vector<glm::mat4> mLightMatrices;
         bool mCastShadows;
     };
 
@@ -698,8 +698,13 @@ namespace Poe
         alignas(16) float color[3];
         alignas(16) float direction[3];
         alignas(4) float intensity;
-        alignas(16) float lightMatrix[4 * 4];
-        alignas(4) bool castShadows;
+        alignas(4) int castShadows;
+
+        alignas(16) float lightMatrix0[4 * 4];
+        alignas(16) float lightMatrix1[4 * 4];
+        alignas(16) float lightMatrix2[4 * 4];
+        alignas(16) float lightMatrix3[4 * 4];
+        alignas(16) float lightMatrix4[4 * 4];
     };
 
     ////////////////////////////////////////
@@ -751,8 +756,31 @@ namespace Poe
         void SetIntensity(float intensity)
         { data.intensity = intensity; }
 
-        void SetLightMatrix(const glm::mat4& lightMatrix)
-        { std::memcpy(data.lightMatrix, glm::value_ptr(lightMatrix), sizeof(glm::mat4)); }
+        void SetLightMatrix(int cascade, const glm::mat4& lightMatrix)
+        {
+            assert(cascade >= 0 && cascade <= NUM_SHADOW_CASCADES);
+            switch (cascade)
+            {
+            case 0:
+                std::memcpy(data.lightMatrix0, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
+                break;
+            case 1:
+                std::memcpy(data.lightMatrix1, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
+                break;
+            case 2:
+                std::memcpy(data.lightMatrix2, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
+                break;
+            case 3:
+                std::memcpy(data.lightMatrix3, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
+                break;
+            case 4:
+                std::memcpy(data.lightMatrix4, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
+                break;
+            default:
+                assert(0 && "Unknown cascade was given");
+                break;
+            }
+        }
 
         void SetCastShadows(bool flag)
         { data.castShadows = flag; }
@@ -765,11 +793,34 @@ namespace Poe
 
         float GetIntensity() const { return data.intensity; }
 
-        glm::mat4 GetLightMatrix() const
-        { return glm::mat4(data.lightMatrix[0],  data.lightMatrix[1],  data.lightMatrix[2],  data.lightMatrix[3],
-                           data.lightMatrix[4],  data.lightMatrix[5],  data.lightMatrix[6],  data.lightMatrix[7],
-                           data.lightMatrix[8],  data.lightMatrix[9],  data.lightMatrix[10], data.lightMatrix[11],
-                           data.lightMatrix[12], data.lightMatrix[13], data.lightMatrix[14], data.lightMatrix[15]); }
+        glm::mat4 GetLightMatrix(int cascade) const
+        {
+            assert(cascade >= 0 && cascade <= NUM_SHADOW_CASCADES);
+            const float* matrixPtr = [&]() -> const float*
+            {
+                switch (cascade)
+                {
+                    case 0:
+                        return data.lightMatrix0;
+                    case 1:
+                        return data.lightMatrix1;
+                    case 2:
+                        return data.lightMatrix2;
+                    case 3:
+                        return data.lightMatrix3;
+                    case 4:
+                        return data.lightMatrix4;
+                    default:
+                        return nullptr;
+                }
+            }();
+
+            assert(nullptr != matrixPtr);
+            return glm::mat4(matrixPtr[0],  matrixPtr[1],  matrixPtr[2],  matrixPtr[3],
+                             matrixPtr[4],  matrixPtr[5],  matrixPtr[6],  matrixPtr[7],
+                             matrixPtr[8],  matrixPtr[9],  matrixPtr[10], matrixPtr[11],
+                             matrixPtr[12], matrixPtr[13], matrixPtr[14], matrixPtr[15]);
+        }
 
         bool GetCastShadows() const { return data.castShadows; }
     };
@@ -924,10 +975,18 @@ namespace Poe
             mLightsData[ind].SetIntensity(intensity);
         }
 
-        void SetLightMatrix(int ind, const glm::mat4& lightMatrix)
+        void SetLightMatrix(int ind, int cascade, const glm::mat4& lightMatrix)
         {
             assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetLightMatrix(lightMatrix);
+            mLightsData[ind].SetLightMatrix(cascade, lightMatrix);
+        }
+
+        void SetLightMatrices(int ind, const std::vector<glm::mat4>& lightMatrices)
+        {
+            assert(lightMatrices.size() == NUM_SHADOW_CASCADES + 1);
+            for (int i = 0; i <= NUM_SHADOW_CASCADES; ++i) {
+                mLightsData[ind].SetLightMatrix(i, lightMatrices[static_cast<size_t>(i)]);
+            }
         }
 
         void SetCastShadows(int ind, bool flag)
@@ -941,10 +1000,12 @@ namespace Poe
 
         void Set(int ind, const glm::mat4& viewMatrix, const DirLight& dirLight)
         {
+            assert(NUM_SHADOW_CASCADES + 1 == dirLight.mLightMatrices.size());
+
             SetColor(ind, dirLight.mColor);
             SetDirection(ind, viewMatrix, dirLight.mDirection);
             SetIntensity(ind, dirLight.mIntensity);
-            SetLightMatrix(ind, dirLight.mLightMatrix);
+            SetLightMatrices(ind, dirLight.mLightMatrices);
             SetCastShadows(ind, dirLight.mCastShadows);
         }
 
@@ -966,10 +1027,19 @@ namespace Poe
             return mLightsData[ind].GetIntensity();
         }
 
-        glm::mat4 GetLightMatrix(int ind) const
+        glm::mat4 GetLightMatrix(int ind, int cascade) const
         {
             assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetLightMatrix();
+            return mLightsData[ind].GetLightMatrix(cascade);
+        }
+
+        std::vector<glm::mat4> GetLightMatrices(int ind) const
+        {
+            std::vector<glm::mat4> buffer;
+            for (int i = 0; i <= NUM_SHADOW_CASCADES; ++i) {
+                buffer.push_back(mLightsData[ind].GetLightMatrix(i));
+            }
+            return buffer;
         }
 
         bool GetCastShadows(int ind) const
@@ -980,11 +1050,13 @@ namespace Poe
 
         DirLight Get(int ind) const
         {
-            return DirLight{ GetColor(ind),
-                             GetDirection(ind),
-                             GetIntensity(ind),
-                             GetLightMatrix(ind),
-                             GetCastShadows(ind) };
+            DirLight dl;
+            dl.mColor = GetColor(ind);
+            dl.mDirection = GetDirection(ind);
+            dl.mIntensity = GetIntensity(ind);
+            dl.mLightMatrices = GetLightMatrices(ind);
+            dl.mCastShadows = GetCastShadows(ind);
+            return dl;
         }
     };
 
@@ -1525,6 +1597,85 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    struct Texture2DArrayParams
+    {
+        unsigned textureFormat = GL_RGB;
+        unsigned internalFormat = GL_RGB8;
+        bool generateMipmaps = true;
+        float maxAnisotropy = 16.0f;
+        int wrapS = GL_REPEAT;
+        int wrapT = GL_REPEAT;
+        int minF = GL_LINEAR_MIPMAP_LINEAR;
+        int magF = GL_LINEAR;
+        unsigned type = GL_UNSIGNED_BYTE;
+    };
+
+    ////////////////////////////////////////
+    struct Texture2DArray
+    {
+    private:
+        unsigned mId;
+
+        int mWidth;
+        int mHeight;
+        int mDepth;
+        int mNumChannels;
+        std::vector<std::string> mUrls;
+
+        Texture2DArrayParams mParams;
+
+        template <typename T>
+        void Create(const std::vector<T*>& data);
+
+        int mNumMipmaps;
+        glm::vec4 mBorderColor;
+
+    public:
+        Texture2DArray(const std::vector<std::string>& urls, const Texture2DArrayParams&);
+
+        template <typename T>
+        Texture2DArray(const std::vector<T*>& data, int width, int height, int numChannels, const Texture2DArrayParams&);
+
+        template <typename T>
+        Texture2DArray(const std::vector<T*>& data, int width, int height, int numChannels, const Texture2DArrayParams&, const glm::vec4&);
+
+        ~Texture2DArray() { glDeleteTextures(1, &mId); }
+
+        Texture2DArray(const Texture2DArray&) = delete;
+        Texture2DArray& operator=(const Texture2DArray&) = delete;
+
+        Texture2DArray(Texture2DArray&&);
+        Texture2DArray& operator=(Texture2DArray&&);
+
+        unsigned GetId() const { return mId; }
+
+        int GetWidth() const { return mWidth; }
+        int GetHeight() const { return mHeight; }
+        int GetDepth() const { return mDepth; }
+        int GetNumChannels() const { return mNumChannels; }
+        std::vector<std::string> GetUrls() const { return mUrls; }
+
+        unsigned GetTextureFormat() const { return mParams.textureFormat; }
+        unsigned GetInternalFormat() const { return mParams.internalFormat; }
+        bool HasMipmaps() const { return mParams.generateMipmaps; }
+        float GetMaxAnisotropy() const { return mParams.maxAnisotropy; }
+        int GetWrapS() const { return mParams.wrapS; }
+        int GetWrapT() const { return mParams.wrapT; }
+        int GetMinF() const { return mParams.minF; }
+        int GetMagF() const { return mParams.magF; }
+        unsigned GetType() const { return mParams.type; }
+
+        int GetNumMipmaps() const { return mNumMipmaps; }
+        glm::vec4 GetBorderColor() const { return mBorderColor; }
+
+        void Bind(unsigned loc = 0) const { glBindTextureUnit(loc, mId); }
+        void UnBind(unsigned loc = 0) const { glBindTextureUnit(loc, 0); }
+    };
+
+    ////////////////////////////////////////
+    Texture2DArray CreateCascadedDepthMap(int width, int height, int numCascades);
+
+    ////////////////////////////////////////
     enum class CubemapFace { Front, Back, Left, Right, Top, Bottom };
 
     ////////////////////////////////////////
@@ -1697,6 +1848,7 @@ namespace Poe
     public:
         explicit Framebuffer(const Texture2D&);
         Framebuffer(const Texture2D&, unsigned attachmentType);
+        Framebuffer(const Texture2DArray&, unsigned attachmentType, int layer);
         Framebuffer(const Cubemap&, unsigned attachmentType);
         Framebuffer(const Texture2D&, const Renderbuffer&);
         Framebuffer(const Texture2DMultiSample&, const RenderbufferMultiSample&);
