@@ -111,6 +111,6 @@ namespace Poe
         void SetAspectRatio(int width, int height)
         { mAspectRatio = static_cast<float>(width) / static_cast<float>(height); }
 
-        std::vector<glm::vec4> GetFrustumCornersInWorldSpace() const;
+        std::vector<glm::vec4> GetFrustumCornersInWorldSpace(float near, float far) const;
     };
 }

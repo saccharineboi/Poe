@@ -177,18 +177,19 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    std::vector<glm::vec4> FirstPersonCamera::GetFrustumCornersInWorldSpace() const
+    std::vector<glm::vec4> FirstPersonCamera::GetFrustumCornersInWorldSpace(float near, float far) const
     {
-        glm::mat4 invMatrix{ glm::inverse(mProjectionMatrix * mViewMatrix) };
+        glm::mat4 projectionMatrix = glm::perspective(mFovy, mAspectRatio, near, far);
+        glm::mat4 invMatrix{ glm::inverse(projectionMatrix * mViewMatrix) };
         std::vector<glm::vec4> frustumCorners;
-        for (float x = 0.0f; x < 2.0f; ++x) {
-            for (float y = 0.0f; y < 2.0f; ++y) {
-                for (float z = 0.0f; z < 2.0f; ++z) {
-                    glm::vec4 P{ invMatrix * glm::vec4(2.0f * x - 1.0f,
-                                                       2.0f * y - 1.0f,
-                                                       2.0f * z - 1.0f,
+        for (int x = 0; x < 2; ++x) {
+            for (int y = 0; y < 2; ++y) {
+                for (int z = 0; z < 2; ++z) {
+                    glm::vec4 P{ invMatrix * glm::vec4(2.0f * static_cast<float>(x) - 1.0f,
+                                                       2.0f * static_cast<float>(y) - 1.0f,
+                                                       2.0f * static_cast<float>(z) - 1.0f,
                                                        1.0f) };
-                    frustumCorners.push_back(P);
+                    frustumCorners.push_back(P / P.w);
                 }
             }
         }
