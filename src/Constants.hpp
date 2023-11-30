@@ -34,4 +34,8 @@ namespace Poe
     inline constexpr int DIR_LIGHT_DEPTH_MAP_BIND_POINT{ 13 };
     inline constexpr int POINT_LIGHT_DEPTH_MAP_BIND_POINT{ 14 };
     inline constexpr int SPOT_LIGHT_DEPTH_MAP_BIND_POINT{ 15 };
+
+    ////////////////////////////////////////
+    inline constexpr int NUM_SHADOW_CASCADES{ 4 };
+    inline constexpr int SHADOW_SIZE{ 2048 };
 }
