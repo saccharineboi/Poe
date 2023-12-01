@@ -336,14 +336,14 @@ namespace CSItalyDemo
                 for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
 
                     std::vector<glm::vec4> frustumCorners = [&]() {
+                        float zOffset{ 10.0f };
                         if (i == 0) {
-                            return mainCamera.GetFrustumCornersInWorldSpace(mainCamera.mNear, cascadeLevels.front());
+                            return mainCamera.GetFrustumCornersInWorldSpace(mainCamera.mNear - zOffset, cascadeLevels.front() + zOffset);
                         }
                         else if (i == Poe::NUM_SHADOW_CASCADES) {
-                            return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels.back(), mainCamera.mFar);
+                            return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels.back() - zOffset, mainCamera.mFar + zOffset);
                         }
                         size_t ind = static_cast<size_t>(i);
-                        float zOffset{ 10.0f };
                         return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels[ind - 1] - zOffset, cascadeLevels[ind] + zOffset);
                     }();
 
