@@ -698,7 +698,6 @@ namespace Poe
         alignas(16) float color[3];
         alignas(16) float direction[3];
         alignas(4) float intensity;
-        alignas(4) int castShadows;
 
         alignas(16) float lightMatrix0[4 * 4];
         alignas(16) float lightMatrix1[4 * 4];
@@ -718,7 +717,6 @@ namespace Poe
         alignas(4) float quadratic;
         alignas(4) float intensity;
         alignas(4) float farPlane;
-        alignas(4) bool castShadows;
     };
 
     ////////////////////////////////////////
@@ -734,7 +732,6 @@ namespace Poe
         alignas(4) float quadratic;
         alignas(4) float intensity;
         alignas(16) float lightMatrix[4 * 4];
-        alignas(4) bool castShadows;
     };
 
     ////////////////////////////////////////
@@ -782,9 +779,6 @@ namespace Poe
             }
         }
 
-        void SetCastShadows(bool flag)
-        { data.castShadows = flag; }
-
         glm::vec3 GetColor() const
         { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
 
@@ -821,8 +815,6 @@ namespace Poe
                              matrixPtr[8],  matrixPtr[9],  matrixPtr[10], matrixPtr[11],
                              matrixPtr[12], matrixPtr[13], matrixPtr[14], matrixPtr[15]);
         }
-
-        bool GetCastShadows() const { return data.castShadows; }
     };
 
     ////////////////////////////////////////
@@ -854,9 +846,6 @@ namespace Poe
 
         void SetIntensity(float intensity) { data.intensity = intensity; }
 
-        void SetCastShadows(bool flag)
-        { data.castShadows = flag; }
-
         glm::vec3 GetColor() const
         { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
 
@@ -873,8 +862,6 @@ namespace Poe
         float GetRadius() const { return 4.5f / data.linear; }
 
         float GetIntensity() const { return data.intensity; }
-
-        bool GetCastShadows() const { return data.castShadows; }
 
         float GetFarPlane() const { return data.farPlane; }
     };
@@ -912,9 +899,6 @@ namespace Poe
         void SetLightMatrix(const glm::mat4& lightMatrix)
         { std::memcpy(data.lightMatrix, glm::value_ptr(lightMatrix), sizeof(glm::mat4)); }
 
-        void SetCastShadows(bool flag)
-        { data.castShadows = flag; }
-
         glm::vec3 GetColor() const
         { return glm::vec3(data.color[0], data.color[1], data.color[2]); }
 
@@ -940,8 +924,6 @@ namespace Poe
                            data.lightMatrix[4],  data.lightMatrix[5],  data.lightMatrix[6],  data.lightMatrix[7],
                            data.lightMatrix[8],  data.lightMatrix[9],  data.lightMatrix[10], data.lightMatrix[11],
                            data.lightMatrix[12], data.lightMatrix[13], data.lightMatrix[14], data.lightMatrix[15]); }
-
-        bool GetCastShadows() const { return data.castShadows; }
     };
 
     ////////////////////////////////////////
@@ -989,12 +971,6 @@ namespace Poe
             }
         }
 
-        void SetCastShadows(int ind, bool flag)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetCastShadows(flag);
-        }
-
         void Update() const
         { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
 
@@ -1006,7 +982,6 @@ namespace Poe
             SetDirection(ind, viewMatrix, dirLight.mDirection);
             SetIntensity(ind, dirLight.mIntensity);
             SetLightMatrices(ind, dirLight.mLightMatrices);
-            SetCastShadows(ind, dirLight.mCastShadows);
         }
 
         glm::vec3 GetColor(int ind) const
@@ -1042,20 +1017,13 @@ namespace Poe
             return buffer;
         }
 
-        bool GetCastShadows(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetCastShadows();
-        }
-
         DirLight Get(int ind) const
         {
-            DirLight dl;
+            DirLight dl{};
             dl.mColor = GetColor(ind);
             dl.mDirection = GetDirection(ind);
             dl.mIntensity = GetIntensity(ind);
             dl.mLightMatrices = GetLightMatrices(ind);
-            dl.mCastShadows = GetCastShadows(ind);
             return dl;
         }
     };
@@ -1103,12 +1071,6 @@ namespace Poe
             mLightsData[ind].SetIntensity(intensity);
         }
 
-        void SetCastShadows(int ind, bool flag)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetCastShadows(flag);
-        }
-
         void SetFarPlane(int ind, float farPlane)
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
@@ -1123,7 +1085,6 @@ namespace Poe
             SetRadius(ind, pl.mRadius);
             SetIntensity(ind, pl.mIntensity);
             SetFarPlane(ind, pl.mFarPlane);
-            SetCastShadows(ind, pl.mCastShadows);
         }
 
         glm::vec3 GetColor(int ind) const
@@ -1156,12 +1117,6 @@ namespace Poe
             return mLightsData[ind].GetIntensity();
         }
 
-        bool GetCastShadows(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetCastShadows();
-        }
-
         float GetFarPlane(int ind) const
         {
             assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
@@ -1175,7 +1130,7 @@ namespace Poe
                                GetViewPosition(ind),
                                GetRadius(ind),
                                GetIntensity(ind),
-                               GetCastShadows(ind),
+                               false,
                                GetFarPlane(ind) };
         }
 
@@ -1244,12 +1199,6 @@ namespace Poe
             mLightsData[ind].SetLightMatrix(lightMatrix);
         }
 
-        void SetCastShadows(int ind, bool flag)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetCastShadows(flag);
-        }
-
         void Set(int ind, const glm::mat4& viewMatrix, const SpotLight& sp)
         {
             SetColor(ind, sp.mColor);
@@ -1260,7 +1209,6 @@ namespace Poe
             SetRadius(ind, sp.mRadius);
             SetIntensity(ind, sp.mIntensity);
             SetLightMatrix(ind, sp.mLightMatrix);
-            SetCastShadows(ind, sp.mCastShadows);
         }
 
         glm::vec3 GetColor(int ind) const
@@ -1311,12 +1259,6 @@ namespace Poe
             return mLightsData[ind].GetLightMatrix();
         }
 
-        bool GetCastShadows(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetCastShadows();
-        }
-
         SpotLight Get(int ind) const
         {
             return SpotLight{ GetColor(ind),
@@ -1327,7 +1269,7 @@ namespace Poe
                               GetRadius(ind),
                               GetIntensity(ind),
                               GetLightMatrix(ind),
-                              GetCastShadows(ind) };
+                              false };
         }
 
         void Update() const

@@ -28,7 +28,6 @@ struct DirLight_t
     vec3 color;
     vec3 direction; // in view space
     float intensity;
-    bool castShadows;
 
     mat4 lightSpace0;
     mat4 lightSpace1;
@@ -52,7 +51,6 @@ struct PointLight_t
     float quadratic;
     float intensity;
     float farPlane;
-    bool castShadows;
 };
 
 layout (std140, binding = 6) uniform PointLightBlock
@@ -72,7 +70,6 @@ struct SpotLight_t
     float quadratic;
     float intensity;
     mat4 lightSpace;
-    bool castShadows;
 };
 
 layout (std140, binding = 7) uniform SpotLightBlock
