@@ -2183,6 +2183,8 @@ namespace Poe
         Texture2D mColor0;
         Framebuffer mFbo;
 
+        PostProcessUB mBlock;
+
     public:
         PostProcessStack(const std::string& shaderRootPath,
                          int width, int height,
@@ -2205,6 +2207,8 @@ namespace Poe
         int GetOutputWidth() const { return mOutputWidth; }
         int GetOutputHeight() const { return mOutputHeight; }
         int GetNumSamples() const { return mNumSamples; }
+
+        PostProcessUB& GetBlock() { return mBlock; }
 
         void Use() const
         {

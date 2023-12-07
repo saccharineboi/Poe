@@ -2073,7 +2073,12 @@ namespace Poe
           mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
-          mFbo(mColor0) {}
+          mFbo(mColor0)
+    {
+        mBlock.SetExposure(PP_DEFAULT_EXPOSURE);
+        mBlock.SetGamma(PP_DEFAULT_GAMMA);
+        mBlock.Buffer().TurnOn();
+    }
 
     ////////////////////////////////////////
     PostProcessStack::PostProcessStack(const std::string& shaderRootPath,
@@ -2086,7 +2091,12 @@ namespace Poe
           mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
-          mFbo(mColor0) {}
+          mFbo(mColor0)
+    {
+        mBlock.SetExposure(PP_DEFAULT_EXPOSURE);
+        mBlock.SetGamma(PP_DEFAULT_GAMMA);
+        mBlock.Buffer().TurnOn();
+    }
 
     ////////////////////////////////////////
     AbstractEmissiveColorProgram::AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)

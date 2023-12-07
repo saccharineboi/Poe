@@ -38,4 +38,8 @@ namespace Poe
     ////////////////////////////////////////
     inline constexpr int NUM_SHADOW_CASCADES{ 4 };
     inline constexpr int SHADOW_SIZE{ 2048 };
+
+    ////////////////////////////////////////
+    inline constexpr float PP_DEFAULT_EXPOSURE{ 1.0f };
+    inline constexpr float PP_DEFAULT_GAMMA{ 2.2f };
 }

@@ -223,11 +223,6 @@ namespace CSItalyDemo
         Poe::PostProcessStack ppStack("..", fbWidth / fbSizeMultiplier, fbHeight / fbSizeMultiplier, fbWidth, fbHeight, 8, shaderLoader);
         mainCamera.SetAspectRatio(ppStack.GetWidth(), ppStack.GetHeight());
 
-        Poe::PostProcessUB ppBlock;
-        ppBlock.SetExposure(1.0f);
-        ppBlock.SetGamma(2.2f);
-        ppBlock.Buffer().TurnOn();
-
         Poe::FogUB fogBlock(glm::vec3(1.0f), 1000.0f, 2.0f);
         fogBlock.Buffer().TurnOn();
 
@@ -463,7 +458,7 @@ namespace CSItalyDemo
             Poe::DebugUI::Begin_GlobalInfo();
                 Poe::DebugUI::Draw_GlobalInfo_General();
                 Poe::DebugUI::Draw_GlobalInfo_Camera(mainCamera);
-                Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppBlock);
+                Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppStack.GetBlock());
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
                 Poe::DebugUI::Draw_GlobalIlluminationInfo(ambientFactor);
                 Poe::DebugUI::Render_DirLightInfo(sun);
