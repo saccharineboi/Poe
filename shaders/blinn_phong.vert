@@ -69,6 +69,7 @@ struct SpotLight_t
     float linear;
     float quadratic;
     float intensity;
+
     mat4 lightSpace;
 };
 

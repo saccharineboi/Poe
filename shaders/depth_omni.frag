@@ -1,15 +1,15 @@
 #version 460 core
 
-in GEOM_OUT
+in VS_OUT
 {
-    vec4 vFragPos;
+    vec3 vFragPos; // world space
 }
-geom_in;
+fs_in;
 
-layout (location = 25) uniform float uFarPlane;
-layout (location = 26) uniform vec3 uLightPos; // world space
+layout (location = 2) uniform float uFarPlane;
+layout (location = 3) uniform vec3 uLightPos; // world space
 
 void main()
 {
-    gl_FragDepth = length(geom_in.vFragPos.xyz - uLightPos) / uFarPlane;
+    gl_FragDepth = length(fs_in.vFragPos - uLightPos) / uFarPlane;
 }

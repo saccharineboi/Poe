@@ -154,8 +154,10 @@ float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightD
 
 float ComputeShadowForPointLights(vec3 lightPos, float farPlane, vec3 normal, vec3 lightDir)
 {
+    float bias = max(SHADOW_BIAS_MAX * (1.0f - dot(normal, lightDir)), SHADOW_BIAS_MIN);
     vec3 fragToLight = fs_in.vFragPosWorld - lightPos;
-    return texture(uPointLightDepthMap, vec4(fragToLight, length(fragToLight) / farPlane - 0.005f));
+    float shadowComp = texture(uPointLightDepthMap, vec4(fragToLight, length(fragToLight) / farPlane - bias));
+    return shadowComp;
 }
 
 float ComputeShadowForSpotLights(vec4 fragPosLightSpace)
