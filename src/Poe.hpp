@@ -1817,6 +1817,9 @@ namespace Poe
         { glBlitNamedFramebuffer(mId, fb.GetId(), 0, 0, width, height, 0, 0, outputWidth, outputHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); }
 
         unsigned GetId() const { return mId; }
+
+        void BindTarget(unsigned attachmentType, const Cubemap& cubemap, unsigned faceIndex) const
+        { glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, faceIndex, cubemap.GetId(), 0); }
     };
 
     ////////////////////////////////////////
@@ -2423,19 +2426,18 @@ namespace Poe
         virtual ~AbstractOmniDepthProgram() {}
 
         static inline constexpr int MODEL_MAX_LOC{ 0 };
-        static inline constexpr int LIGHT_MATRICES_LOC{ 1 };
-        static inline constexpr int FAR_PLANE_LOC{ 25 };
-        static inline constexpr int LIGHT_POS_LOC{ 26 };
+        static inline constexpr int LIGHT_MATRIX_LOC{ 1 };
+        static inline constexpr int FAR_PLANE_LOC{ 2 };
+        static inline constexpr int LIGHT_POS_LOC{ 3 };
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
 
         virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
 
-        void SetLightMatrices(const glm::mat4* lightMatrices) const
+        void SetLightMatrix(const glm::mat4& lightMatrix) const
         {
-            assert(nullptr != lightMatrices);
-            glUniformMatrix4fv(static_cast<int>(LIGHT_MATRICES_LOC), 6, GL_FALSE, glm::value_ptr(lightMatrices[0]));
+            glUniformMatrix4fv(LIGHT_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(lightMatrix));
         }
 
         void SetFarPlane(float farPlane) const

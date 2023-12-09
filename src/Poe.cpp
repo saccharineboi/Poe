@@ -2404,7 +2404,6 @@ namespace Poe
     ////////////////////////////////////////
     AbstractOmniDepthProgram::AbstractOmniDepthProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
         : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_GEOMETRY_SHADER, rootPath + "/shaders/depth_omni.geom"),
                     loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/depth_omni.frag") } {}
 
     ////////////////////////////////////////
