@@ -1686,7 +1686,7 @@ namespace Poe
         params.generateMipmaps = false;
         params.type = GL_FLOAT;
         params.textureFormat = GL_DEPTH_COMPONENT;
-        params.internalFormat = GL_DEPTH_COMPONENT32F;
+        params.internalFormat = GL_DEPTH_COMPONENT16;
         params.maxAnisotropy = 0.0f;
         float* data = nullptr;
         return Texture2D(data, width, height, 1, params, glm::vec4(1.0f));
@@ -1701,7 +1701,7 @@ namespace Poe
         params.generateMipmaps = false;
         params.type = GL_FLOAT;
         params.textureFormat = GL_DEPTH_COMPONENT;
-        params.internalFormat = GL_DEPTH_COMPONENT32F;
+        params.internalFormat = GL_DEPTH_COMPONENT16;
         params.maxAnisotropy = 0.0f;
         std::vector<float*> data(static_cast<size_t>(numCascades));
         return Texture2DArray(data, width, height, 1, params, glm::vec4(1.0f));
@@ -1961,7 +1961,7 @@ namespace Poe
     {
         CubemapParams params;
         params.generateMipmaps = false;
-        params.internalFormat = GL_DEPTH_COMPONENT32F;
+        params.internalFormat = GL_DEPTH_COMPONENT16;
         params.textureFormat = GL_DEPTH_COMPONENT;
         params.minF = params.magF = GL_LINEAR;
         params.wrapS = params.wrapT = params.wrapR = GL_CLAMP_TO_EDGE;

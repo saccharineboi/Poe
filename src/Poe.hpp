@@ -756,7 +756,6 @@ namespace Poe
 
         void SetLightMatrix(int cascade, const glm::mat4& lightMatrix)
         {
-            assert(cascade >= 0 && cascade <= NUM_SHADOW_CASCADES);
             switch (cascade)
             {
             case 0:
@@ -790,7 +789,6 @@ namespace Poe
 
         glm::mat4 GetLightMatrix(int cascade) const
         {
-            assert(cascade >= 0 && cascade <= NUM_SHADOW_CASCADES);
             const float* matrixPtr = [&]() -> const float*
             {
                 switch (cascade)
@@ -966,9 +964,8 @@ namespace Poe
 
         void SetLightMatrices(int ind, const std::vector<glm::mat4>& lightMatrices)
         {
-            assert(lightMatrices.size() == NUM_SHADOW_CASCADES + 1);
-            for (int i = 0; i <= NUM_SHADOW_CASCADES; ++i) {
-                mLightsData[ind].SetLightMatrix(i, lightMatrices[static_cast<size_t>(i)]);
+            for (size_t i = 0; i < lightMatrices.size(); ++i) {
+                mLightsData[ind].SetLightMatrix(static_cast<int>(i), lightMatrices[i]);
             }
         }
 
@@ -977,8 +974,6 @@ namespace Poe
 
         void Set(int ind, const glm::mat4& viewMatrix, const DirLight& dirLight)
         {
-            assert(NUM_SHADOW_CASCADES + 1 == dirLight.mLightMatrices.size());
-
             SetColor(ind, dirLight.mColor);
             SetDirection(ind, viewMatrix, dirLight.mDirection);
             SetIntensity(ind, dirLight.mIntensity);
@@ -1012,7 +1007,7 @@ namespace Poe
         std::vector<glm::mat4> GetLightMatrices(int ind) const
         {
             std::vector<glm::mat4> buffer;
-            for (int i = 0; i <= NUM_SHADOW_CASCADES; ++i) {
+            for (int i = 0; i <= 4; ++i) {
                 buffer.push_back(mLightsData[ind].GetLightMatrix(i));
             }
             return buffer;
