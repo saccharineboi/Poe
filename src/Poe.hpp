@@ -18,6 +18,7 @@
 
 #include "Constants.hpp"
 #include "Suppress.hpp"
+#include "Utility.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -1421,15 +1422,17 @@ namespace Poe
     struct ShaderLoader
     {
     private:
-        // key: path, data: shader content
-        std::unordered_map<std::string, Shader> mShaders;
+        // key: path+type, data: shader content
+        std::unordered_map<std::pair<std::string, GLuint>, Shader, Utility::PairHash> mShaders;
 
     public:
-        Shader& Load(unsigned type, std::string_view shaderUrl);
+        Shader& Load(GLuint type, const std::string& shaderUrl);
+        Shader& Load(GLuint type, const std::string& shaderUrl,
+                     const std::vector<std::pair<std::string, float>>& values);
+        Shader& Load(GLuint type, const std::string& shaderUrl,
+                     const std::vector<std::pair<std::string, float>>& values,
+                     const std::vector<std::string>& additionalUrls);
     };
-
-    ////////////////////////////////////////
-    Program CreateBasicProgram(const std::string& rootPath, ShaderLoader&);
 
     ////////////////////////////////////////
     struct PostProcessProgram
@@ -1645,10 +1648,14 @@ namespace Poe
         int mNumChannels;
         int mNumMipmaps;
         CubemapParams mParams;
+        glm::vec4 mBorderColor;
+
+        void Create();
 
     public:
         Cubemap(std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
         Cubemap(int width, int height, const CubemapParams&);
+        Cubemap(int width, int height, const CubemapParams&, const glm::vec4& borderColor);
 
         ~Cubemap() { glDeleteTextures(1, &mId); }
 
@@ -1686,6 +1693,7 @@ namespace Poe
         int GetMinF() const { return mParams.minF; }
         int GetMagF() const { return mParams.magF; }
         unsigned GetType() const { return mParams.type; }
+        glm::vec4 GetBorderColor() const { return mBorderColor; }
     };
 
     ////////////////////////////////////////
@@ -2180,7 +2188,7 @@ namespace Poe
         Program mProgram;
 
     public:
-        AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader&, const std::string& vshaderUrl);
+        AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader&, bool);
 
         virtual ~AbstractEmissiveColorProgram() {}
 
@@ -2227,7 +2235,7 @@ namespace Poe
         Program mProgram;
 
     public:
-        AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&, const std::string& vshaderUrl);
+        AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader&, bool);
 
         virtual ~AbstractEmissiveTextureProgram() {}
 
@@ -2317,12 +2325,39 @@ namespace Poe
     struct AbstractBlinnPhongProgram
     {
     protected:
+        int mNumDirLights;
+        int mNumPointLights;
+        int mNumSpotLights;
+        int mNumCascades;
+        float mShadowBiasMin;
+        float mShadowBiasMax;
+        float mPointShadowBias;
+
         Program mProgram;
 
     public:
-        AbstractBlinnPhongProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
+        AbstractBlinnPhongProgram(const std::string& rootPath,
+                                  ShaderLoader&,
+                                  bool isInstanced,
+                                  int numDirLights,
+                                  int numPointLights,
+                                  int numSpotLights,
+                                  int numCascades,
+                                  float shadowBiasMin,
+                                  float shadowBiasMax,
+                                  float pointShadowBias);
 
         virtual ~AbstractBlinnPhongProgram() {}
+
+        int GetNumDirLights() const { return mNumDirLights; }
+        int GetNumPointLights() const { return mNumPointLights; }
+        int GetNumSpotLights() const { return mNumSpotLights; }
+
+        int GetNumCascades() const { return mNumCascades; }
+
+        float GetShadowBiasMin() const { return mShadowBiasMin; }
+        float GetShadowBiasMax() const { return mShadowBiasMax; }
+        float GetPointShadowBias() const { return mPointShadowBias; }
 
         static inline constexpr int MODEL_MATRIX_LOC{ 0 };
         static inline constexpr int NORMAL_MATRIX_LOC{ 1 };
@@ -2356,7 +2391,15 @@ namespace Poe
     ////////////////////////////////////////
     struct BlinnPhongProgram : public AbstractBlinnPhongProgram
     {
-        BlinnPhongProgram(const std::string& rootPath, ShaderLoader&);
+        BlinnPhongProgram(const std::string& rootPath,
+                          ShaderLoader&,
+                          int numDirLights,
+                          int numPointLights,
+                          int numSpotLights,
+                          int numCascades,
+                          float shadowBiasMin,
+                          float shadowBiasMax,
+                          float pointShadowBias);
 
         void SetModelMatrix(const glm::mat4& modelMatrix) const override
         { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
@@ -2368,7 +2411,15 @@ namespace Poe
     ////////////////////////////////////////
     struct BlinnPhongProgramInstanced : public AbstractBlinnPhongProgram
     {
-        BlinnPhongProgramInstanced(const std::string& rootPath, ShaderLoader&);
+        BlinnPhongProgramInstanced(const std::string& rootPath,
+                                   ShaderLoader&,
+                                   int numDirLights,
+                                   int numPointLights,
+                                   int numSpotLights,
+                                   int numCascades,
+                                   float shadowBiasMin,
+                                   float shadowBiasMax,
+                                   float pointShadowBias);
 
         void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
         void SetNormalMatrix(const glm::mat3& normalMatrix) const override {}
@@ -2381,52 +2432,12 @@ namespace Poe
         Program mProgram;
 
     public:
-        AbstractDepthProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
+        AbstractDepthProgram(const std::string& rootPath, ShaderLoader&, bool isInstanced, bool isOmni);
 
         virtual ~AbstractDepthProgram() {}
 
         static inline constexpr int LIGHT_MATRIX_LOC{ 0 };
         static inline constexpr int MODEL_MATRIX_LOC{ 1 };
-
-        void Use() const { mProgram.Use(); }
-        void Halt() const { mProgram.Halt(); }
-
-        virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
-
-        void SetLightMatrix(const glm::mat4& lightMatrix) const
-        { glUniformMatrix4fv(LIGHT_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(lightMatrix)); }
-    };
-
-    ////////////////////////////////////////
-    struct DepthProgram : public AbstractDepthProgram
-    {
-        DepthProgram(const std::string& rootPath, ShaderLoader&);
-
-        void SetModelMatrix(const glm::mat4& modelMatrix) const override
-        { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
-    };
-
-    ////////////////////////////////////////
-    struct DepthProgramInstanced : public AbstractDepthProgram
-    {
-        DepthProgramInstanced(const std::string& rootPath, ShaderLoader&);
-
-        void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
-    };
-
-    ////////////////////////////////////////
-    struct AbstractOmniDepthProgram
-    {
-    protected:
-        Program mProgram;
-
-    public:
-        AbstractOmniDepthProgram(const std::string& rootPath, ShaderLoader&, const std::string&);
-
-        virtual ~AbstractOmniDepthProgram() {}
-
-        static inline constexpr int MODEL_MAX_LOC{ 0 };
-        static inline constexpr int LIGHT_MATRIX_LOC{ 1 };
         static inline constexpr int FAR_PLANE_LOC{ 2 };
         static inline constexpr int LIGHT_POS_LOC{ 3 };
 
@@ -2436,38 +2447,72 @@ namespace Poe
         virtual void SetModelMatrix(const glm::mat4& modelMatrix) const = 0;
 
         void SetLightMatrix(const glm::mat4& lightMatrix) const
+        { glUniformMatrix4fv(LIGHT_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(lightMatrix)); }
+
+        virtual void SetFarPlane(float farPlane) const = 0;
+        virtual void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const = 0;
+    };
+
+    ////////////////////////////////////////
+    struct DepthProgram : public AbstractDepthProgram
+    {
+        DepthProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override
+        { glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix)); }
+
+        void SetFarPlane(float farPlane) const override {}
+        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const override {}
+    };
+
+    ////////////////////////////////////////
+    struct DepthProgramInstanced : public AbstractDepthProgram
+    {
+        DepthProgramInstanced(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
+
+        void SetFarPlane(float farPlane) const override {}
+        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const override {}
+    };
+
+    ////////////////////////////////////////
+    struct DepthOmniProgram : public AbstractDepthProgram
+    {
+        DepthOmniProgram(const std::string& rootPath, ShaderLoader&);
+
+        void SetModelMatrix(const glm::mat4& modelMatrix) const override
         {
-            glUniformMatrix4fv(LIGHT_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(lightMatrix));
+            glUniformMatrix4fv(MODEL_MATRIX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         }
 
-        void SetFarPlane(float farPlane) const
+        void SetFarPlane(float farPlane) const override
         {
             glUniform1f(FAR_PLANE_LOC, farPlane);
         }
 
-        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const
+        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const override
         {
             glUniform3fv(LIGHT_POS_LOC, 1, glm::value_ptr(lightPos));
         }
     };
 
     ////////////////////////////////////////
-    struct DepthOmniProgram : public AbstractOmniDepthProgram
-    {
-        DepthOmniProgram(const std::string& rootPath, ShaderLoader&);
-
-        void SetModelMatrix(const glm::mat4& modelMatrix) const override
-        {
-            glUniformMatrix4fv(MODEL_MAX_LOC, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-        }
-    };
-
-    ////////////////////////////////////////
-    struct DepthOmniProgramInstanced : public AbstractOmniDepthProgram
+    struct DepthOmniProgramInstanced : public AbstractDepthProgram
     {
         DepthOmniProgramInstanced(const std::string& rootPath, ShaderLoader&);
 
         void SetModelMatrix(const glm::mat4& modelMatrix) const override {}
+
+        void SetFarPlane(float farPlane) const override
+        {
+            glUniform1f(FAR_PLANE_LOC, farPlane);
+        }
+
+        void SetLightPositionInWorldSpace(const glm::vec3& lightPos) const override
+        {
+            glUniform3fv(LIGHT_POS_LOC, 1, glm::value_ptr(lightPos));
+        }
     };
 
     ////////////////////////////////////////
@@ -2476,8 +2521,16 @@ namespace Poe
     private:
         Program mProgram;
 
+        float mShaderPI;
+        float mShaderISteps;
+        float mShaderJSteps;
+
     public:
-        RealisticSkyboxProgram(const std::string& rootPath, ShaderLoader&);
+        RealisticSkyboxProgram(const std::string& rootPath,
+                               ShaderLoader&,
+                               float shaderPi = 3.1415926f,
+                               float shaderISteps = 16,
+                               float shaderJSteps = 8);
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }

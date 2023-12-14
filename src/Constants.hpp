@@ -42,4 +42,13 @@ namespace Poe
     ////////////////////////////////////////
     inline constexpr float PP_DEFAULT_EXPOSURE{ 1.0f };
     inline constexpr float PP_DEFAULT_GAMMA{ 2.2f };
+
+    ////////////////////////////////////////
+    inline constexpr int ATTRIB_POS_LOC{ 0 };
+    inline constexpr int ATTRIB_TEXCOORD_LOC{ 1 };
+    inline constexpr int ATTRIB_NORMAL_LOC{ 2 };
+
+    ////////////////////////////////////////
+    inline constexpr int INSTANCED_MODEL_LOC{ 8 };
+    inline constexpr int INSTANCED_NORMAL_LOC{ 12 };
 }

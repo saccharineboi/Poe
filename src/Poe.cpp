@@ -34,9 +34,59 @@ ENABLE_WARNINGS()
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <sstream>
 
 namespace Poe
 {
+    ////////////////////////////////////////
+    static inline std::string ComputeOpenGLVersionStringForShader()
+    {
+        GLint major, minor;
+        glGetIntegerv(GL_MAJOR_VERSION, &major);
+        glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+        // assume version >= 330
+        return std::string("#version ") + std::to_string(major) + std::to_string(minor) + std::string("0 core\n");
+    }
+
+    ////////////////////////////////////////
+    static inline std::string ComputeShaderTypeStringForShader(GLuint type)
+    {
+        switch (type) {
+            case GL_VERTEX_SHADER:
+                return "#define POE_VERTEX_SHADER\n";
+            case GL_FRAGMENT_SHADER:
+                return "#define POE_FRAGMENT_SHADER\n";
+            case GL_GEOMETRY_SHADER:
+                return "#define POE_GEOMETRY_SHADER\n";
+            case GL_COMPUTE_SHADER:
+                return "#define POE_COMPUTE_SHADER\n";
+            default:
+                DebugUI::PushLog(stderr, "%u is an unrecognized shader type", type);
+                return "error";
+        }
+    }
+
+    ////////////////////////////////////////
+    static inline std::string ComputeDefineStringForShader(const std::string& param)
+    {
+        return std::string("#define ") + param + '\n';
+    }
+
+    ////////////////////////////////////////
+    template <typename T>
+    static inline std::string ComputeDefineStringForShader(const std::string& param, T value)
+    {
+        if constexpr (std::is_floating_point<T>()) {
+            int integralPart{ static_cast<int>(value) };
+            if (Utility::FloatEquals(static_cast<float>(integralPart) - value, 0.0f)) {
+                return std::string("#define ") + param + " " + std::to_string(integralPart) + '\n';
+            }
+        }
+        return std::string("#define ") + param + " " + std::to_string(value) + '\n';
+    }
+
     ////////////////////////////////////////
     void APIENTRY GraphicsDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam)
     {
@@ -454,17 +504,15 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Program CreateBasicProgram(const std::string& rootPath, ShaderLoader& loader)
-    {
-        Shader& vshader = loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/basic.vert");
-        Shader& fshader = loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/basic.frag");
-        return Program{ vshader, fshader };
-    }
-
-    ////////////////////////////////////////
     PostProcessProgram::PostProcessProgram(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/post_process.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/post_process.frag") }
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/post_process.glsl"),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/post_process.glsl",
+                                { { "POE_USCREEN_TEXTURE_LOC", PostProcessProgram::SCREEN_TEXTURE_LOC },
+                                  { "POE_UTEXEL_STRETCH_LOC", PostProcessProgram::TEXELSTRETCH_LOC },
+                                  { "POE_POST_PROCESS_BLOCK_LOC", UniformBuffer::POSTPROCESS_BLOCK_BINDING } },
+                                { rootPath + "/shaders/post_processing/gamma.glsl" }) }
     {
         mProgram.Use();
             glUniform1i(SCREEN_TEXTURE_LOC, 0);
@@ -477,7 +525,7 @@ namespace Poe
         if (mNumInstances > 0) {
             mModelMatrixBuffer->Bind();
             mVao.Bind();
-            for (unsigned i = 8; i < 12; ++i) {
+            for (unsigned i = INSTANCED_MODEL_LOC; i < INSTANCED_MODEL_LOC + 4; ++i) {
                 glEnableVertexAttribArray(i);
                 glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), reinterpret_cast<const void*>((i - 8) * sizeof(glm::vec4)));
                 glVertexAttribDivisor(i, 1);
@@ -1398,13 +1446,79 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    Shader& ShaderLoader::Load(unsigned type, std::string_view shaderUrl)
+    Shader& ShaderLoader::Load(GLuint type, const std::string& shaderUrl)
     {
-        auto iter = mShaders.find(shaderUrl.data());
+        auto iter = mShaders.find({shaderUrl, type});
         if (iter == mShaders.end()) {
             std::string contents = IO::ReadTextFile(shaderUrl.data());
-            Shader shader(type, contents);
-            auto s = mShaders.insert(std::make_pair(shaderUrl, std::move(shader)));
+            std::string header = ComputeOpenGLVersionStringForShader();
+            std::string shaderType = ComputeShaderTypeStringForShader(type);
+            Shader shader(type, header + shaderType + contents);
+            auto s = mShaders.insert({std::make_pair(shaderUrl, type), std::move(shader)});
+            return s.first->second;
+        }
+        return iter->second;
+    }
+
+    ////////////////////////////////////////
+    Shader& ShaderLoader::Load(GLuint type, const std::string& shaderUrl, const std::vector<std::pair<std::string, float>>& values)
+    {
+        std::stringstream valuesStr;
+        for (const auto& [ name, value ] : values) {
+            valuesStr << std::to_string(value);
+        }
+
+        auto iter = mShaders.find({ shaderUrl + valuesStr.str(), type });
+        if (iter == mShaders.end()) {
+            std::string contents = IO::ReadTextFile(shaderUrl.data());
+            std::string header = ComputeOpenGLVersionStringForShader();
+            std::string shaderType = ComputeShaderTypeStringForShader(type);
+            std::string valuesAsString = [&values](){
+                std::stringstream ss;
+                for (const auto& [ name, value ] : values) {
+                    ss << ComputeDefineStringForShader(name, value);
+                }
+                return ss.str();
+            }();
+            Shader shader(type, header + shaderType + valuesAsString + contents);
+            auto s = mShaders.insert({std::make_pair(shaderUrl + valuesStr.str(), type), std::move(shader)});
+            return s.first->second;
+        }
+        return iter->second;
+    }
+
+    ////////////////////////////////////////
+    Shader& ShaderLoader::Load(GLuint type,
+                               const std::string& shaderUrl,
+                               const std::vector<std::pair<std::string, float>>& values,
+                               const std::vector<std::string>& additionalUrls)
+    {
+        std::stringstream valuesStr;
+        for (const auto& [ name, value ] : values) {
+            valuesStr << std::to_string(value);
+        }
+
+        auto iter = mShaders.find({ shaderUrl + valuesStr.str(), type });
+        if (iter == mShaders.end()) {
+            std::string contents = IO::ReadTextFile(shaderUrl.data());
+            std::string header = ComputeOpenGLVersionStringForShader();
+            std::string shaderType = ComputeShaderTypeStringForShader(type);
+            std::string valuesAsString = [&values](){
+                std::stringstream ss;
+                for (const auto& [ name, value ] : values) {
+                    ss << ComputeDefineStringForShader(name, value);
+                }
+                return ss.str();
+            }();
+            std::string additionalHeaders = [&additionalUrls](){
+                std::stringstream ss;
+                for (const std::string& url : additionalUrls) {
+                    ss << IO::ReadTextFile(url) << '\n';
+                }
+                return ss.str();
+            }();
+            Shader shader(type, header + shaderType + valuesAsString + additionalHeaders + contents);
+            auto s = mShaders.insert({std::make_pair(shaderUrl + valuesStr.str(), type), std::move(shader)});
             return s.first->second;
         }
         return iter->second;
@@ -1758,6 +1872,12 @@ namespace Poe
 
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mId);
 
+        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
         int faceIndex{};
         for (const auto& face : faces) {
             unsigned char* data = stbi_load(face.second.data(), &mWidth, &mHeight, &mNumChannels, 0);
@@ -1770,12 +1890,6 @@ namespace Poe
                 mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
                 glTextureStorage2D(mId, mNumMipmaps, GL_RGB8, mWidth, mHeight);
             }
-
-            glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTextureParameteri(mId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(mId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(mId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
             int texType = [](CubemapFace chosenFace){
                 switch (chosenFace) {
@@ -1805,6 +1919,44 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    void Cubemap::Create()
+    {
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mId);
+
+        if (mParams.generateMipmaps) {
+            mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
+        }
+        else {
+            mNumMipmaps = 1;
+        }
+        glTextureStorage2D(mId, mNumMipmaps, mParams.internalFormat, mWidth, mHeight);
+
+        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, mParams.magF);
+        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, mParams.minF);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, mParams.wrapS);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, mParams.wrapT);
+        glTextureParameteri(mId, GL_TEXTURE_WRAP_R, mParams.wrapR);
+
+        if (mParams.wrapS == GL_CLAMP_TO_BORDER ||
+            mParams.wrapT == GL_CLAMP_TO_BORDER ||
+            mParams.wrapR == GL_CLAMP_TO_BORDER) {
+            glTextureParameterfv(mId, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(mBorderColor));
+        }
+
+        if (mParams.textureFormat == GL_DEPTH_COMPONENT) {
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        }
+
+        for (int i = 0; i < 6; ++i) {
+            glTextureSubImage3D(mId, 0, 0, 0, i, mWidth, mHeight, 1, mParams.textureFormat, mParams.type, nullptr);
+        }
+        if (mParams.generateMipmaps) {
+            glGenerateTextureMipmap(mId);
+        }
+    }
+
+    ////////////////////////////////////////
     Cubemap CreateDepthCubemap(int width, int height)
     {
         CubemapParams params;
@@ -1822,33 +1974,14 @@ namespace Poe
     Cubemap::Cubemap(int width, int height, const CubemapParams& params)
         : mWidth{width}, mHeight{height}, mNumChannels{}, mNumMipmaps{}, mParams{params}
     {
-        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mId);
+        Create();
+    }
 
-        if (params.generateMipmaps) {
-            mNumMipmaps = static_cast<int>(glm::floor(glm::log2(glm::max(mWidth, mHeight)))) + 1;
-        }
-        else {
-            mNumMipmaps = 1;
-        }
-        glTextureStorage2D(mId, mNumMipmaps, params.internalFormat, mWidth, mHeight);
-
-        glTextureParameteri(mId, GL_TEXTURE_MAG_FILTER, params.magF);
-        glTextureParameteri(mId, GL_TEXTURE_MIN_FILTER, params.minF);
-        glTextureParameteri(mId, GL_TEXTURE_WRAP_S, params.wrapS);
-        glTextureParameteri(mId, GL_TEXTURE_WRAP_T, params.wrapT);
-        glTextureParameteri(mId, GL_TEXTURE_WRAP_R, params.wrapR);
-
-        if (params.textureFormat == GL_DEPTH_COMPONENT) {
-            glTextureParameteri(mId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-            glTextureParameteri(mId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-        }
-
-        for (int i = 0; i < 6; ++i) {
-            glTextureSubImage3D(mId, 0, 0, 0, i, mWidth, mHeight, 1, params.textureFormat, params.type, nullptr);
-        }
-        if (params.generateMipmaps) {
-            glGenerateTextureMipmap(mId);
-        }
+    ////////////////////////////////////////
+    Cubemap::Cubemap(int width, int height, const CubemapParams& params, const glm::vec4& borderColor)
+        : mWidth{width}, mHeight{height}, mNumChannels{}, mNumMipmaps{}, mParams{params}, mBorderColor{borderColor}
+    {
+        Create();
     }
 
     ////////////////////////////////////////
@@ -2099,20 +2232,47 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    AbstractEmissiveColorProgram::AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_color.frag") } {}
+    AbstractEmissiveColorProgram::AbstractEmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader, bool isInstanced)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/emissive_color.glsl",
+                                { { "POE_APOS_LOC", ATTRIB_POS_LOC },
+                                  { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING },
+                                  { "POE_UMODEL_LOC", AbstractEmissiveColorProgram::MODEL_LOC },
+                                  { "POE_AMODEL_LOC", INSTANCED_MODEL_LOC },
+                                  { "POE_INSTANCED", isInstanced ? 1 : 0 } }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/emissive_color.glsl",
+                                { { "POE_UCOLOR_LOC", AbstractEmissiveColorProgram::COLOR_LOC },
+                                  { "POE_FOG_BLOCK_LOC", UniformBuffer::FOG_BLOCK_BINDING } },
+                                { rootPath + "/shaders/post_processing/fog.glsl" }) } {}
 
     ////////////////////////////////////////
-    EmissiveColorProgramInstanced::EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveColorProgram(rootPath, loader, "/shaders/emissive_color_instanced.vert") {}
+    EmissiveColorProgramInstanced::EmissiveColorProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractEmissiveColorProgram(rootPath, loader, true) {}
 
     ////////////////////////////////////////
-    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveColorProgram(rootPath, loader, "/shaders/emissive_color.vert") {}
+    EmissiveColorProgram::EmissiveColorProgram(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractEmissiveColorProgram(rootPath, loader, false) {}
 
     ////////////////////////////////////////
-    AbstractEmissiveTextureProgram::AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/emissive_texture.frag") }
+    AbstractEmissiveTextureProgram::AbstractEmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader, bool isInstanced)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/emissive_texture.glsl",
+                                { { "POE_APOS_LOC", ATTRIB_POS_LOC },
+                                  { "POE_ATEXCOORD_LOC", ATTRIB_TEXCOORD_LOC },
+                                  { "POE_UMODEL_LOC", AbstractEmissiveTextureProgram::MODEL_LOC },
+                                  { "POE_AMODEL_LOC", INSTANCED_MODEL_LOC },
+                                  { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING },
+                                  { "POE_INSTANCED", isInstanced ? 1 : 0 } }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/emissive_texture.glsl",
+                                { { "POE_UEMISSIVE_TEXTURE_LOC", EMISSIVE_TEXTURE_LOC },
+                                  { "POE_UTILE_MULTIPLIER_LOC", TILE_MULTIPLIER_LOC },
+                                  { "POE_UTILE_OFFSET_LOC", TILE_OFFSET_LOC },
+                                  { "POE_POST_PROCESS_BLOCK_LOC", UniformBuffer::POSTPROCESS_BLOCK_BINDING },
+                                  { "POE_FOG_BLOCK_LOC", UniformBuffer::FOG_BLOCK_BINDING } },
+                                { rootPath + "/shaders/post_processing/fog.glsl",
+                                  rootPath + "/shaders/post_processing/gamma.glsl" }) }
     {
         mProgram.Use();
             glUniform1i(EMISSIVE_TEXTURE_LOC, 0);
@@ -2120,10 +2280,12 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveTextureProgram(rootPath, loader, "/shaders/emissive_texture_instanced.vert") {}
+    EmissiveTextureProgramInstanced::EmissiveTextureProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractEmissiveTextureProgram(rootPath, loader, true) {}
 
     ////////////////////////////////////////
-    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractEmissiveTextureProgram(rootPath, loader, "/shaders/emissive_texture.vert") {}
+    EmissiveTextureProgram::EmissiveTextureProgram(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractEmissiveTextureProgram(rootPath, loader, false) {}
 
     ////////////////////////////////////////
     void TexturedSkyboxProgram::Init()
@@ -2340,8 +2502,14 @@ namespace Poe
 
     ////////////////////////////////////////
     TexturedSkyboxProgram::TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader& loader, std::initializer_list<std::pair<CubemapFace, std::string_view>> faces)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/texture_skybox.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/texture_skybox.frag") },
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/texture_skybox.glsl",
+                                { { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING } }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/texture_skybox.glsl",
+                                { { "POE_USKYBOX_LOC", SKYBOX_LOC },
+                                  { "POE_POST_PROCESS_BLOCK_LOC", UniformBuffer::POSTPROCESS_BLOCK_BINDING } },
+                                { rootPath + "/shaders/post_processing/gamma.glsl" }) },
          mCubemap{faces}
     {
         Init();
@@ -2369,9 +2537,74 @@ namespace Poe
     {}
 
     ////////////////////////////////////////
-    AbstractBlinnPhongProgram::AbstractBlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/blinn_phong.frag") }
+    AbstractBlinnPhongProgram::AbstractBlinnPhongProgram(const std::string& rootPath,
+                                                         ShaderLoader& loader,
+                                                         bool isInstanced,
+                                                         int numDirLights,
+                                                         int numPointLights,
+                                                         int numSpotLights,
+                                                         int numCascades,
+                                                         float shadowBiasMin,
+                                                         float shadowBiasMax,
+                                                         float pointShadowBias)
+        :  mNumDirLights{numDirLights}, mNumPointLights{numPointLights}, mNumSpotLights{numSpotLights},
+           mNumCascades{numCascades}, mShadowBiasMin{shadowBiasMin}, mShadowBiasMax{shadowBiasMax},
+           mPointShadowBias{pointShadowBias},
+           mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/blinn_phong.glsl",
+                                { { "NUM_DIR_LIGHTS", numDirLights },
+                                  { "NUM_POINT_LIGHTS", numPointLights },
+                                  { "NUM_SPOT_LIGHTS", numSpotLights },
+                                  { "NUM_CASCADES", numCascades },
+                                  { "POE_APOS_LOC", ATTRIB_POS_LOC },
+                                  { "POE_ATEXCOORD_LOC", ATTRIB_TEXCOORD_LOC },
+                                  { "POE_ANORM_LOC", ATTRIB_NORMAL_LOC },
+                                  { "POE_AMODEL_LOC", INSTANCED_MODEL_LOC },
+                                  { "POE_ANORM_MAT_LOC", INSTANCED_NORMAL_LOC },
+                                  { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING },
+                                  { "POE_UMODEL_LOC", MODEL_MATRIX_LOC },
+                                  { "POE_UNORM_LOC", NORMAL_MATRIX_LOC },
+                                  { "POE_UTEX_OFFSET_LOC", TEX_OFFSET_LOC },
+                                  { "POE_UTEX_MULTIPLIER_LOC", TEX_MULTIPLIER_LOC },
+                                  { "POE_DIR_LIGHT_BLOCK_LOC", UniformBuffer::DIR_LIGHT_BLOCK_BINDING },
+                                  { "POE_POINT_LIGHT_BLOCK_LOC", UniformBuffer::POINT_LIGHT_BLOCK_BINDING },
+                                  { "POE_SPOT_LIGHT_BLOCK_LOC", UniformBuffer::SPOT_LIGHT_BLOCK_BINDING },
+                                  { "POE_INSTANCED", isInstanced ? 1 : 0 } },
+                                { rootPath + "/shaders/lights/directional.glsl",
+                                  rootPath + "/shaders/lights/point.glsl",
+                                  rootPath + "/shaders/lights/spot.glsl" }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/blinn_phong.glsl",
+                                { { "NUM_DIR_LIGHTS", numDirLights },
+                                  { "NUM_POINT_LIGHTS", numPointLights },
+                                  { "NUM_SPOT_LIGHTS", numSpotLights },
+                                  { "NUM_CASCADES", numCascades },
+                                  { "SHADOW_BIAS_MIN", shadowBiasMin },
+                                  { "SHADOW_BIAS_MAX", shadowBiasMax },
+                                  { "POINT_SHADOW_BIAS", pointShadowBias },
+                                  { "NUM_CASCADES", numCascades },
+                                  { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING },
+                                  { "POE_FOG_BLOCK_LOC", UniformBuffer::FOG_BLOCK_BINDING },
+                                  { "POE_BLINN_PHONG_MATERIAL_BLOCK_LOC", UniformBuffer::BLINN_PHONG_MATERIAL_BLOCK_BINDING },
+                                  { "POE_DIR_LIGHT_BLOCK_LOC", UniformBuffer::DIR_LIGHT_BLOCK_BINDING },
+                                  { "POE_POINT_LIGHT_BLOCK_LOC", UniformBuffer::POINT_LIGHT_BLOCK_BINDING },
+                                  { "POE_SPOT_LIGHT_BLOCK_LOC", UniformBuffer::SPOT_LIGHT_BLOCK_BINDING },
+                                  { "POE_POST_PROCESS_BLOCK_LOC", UniformBuffer::POSTPROCESS_BLOCK_BINDING },
+                                  { "POE_UMATERIAL_AMBIENT_TEXTURE_LOC", MATERIAL_AMBIENT_TEXTURE_LOC },
+                                  { "POE_UMATERIAL_DIFFUSE_TEXTURE_LOC", MATERIAL_DIFFUSE_TEXTURE_LOC },
+                                  { "POE_UMATERIAL_SPECULAR_TEXTURE_LOC", MATERIAL_SPECULAR_TEXTURE_LOC },
+                                  { "POE_UAMBIENT_FACTOR_LOC", AMBIENT_FACTOR_LOC },
+                                  { "POE_UDIR_LIGHT_DEPTH_MAP_LOC", DIR_LIGHT_DEPTH_MAP },
+                                  { "POE_UPOINT_LIGHT_DEPTH_MAP_LOC", POINT_LIGHT_DEPTH_MAP },
+                                  { "POE_USPOT_LIGHT_DEPTH_MAP_LOC", SPOT_LIGHT_DEPTH_MAP } },
+                                { rootPath + "/shaders/lights/directional.glsl",
+                                  rootPath + "/shaders/lights/point.glsl",
+                                  rootPath + "/shaders/lights/spot.glsl",
+                                  rootPath + "/shaders/post_processing/gamma.glsl",
+                                  rootPath + "/shaders/post_processing/fog.glsl",
+                                  rootPath + "/shaders/shadows/directional.glsl",
+                                  rootPath + "/shaders/shadows/point.glsl",
+                                  rootPath + "/shaders/shadows/spot.glsl" }) }
     {
         mProgram.Use();
             glUniform1i(MATERIAL_AMBIENT_TEXTURE_LOC, 0);
@@ -2385,35 +2618,74 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    BlinnPhongProgram::BlinnPhongProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractBlinnPhongProgram(rootPath, loader, "/shaders/blinn_phong.vert") {}
+    BlinnPhongProgram::BlinnPhongProgram(const std::string& rootPath,
+                                         ShaderLoader& loader,
+                                         int numDirLights,
+                                         int numPointLights,
+                                         int numSpotLights,
+                                         int numCascades,
+                                         float shadowBiasMin,
+                                         float shadowBiasMax,
+                                         float pointShadowBias)
+        : AbstractBlinnPhongProgram(rootPath, loader, false, numDirLights, numPointLights, numSpotLights, numCascades, shadowBiasMin, shadowBiasMax, pointShadowBias) {}
 
     ////////////////////////////////////////
-    BlinnPhongProgramInstanced::BlinnPhongProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractBlinnPhongProgram(rootPath, loader, "/shaders/blinn_phong_instanced.vert") {}
+    BlinnPhongProgramInstanced::BlinnPhongProgramInstanced(const std::string& rootPath,
+                                                           ShaderLoader& loader,
+                                                           int numDirLights,
+                                                           int numPointLights,
+                                                           int numSpotLights,
+                                                           int numCascades,
+                                                           float shadowBiasMin,
+                                                           float shadowBiasMax,
+                                                           float pointShadowBias)
+        : AbstractBlinnPhongProgram(rootPath, loader, false, numDirLights, numPointLights, numSpotLights, numCascades, shadowBiasMin, shadowBiasMax, pointShadowBias) {}
 
     ////////////////////////////////////////
-    AbstractDepthProgram::AbstractDepthProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/depth.frag") } {}
+    AbstractDepthProgram::AbstractDepthProgram(const std::string& rootPath,
+                                               ShaderLoader& loader,
+                                               bool isInstanced,
+                                               bool isOmni)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/depth.glsl",
+                                { { "POE_APOS_LOC", ATTRIB_POS_LOC },
+                                  { "POE_ULIGHT_MATRIX_LOC", LIGHT_MATRIX_LOC },
+                                  { "POE_UMODEL_LOC", MODEL_MATRIX_LOC },
+                                  { "POE_AMODEL_LOC", INSTANCED_MODEL_LOC },
+                                  { "POE_INSTANCED", isInstanced ? 1 : 0 },
+                                  { "POE_OMNI", isOmni ? 1 : 0 } }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/depth.glsl",
+                                { { "POE_UFAR_PLANE_LOC", FAR_PLANE_LOC },
+                                  { "POE_ULIGHT_POS_LOC", LIGHT_POS_LOC },
+                                  { "POE_OMNI", isOmni ? 1 : 0 } }) } {}
 
     ////////////////////////////////////////
-    DepthProgram::DepthProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractDepthProgram(rootPath, loader, "/shaders/depth.vert") {}
+    DepthProgram::DepthProgram(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractDepthProgram(rootPath, loader, false, false) {}
 
     ////////////////////////////////////////
-    DepthProgramInstanced::DepthProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractDepthProgram(rootPath, loader, "/shaders/depth_instanced.vert") {}
+    DepthProgramInstanced::DepthProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractDepthProgram(rootPath, loader, true, false) {}
 
     ////////////////////////////////////////
-    AbstractOmniDepthProgram::AbstractOmniDepthProgram(const std::string& rootPath, ShaderLoader& loader, const std::string& vshaderUrl)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + vshaderUrl),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/depth_omni.frag") } {}
+    DepthOmniProgram::DepthOmniProgram(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractDepthProgram(rootPath, loader, false, true) {}
 
     ////////////////////////////////////////
-    DepthOmniProgram::DepthOmniProgram(const std::string& rootPath, ShaderLoader& loader) : AbstractOmniDepthProgram(rootPath, loader, "/shaders/depth_omni.vert") {}
+    DepthOmniProgramInstanced::DepthOmniProgramInstanced(const std::string& rootPath, ShaderLoader& loader)
+        : AbstractDepthProgram(rootPath, loader, true, true) {}
 
     ////////////////////////////////////////
-    DepthOmniProgramInstanced::DepthOmniProgramInstanced(const std::string& rootPath, ShaderLoader& loader) : AbstractOmniDepthProgram(rootPath, loader, "/shaders/depth_omni_instanced/vert") {}
-
-    ////////////////////////////////////////
-    RealisticSkyboxProgram::RealisticSkyboxProgram(const std::string& rootPath, ShaderLoader& loader)
-        : mProgram{ loader.Load(GL_VERTEX_SHADER, rootPath + "/shaders/realistic_skybox.vert"),
-                    loader.Load(GL_FRAGMENT_SHADER, rootPath + "/shaders/realistic_skybox.frag") } {}
+    RealisticSkyboxProgram::RealisticSkyboxProgram(const std::string& rootPath,
+                                                   ShaderLoader& loader,
+                                                   float shaderPi, float iSteps, float jSteps)
+        : mProgram{ loader.Load(GL_VERTEX_SHADER,
+                                rootPath + "/shaders/realistic_skybox.glsl",
+                                { { "POE_TRANSFORM_BLOCK_LOC", UniformBuffer::TRANSFORM_BLOCK_BINDING } }),
+                    loader.Load(GL_FRAGMENT_SHADER,
+                                rootPath + "/shaders/realistic_skybox.glsl",
+                                { { "PI", shaderPi }, { "I_STEPS", iSteps }, { "J_STEPS", jSteps },
+                                  { "POE_REALISTIC_SKYBOX_BLOCK_LOC", UniformBuffer::REALISTIC_SKYBOX_BLOCK_BINDING } }) },
+         mShaderPI {shaderPi}, mShaderISteps{iSteps}, mShaderJSteps{jSteps} {}
 }
