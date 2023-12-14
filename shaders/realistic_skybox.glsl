@@ -1,8 +1,98 @@
-#version 460 core
+#ifdef POE_VERTEX_SHADER
 
+////////////////////////////////////////
+//////////// VERTEX SHADER /////////////
+////////////////////////////////////////
+
+// assume CCW
+const vec3 positions[36] = vec3[](
+    // front face
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+
+    // back face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3(-1.0f, -1.0f, -1.0f),
+
+    // left face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3(-1.0f, -1.0f, -1.0f),
+
+    // right face
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+
+    // top face
+    vec3(-1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f, -1.0f),
+    vec3( 1.0f,  1.0f,  1.0f),
+    vec3(-1.0f,  1.0f,  1.0f),
+
+    // bottom face
+    vec3(-1.0f, -1.0f, -1.0f),
+    vec3(-1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f,  1.0f),
+    vec3( 1.0f, -1.0f, -1.0f),
+    vec3(-1.0f, -1.0f, -1.0f)
+);
+
+out VS_OUT
+{
+    vec3 vTexCoord;
+}
+vs_out;
+
+layout (std140, binding = POE_TRANSFORM_BLOCK_LOC) uniform TransformBlock
+{
+    mat4 uProjection;
+    mat4 uView;
+    mat4 uProjView;
+    vec3 uCamDir;
+};
+
+void main()
+{
+    vec4 vertexPos = uProjection * mat4(mat3(uView)) * vec4(positions[gl_VertexID], 1.0f);
+    gl_Position = vertexPos.xyww;
+    vs_out.vTexCoord = positions[gl_VertexID];
+}
+
+#elif defined(POE_FRAGMENT_SHADER)
+
+////////////////////////////////////////
+//////////// FRAGMENT SHADER ///////////
+////////////////////////////////////////
+
+#ifndef PI
 #define PI 3.1415926f
+#endif
+
+#ifndef I_STEPS
 #define I_STEPS 16
+#endif
+
+#ifndef J_STEPS
 #define J_STEPS 8
+#endif
 
 in VS_OUT
 {
@@ -10,7 +100,7 @@ in VS_OUT
 }
 fs_in;
 
-layout (std140, binding = 8) uniform RealisticSkyboxBlock
+layout (std140, binding = POE_REALISTIC_SKYBOX_BLOCK_LOC) uniform RealisticSkyboxBlock
 {
     vec3 uRayleighScatteringCoefficent;
     vec3 uRayOrigin;
@@ -150,3 +240,5 @@ void main()
                            uMiePreferredScatteringDirection);
     color.a = 1.0f;
 }
+
+#endif
