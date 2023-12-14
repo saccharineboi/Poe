@@ -20,6 +20,7 @@
 #include "Utility.hpp"
 #include "Cameras.hpp"
 #include "Constants.hpp"
+#include "Window.hpp"
 
 #include <chrono>
 #include <thread>
@@ -76,98 +77,6 @@ namespace CSItalyDemo
     }
 
     ////////////////////////////////////////
-    static void InitGLFW()
-    {
-        if (!glfwInit()) {
-            std::fprintf(stderr, "ERROR: couldn't initialize GLFW\n");
-            std::exit(EXIT_FAILURE);
-        }
-    }
-
-    ////////////////////////////////////////
-    static GLFWwindow* CreateWindow()
-    {
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        if (!monitor) {
-            std::fprintf(stderr, "ERROR: couldn't get primary monitor\n");
-            glfwTerminate();
-            std::exit(EXIT_FAILURE);
-        }
-
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        if (!mode) {
-            std::fprintf(stderr, "ERROR: couldn't get video mode\n");
-            glfwTerminate();
-            std::exit(EXIT_FAILURE);
-        }
-
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-
-        GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Poe", monitor, nullptr);
-        if (!window) {
-            std::fprintf(stderr, "ERROR: couldn't create window\n");
-            glfwTerminate();
-            std::exit(EXIT_FAILURE);
-        }
-
-        return window;
-    }
-
-    ////////////////////////////////////////
-    static void SetHints()
-    {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-#ifdef _DEBUG
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-#endif
-    }
-
-    ////////////////////////////////////////
-    static void InitOpenGL(GLFWwindow* window)
-    {
-        glfwMakeContextCurrent(window);
-        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
-            std::fprintf(stderr, "ERROR: couldn't initialize glad\n");
-            glfwTerminate();
-            std::exit(EXIT_FAILURE);
-        }
-    }
-
-    ////////////////////////////////////////
-    static void DebugOutput()
-    {
-        Poe::DebugUI::PushLog(stdout, "[DEBUG] GL version: %s\n", glGetString(GL_VERSION));
-        Poe::DebugUI::PushLog(stdout, "[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-        Poe::DebugUI::PushLog(stdout, "[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
-        Poe::DebugUI::PushLog(stdout, "[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
-    }
-
-    ////////////////////////////////////////
-    static void EnableDebugContext()
-    {
-#ifdef _DEBUG
-        int dflags;
-        glGetIntegerv(GL_CONTEXT_FLAGS, &dflags);
-        if (dflags & GL_CONTEXT_FLAG_DEBUG_BIT) {
-            glEnable(GL_DEBUG_OUTPUT);
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(Poe::GraphicsDebugOutput, nullptr);
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-            Poe::DebugUI::PushLog(stdout, "[DEBUG] GL debug output is ON\n");
-        }
-        else
-            Poe::DebugUI::PushLog(stdout, "[DEBUG] GL debug output is OFF\n");
-#endif
-    }
-
-    ////////////////////////////////////////
     static void SetCallbacks(GLFWwindow* window)
     {
         glfwSetKeyCallback(window, keyCallback);
@@ -181,12 +90,7 @@ namespace CSItalyDemo
     ////////////////////////////////////////
     static int Run(int argc, char** argv)
     {
-        InitGLFW();
-        SetHints();
-        GLFWwindow* window = CreateWindow();
-        InitOpenGL(window);
-        DebugOutput();
-        EnableDebugContext();
+        GLFWwindow* window = Poe::Window::CreateFullScreenWindow("Poe Renderer");
         SetCallbacks(window);
 
         Poe::DebugUI::Init(window);
@@ -253,11 +157,14 @@ namespace CSItalyDemo
         blinnPhongBlock.Set(blinnPhongMaterial);
         blinnPhongBlock.Update();
 
+        constexpr int shadowSize{ 1024 };
+        constexpr int numCascades{ 4 };
+
         Poe::DirLight sun{
             glm::vec3(1.0f, 1.0f, 1.0f),    // color
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
-            std::vector<glm::mat4>(Poe::NUM_SHADOW_CASCADES + 1),       // light matrix
+            std::vector<glm::mat4>(numCascades + 1),       // light matrix
             true                            // cast shadows
         };
 
@@ -288,13 +195,13 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
-        Poe::Texture2DArray dirLightDepthMap = Poe::CreateCascadedDepthMap(Poe::SHADOW_SIZE, Poe::SHADOW_SIZE, Poe::NUM_SHADOW_CASCADES + 1);
+        Poe::Texture2DArray dirLightDepthMap = Poe::CreateCascadedDepthMap(shadowSize, shadowSize, numCascades + 1);
         std::vector<Poe::Framebuffer> dirLightDepthFBOs;
-        for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+        for (int i = 0; i <= numCascades; ++i) {
             dirLightDepthFBOs.push_back(Poe::Framebuffer(dirLightDepthMap, GL_DEPTH_ATTACHMENT, i));
         }
 
-        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(Poe::SHADOW_SIZE, Poe::SHADOW_SIZE);
+        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(shadowSize, shadowSize);
         Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);
 
         dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
@@ -332,7 +239,7 @@ namespace CSItalyDemo
 
             // directional light shadow pass
             {
-                for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+                for (int i = 0; i <= numCascades; ++i) {
                     dirLightDepthFBOs[static_cast<size_t>(i)].Bind();
                     glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
                     glClear(GL_DEPTH_BUFFER_BIT);
@@ -344,14 +251,14 @@ namespace CSItalyDemo
                                                       mainCamera.mFar / 10.0f,
                                                       mainCamera.mFar / 2.0f };
 
-                    for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+                    for (int i = 0; i <= numCascades; ++i) {
 
                         std::vector<glm::vec4> frustumCorners = [&]() {
                             float zOffset{ 10.0f };
                             if (i == 0) {
                                 return mainCamera.GetFrustumCornersInWorldSpace(mainCamera.mNear - zOffset, cascadeLevels.front() + zOffset);
                             }
-                            else if (i == Poe::NUM_SHADOW_CASCADES) {
+                            else if (i == numCascades) {
                                 return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels.back() - zOffset, mainCamera.mFar + zOffset);
                             }
                             size_t ind = static_cast<size_t>(i);
@@ -372,7 +279,7 @@ namespace CSItalyDemo
                     depthProgram.SetModelMatrix(model);
 
                     glDisable(GL_CULL_FACE);
-                    for (int i = 0; i <= Poe::NUM_SHADOW_CASCADES; ++i) {
+                    for (int i = 0; i <= numCascades; ++i) {
                         dirLightDepthFBOs[static_cast<size_t>(i)].Bind();
                         glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
                         if (sun.mCastShadows) {

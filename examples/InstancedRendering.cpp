@@ -254,7 +254,7 @@ namespace CSItalyDemo
             glm::vec3(1.0f, 1.0f, 1.0f),    // color
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
-            std::vector<glm::mat4>(Poe::NUM_SHADOW_CASCADES),
+            std::vector<glm::mat4>(4),
             false                           // cast shadows
         };
 
