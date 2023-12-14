@@ -238,7 +238,8 @@ workspace "poe"
             "src/Poe.cpp",
             "src/UI.cpp",
             "src/Cameras.cpp",
-            "src/Utility.cpp"
+            "src/Utility.cpp",
+            "src/Window.cpp"
         }
 
         includedirs { "include", "src" }
