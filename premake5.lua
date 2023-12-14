@@ -237,7 +237,8 @@ workspace "poe"
         files {
             "src/Poe.cpp",
             "src/UI.cpp",
-            "src/Cameras.cpp"
+            "src/Cameras.cpp",
+            "src/Utility.cpp"
         }
 
         includedirs { "include", "src" }
