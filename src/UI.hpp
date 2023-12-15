@@ -324,64 +324,114 @@ namespace Poe
             ImGui::End();
         }
 
-        static void Render_DirLightInfo(DirLight& dirLight)
+        static void Render_DirectionalLightsInfo(const std::vector<std::reference_wrapper<DirLight>>& dirLights, int width, int height)
         {
-            ImGui::SetNextWindowSize({ 300, 140 });
+            constexpr int wwidth{ 400 };
+            ImGui::SetNextWindowSize({ wwidth, -1 });
+            ImGui::SetNextWindowPos({ static_cast<float>(width - wwidth - 20), 100.0f });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Directional Light #0", nullptr, ImGuiWindowFlags_NoResize);
+            ImGui::Begin("Directional Lights", nullptr, ImGuiWindowFlags_NoResize);
 
-            ImGui::ColorEdit3("Light Color", glm::value_ptr(dirLight.mColor));
-            ImGui::Text("Direction: %.2f %.2f %.2f", dirLight.mDirection.x, dirLight.mDirection.y, dirLight.mDirection.z);
-            ImGui::Text("Intensity: %.2f", dirLight.mIntensity);
-            ImGui::Checkbox("Cast Shadows", &dirLight.mCastShadows);
+            int dirLightIndex{};
+            for (DirLight& light : dirLights) {
+                ImGui::Text("Light #%d", dirLightIndex);
 
+                ImGui::ColorEdit3("Color", glm::value_ptr(light.mColor));
+                ImGui::Text("Direction: %.2f %.2f %.2f", light.mDirection.x, light.mDirection.y, light.mDirection.z);
+                ImGui::Text("Intensity: %.2f", light.mIntensity);
+                ImGui::Checkbox("Cast Shadows", &light.mCastShadows);
+
+                ++dirLightIndex;
+
+                if (dirLightIndex != static_cast<int>(dirLights.size())) {
+                    ImGui::NewLine();
+                }
+            }
             ImGui::End();
         }
 
-        static void Render_PointLightInfo(PointLight& pointLight)
+        static void Render_PointLightsInfo(const std::vector<std::reference_wrapper<PointLight>>& pointLights, int width, int height)
         {
-            ImGui::SetNextWindowSize({ 350, 200 });
+            constexpr int wwidth{ 400 };
+            ImGui::SetNextWindowSize({ wwidth, -1 });
+            ImGui::SetNextWindowPos({ static_cast<float>(width - wwidth - 20), 140.0f });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Point Light #0", nullptr, ImGuiWindowFlags_NoResize);
+            ImGui::Begin("Point Lights", nullptr, ImGuiWindowFlags_NoResize);
 
-            ImGui::ColorEdit3("Light Color", glm::value_ptr(pointLight.mColor));
-            ImGui::Text("Light World Pos: %.2f %.2f %.2f", pointLight.mWorldPosition.x, pointLight.mWorldPosition.y, pointLight.mWorldPosition.z);
-            ImGui::Text("Light View Pos: %.2f %.2f %.2f", pointLight.mViewPosition.x, pointLight.mViewPosition.y, pointLight.mViewPosition.z);
-            ImGui::SliderFloat("Light Intensity", &pointLight.mIntensity, 0.0f, 100.0f);
-            ImGui::SliderFloat("Light Radius", &pointLight.mRadius, 0.0f, 100.0f);
-            ImGui::Checkbox("Cast Shadows", &pointLight.mCastShadows);
+            int pointLightIndex{};
+            for (PointLight& light : pointLights) {
+                ImGui::Text("Light #%d", pointLightIndex);
 
+                ImGui::ColorEdit3("Color", glm::value_ptr(light.mColor));
+                ImGui::Text("World Pos: %.2f %.2f %.2f", light.mWorldPosition.x, light.mWorldPosition.y, light.mWorldPosition.z);
+                ImGui::Text("View Pos: %.2f %.2f %.2f", light.mViewPosition.x, light.mViewPosition.y, light.mViewPosition.z);
+                ImGui::SliderFloat("Intensity", &light.mIntensity, 0.0f, 100.0f);
+                ImGui::SliderFloat("Radius", &light.mRadius, 0.0f, 100.0f);
+                ImGui::Checkbox("Cast Shadows", &light.mCastShadows);
+
+                ++pointLightIndex;
+
+                if (pointLightIndex != static_cast<int>(pointLights.size())) {
+                    ImGui::NewLine();
+                }
+            }
             ImGui::End();
         }
 
-        static void Render_SpotLightInfo(SpotLight& spotLight)
+        static void Render_SpotLightsInfo(const std::vector<std::reference_wrapper<SpotLight>>& spotLights, int width, int height)
         {
-            ImGui::SetNextWindowSize({ 350, 250 });
+            constexpr int wwidth{ 400 };
+            ImGui::SetNextWindowSize({ wwidth, -1 });
+            ImGui::SetNextWindowPos({ static_cast<float>(width - wwidth - 20), 180.0f });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Spot Light #0", nullptr, ImGuiWindowFlags_NoResize);
+            ImGui::Begin("Spot Lights", nullptr, ImGuiWindowFlags_NoResize);
 
-            ImGui::ColorEdit3("Light Color", glm::value_ptr(spotLight.mColor));
-            ImGui::Text("Light Direction: %.2f %.2f %.2f", spotLight.mDirection.x, spotLight.mDirection.y, spotLight.mDirection.z);
-            ImGui::Text("Light Position: %.2f %.2f %.2f", spotLight.mPosition.x, spotLight.mPosition.y, spotLight.mPosition.z);
-            ImGui::SliderFloat("Light Intensity", &spotLight.mIntensity, 0.0f, 100.0f);
-            ImGui::SliderFloat("Inner Cutoff", &spotLight.mInnerCutoff, 0.0f, PI);
-            ImGui::SliderFloat("Outer Cutoff", &spotLight.mOuterCutoff, 0.0f, PI);
-            ImGui::SliderFloat("Radius", &spotLight.mRadius, 0.0f, 100.0f);
-            ImGui::Checkbox("Cast Shadows", &spotLight.mCastShadows);
+            int spotLightIndex{};
+            for (SpotLight& light : spotLights) {
+                ImGui::Text("Light #%d", spotLightIndex);
 
+                ImGui::ColorEdit3("Color", glm::value_ptr(light.mColor));
+                ImGui::Text("Direction: %.2f %.2f %.2f", light.mDirection.x, light.mDirection.y, light.mDirection.z);
+                ImGui::Text("Position: %.2f %.2f %.2f", light.mPosition.x, light.mPosition.y, light.mPosition.z);
+                ImGui::SliderFloat("Intensity", &light.mIntensity, 0.0f, 100.0f);
+                ImGui::SliderFloat("Inner Cutoff", &light.mInnerCutoff, 0.0f, PI);
+                ImGui::SliderFloat("Outer Cutoff", &light.mOuterCutoff, 0.0f, PI);
+                ImGui::SliderFloat("Radius", &light.mRadius, 0.0f, 100.0f);
+                ImGui::Checkbox("Cast Shadows", &light.mCastShadows);
+
+                ++spotLightIndex;
+
+                if (spotLightIndex != static_cast<int>(spotLights.size())) {
+                    ImGui::NewLine();
+                }
+            }
             ImGui::End();
         }
 
-        static void Render_BlinnPhongMaterialInfo(BlinnPhongMaterial& material)
+        static void Render_BlinnPhongMaterialsInfo(const std::vector<std::reference_wrapper<BlinnPhongMaterial>>& materials, int width, int height)
         {
-            ImGui::SetNextWindowSize({ 350, 150 });
+            constexpr int wwidth{ 400 };
+            ImGui::SetNextWindowSize({ wwidth, -1 });
+            ImGui::SetNextWindowPos({ static_cast<float>(width - wwidth - 20), 220.0f });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Blinn Phong Material", nullptr, ImGuiWindowFlags_NoResize);
 
-            ImGui::ColorEdit3("Ambient Color", glm::value_ptr(material.mAmbient));
-            ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(material.mDiffuse));
-            ImGui::ColorEdit3("Specular Color", glm::value_ptr(material.mSpecular));
-            ImGui::InputFloat("Shininess", &material.mShininess);
+            ImGui::Begin("Blinn-Phong Materials", nullptr, ImGuiWindowFlags_NoResize);
+
+            int materialIndex{};
+            for (BlinnPhongMaterial& material : materials) {
+                ImGui::Text("Material #%d", materialIndex);
+
+                ImGui::ColorEdit3("Ambient Color", glm::value_ptr(material.mAmbient));
+                ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(material.mDiffuse));
+                ImGui::ColorEdit3("Specular Color", glm::value_ptr(material.mSpecular));
+                ImGui::InputFloat("Shininess", &material.mShininess);
+
+                ++materialIndex;
+
+                if (materialIndex != static_cast<int>(materials.size())) {
+                    ImGui::NewLine();
+                }
+            }
 
             ImGui::End();
         }
