@@ -750,11 +750,6 @@ namespace Poe
     };
 
     ////////////////////////////////////////
-    inline constexpr int NUM_DIR_LIGHTS{ 2 };
-    inline constexpr int NUM_POINT_LIGHTS{ 4 };
-    inline constexpr int NUM_SPOT_LIGHTS{ 2 };
-
-    ////////////////////////////////////////
     template <int NumCascades>
     struct alignas(16) DirLightListElem__DATA
     {
@@ -933,60 +928,40 @@ namespace Poe
     {
     private:
         UniformBuffer mBuffer;
-        DirLightListElem__DATA<NumCascades> mLightsData[NUM_DIR_LIGHTS];
+        std::vector<DirLightListElem__DATA<NumCascades>> mLightsData;
+        int mNumLights;
 
     public:
-        DirLightUB();
+        explicit DirLightUB(int numLights);
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
-
         void SetColor(int ind, const glm::vec3& color)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetColor(color);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetColor(color); }
 
         void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetDirection(viewMatrix, dir);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetDirection(viewMatrix, dir); }
 
         void SetIntensity(int ind, float intensity)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetIntensity(intensity);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetIntensity(intensity); }
 
         void SetFarPlane(int ind, float farPlane)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetFarPlane(farPlane);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetFarPlane(farPlane); }
 
         void SetLightMatrix(int ind, int cascade, const glm::mat4& lightMatrix)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetLightMatrix(cascade, lightMatrix);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetLightMatrix(cascade, lightMatrix); }
 
         void SetLightMatrices(int ind, const std::vector<glm::mat4>& lightMatrices)
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
             for (size_t i = 0; i < lightMatrices.size(); ++i) {
-                mLightsData[ind].SetLightMatrix(static_cast<int>(i), lightMatrices[i]);
+                mLightsData[static_cast<size_t>(ind)].SetLightMatrix(static_cast<int>(i), lightMatrices[i]);
             }
         }
 
         void SetCascadeRanges(int ind, const std::vector<float>& cascadeRanges)
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            mLightsData[ind].SetCascadeRanges(cascadeRanges);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetCascadeRanges(cascadeRanges); }
 
         void Update() const
-        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
+        { mBuffer.Modify(0, sizeof(DirLightListElem__DATA<NumCascades>) * static_cast<size_t>(mNumLights), mLightsData.data()); }
 
         void Set(int ind, const glm::mat4& viewMatrix, const DirLight& dirLight)
         {
@@ -999,50 +974,31 @@ namespace Poe
         }
 
         glm::vec3 GetColor(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetColor();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetColor(); }
 
         glm::vec3 GetDirection(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetDirection();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetDirection(); }
 
         float GetIntensity(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetIntensity();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetIntensity(); }
 
         float GetFarPlane(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetFarPlane();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetFarPlane(); }
 
         glm::mat4 GetLightMatrix(int ind, int cascade) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetLightMatrix(cascade);
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetLightMatrix(cascade); }
 
         std::vector<glm::mat4> GetLightMatrices(int ind) const
         {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
             std::vector<glm::mat4> buffer;
-            for (int i = 0; i <= 4; ++i) {
-                buffer.push_back(mLightsData[ind].GetLightMatrix(i));
+            for (int i = 0; i <= NumCascades; ++i) {
+                buffer.push_back(mLightsData[static_cast<size_t>(ind)].GetLightMatrix(i));
             }
             return buffer;
         }
 
         std::vector<float> GetCascadeRanges(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
-            return mLightsData[ind].GetCascadeRanges();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetCascadeRanges(); }
 
         DirLight Get(int ind) const
         {
@@ -1059,11 +1015,13 @@ namespace Poe
 
     ////////////////////////////////////////
     template <int NumCascades>
-    DirLightUB<NumCascades>::DirLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING)
+    DirLightUB<NumCascades>::DirLightUB(int numLights)
+        : mBuffer(sizeof(DirLightListElem__DATA<NumCascades>) * static_cast<size_t>(numLights), GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING),
+          mLightsData(static_cast<size_t>(numLights)),
+          mNumLights{numLights}
     {
-        std::memset(&mLightsData, 0, DATA_SIZE);
-        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+        std::memset(mLightsData.data(), 0, sizeof(DirLightListElem__DATA<NumCascades>) * static_cast<size_t>(mNumLights));
+        mBuffer.Modify(0, sizeof(DirLightListElem__DATA<NumCascades>) * static_cast<size_t>(mNumLights), mLightsData.data());
     }
 
     ////////////////////////////////////////
@@ -1071,49 +1029,30 @@ namespace Poe
     {
     private:
         UniformBuffer mBuffer;
-        PointLightListElem__DATA mLightsData[NUM_POINT_LIGHTS];
+        std::vector<PointLightListElem__DATA> mLightsData;
+        int mNumLights;
 
     public:
-        PointLightUB();
+        explicit PointLightUB(int numLights);
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
-
         void SetColor(int ind, const glm::vec3& color)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetColor(color);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetColor(color); }
 
         void SetWorldPosition(int ind, const glm::vec3& pos)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetWorldPosition(pos);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetWorldPosition(pos); }
 
         void SetViewPosition(int ind, const glm::vec3& pos)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetViewPosition(pos);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetViewPosition(pos); }
 
         void SetRadius(int ind, float radius)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetRadius(radius);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetRadius(radius); }
 
         void SetIntensity(int ind, float intensity)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetIntensity(intensity);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetIntensity(intensity); }
 
         void SetFarPlane(int ind, float farPlane)
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            mLightsData[ind].SetFarPlane(farPlane);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetFarPlane(farPlane); }
 
         void Set(int ind, const PointLight& pl)
         {
@@ -1126,40 +1065,22 @@ namespace Poe
         }
 
         glm::vec3 GetColor(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetColor();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetColor(); }
 
         glm::vec3 GetWorldPosition(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetWorldPosition();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetWorldPosition(); }
 
         glm::vec3 GetViewPosition(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetViewPosition();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetViewPosition(); }
 
         float GetRadius(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetRadius();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetRadius(); }
 
         float GetIntensity(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetIntensity();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetIntensity(); }
 
         float GetFarPlane(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_POINT_LIGHTS);
-            return mLightsData[ind].GetFarPlane();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetFarPlane(); }
 
         PointLight Get(int ind) const
         {
@@ -1173,7 +1094,7 @@ namespace Poe
         }
 
         void Update() const
-        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
+        { mBuffer.Modify(0, static_cast<int>(sizeof(PointLightListElem__DATA) * mLightsData.size()), mLightsData.data()); }
     };
 
     ////////////////////////////////////////
@@ -1181,61 +1102,36 @@ namespace Poe
     {
     private:
         UniformBuffer mBuffer;
-        SpotLightListElem__DATA mLightsData[NUM_SPOT_LIGHTS];
+        std::vector<SpotLightListElem__DATA> mLightsData;
+        int mNumLights;
 
     public:
-        SpotLightUB();
+        explicit SpotLightUB(int numLights);
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
-
         void SetColor(int ind, const glm::vec3& color)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetColor(color);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetColor(color); }
 
         void SetDirection(int ind, const glm::mat4& viewMatrix, const glm::vec3& dir)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetDirection(viewMatrix, dir);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetDirection(viewMatrix, dir); }
 
         void SetPosition(int ind, const glm::mat4& viewMatrix, const glm::vec3& pos)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetPosition(viewMatrix, pos);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetPosition(viewMatrix, pos); }
 
         void SetInnerCutoff(int ind, float innerCutoff)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetInnerCutoff(innerCutoff);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetInnerCutoff(innerCutoff); }
 
         void SetOuterCutoff(int ind, float outerCutoff)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetOuterCutoff(outerCutoff);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetOuterCutoff(outerCutoff); }
 
         void SetRadius(int ind, float radius)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetRadius(radius);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetRadius(radius); }
 
         void SetIntensity(int ind, float intensity)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetIntensity(intensity);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetIntensity(intensity); }
 
         void SetLightMatrix(int ind, const glm::mat4& lightMatrix)
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            mLightsData[ind].SetLightMatrix(lightMatrix);
-        }
+        { mLightsData[static_cast<size_t>(ind)].SetLightMatrix(lightMatrix); }
 
         void Set(int ind, const glm::mat4& viewMatrix, const SpotLight& sp)
         {
@@ -1250,52 +1146,28 @@ namespace Poe
         }
 
         glm::vec3 GetColor(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetColor();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetColor(); }
 
         glm::vec3 GetDirection(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetDirection();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetDirection(); }
 
         glm::vec3 GetPosition(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetPosition();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetPosition(); }
 
         float GetInnerCutoff(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetInnerCutoff();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetInnerCutoff(); }
 
         float GetOuterCutoff(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetOuterCutoff();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetOuterCutoff(); }
 
         float GetRadius(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetRadius();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetRadius(); }
 
         float GetIntensity(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetIntensity();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetIntensity(); }
 
         glm::mat4 GetLightMatrix(int ind) const
-        {
-            assert(ind >= 0 && ind < NUM_SPOT_LIGHTS);
-            return mLightsData[ind].GetLightMatrix();
-        }
+        { return mLightsData[static_cast<size_t>(ind)].GetLightMatrix(); }
 
         SpotLight Get(int ind) const
         {
@@ -1311,7 +1183,7 @@ namespace Poe
         }
 
         void Update() const
-        { mBuffer.Modify(0, DATA_SIZE, mLightsData); }
+        { mBuffer.Modify(0, static_cast<int>(sizeof(PointLightListElem__DATA) * mLightsData.size()), mLightsData.data()); }
     };
 
     ////////////////////////////////////////

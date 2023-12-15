@@ -376,26 +376,30 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    PointLightUB::PointLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::POINT_LIGHT_BLOCK_BINDING)
+    PointLightUB::PointLightUB(int numLights)
+        : mBuffer(sizeof(PointLightListElem__DATA) * static_cast<size_t>(numLights), GL_DYNAMIC_DRAW, UniformBuffer::POINT_LIGHT_BLOCK_BINDING),
+          mLightsData(static_cast<size_t>(numLights)),
+          mNumLights{numLights}
     {
-        std::memset(&mLightsData, 0, DATA_SIZE);
-        for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
+        std::memset(mLightsData.data(), 0, sizeof(PointLightListElem__DATA) * static_cast<size_t>(numLights));
+        for (int i = 0; i < numLights; ++i)
         {
-            mLightsData[i].SetConstant(1.0f);
+            mLightsData[static_cast<size_t>(i)].SetConstant(1.0f);
         }
-        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+        mBuffer.Modify(0, sizeof(PointLightListElem__DATA) * static_cast<size_t>(numLights), mLightsData.data());
     }
     ////////////////////////////////////////
-    SpotLightUB::SpotLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::SPOT_LIGHT_BLOCK_BINDING)
+    SpotLightUB::SpotLightUB(int numLights)
+        : mBuffer(sizeof(SpotLightListElem__DATA) * static_cast<size_t>(numLights), GL_DYNAMIC_DRAW, UniformBuffer::SPOT_LIGHT_BLOCK_BINDING),
+          mLightsData(static_cast<size_t>(numLights)),
+          mNumLights{numLights}
     {
-        std::memset(&mLightsData, 0, DATA_SIZE);
-        for (int i = 0; i < NUM_SPOT_LIGHTS; ++i)
+        std::memset(mLightsData.data(), 0, sizeof(SpotLightListElem__DATA) * static_cast<size_t>(numLights));
+        for (int i = 0; i < numLights; ++i)
         {
-            mLightsData[i].SetConstant(1.0f);
+            mLightsData[static_cast<size_t>(i)].SetConstant(1.0f);
         }
-        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+        mBuffer.Modify(0, sizeof(SpotLightListElem__DATA) * static_cast<size_t>(numLights), mLightsData.data());
     }
 
     ////////////////////////////////////////
