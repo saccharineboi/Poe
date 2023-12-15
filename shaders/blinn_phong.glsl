@@ -229,7 +229,7 @@ vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexCo
         vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
 
         int layer = ChooseCascade(length(fs_in.vFragPos));
-        float shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i][layer], normal, lightDir, layer);
+        float shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i][layer], normal, lightDir, layer, uDirLights[i].farPlane);
         result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
     }
     return result;

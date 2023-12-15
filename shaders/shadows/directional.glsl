@@ -16,7 +16,7 @@ int ChooseCascade(float fragDepth)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layer)
+float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layer, float farPlane)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5f + 0.5f;
@@ -31,7 +31,7 @@ float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightD
 
     if (layer == NUM_CASCADES)
     {
-        bias *= 1.0f / (1000.0f * biasModifier);
+        bias *= 1.0f / (farPlane * biasModifier);
     }
     else
     {
