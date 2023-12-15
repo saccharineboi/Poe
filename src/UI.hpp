@@ -93,7 +93,12 @@ namespace Poe
             ImGui::SetNextWindowSize({ 400, 0 });
             ImGui::SetNextWindowPos({ 20, 20 });
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::Begin("Poe Global Info (OpenGL 4.6 Core)");
+
+            GLint glVersionMajor{}, glVersionMinor{};
+            glGetIntegerv(GL_MAJOR_VERSION, &glVersionMajor);
+            glGetIntegerv(GL_MINOR_VERSION, &glVersionMinor);
+
+            ImGui::Begin("Poe Global Info");
         }
 
         static void End_GlobalInfo()
@@ -234,14 +239,17 @@ namespace Poe
                 mCerrLogs.push_back(buffer);
         }
 
-        static void Render_LogInfo()
+        static void Render_LogInfo(int width, int height)
         {
-            ImGui::SetNextWindowSize({ 600, 0 });
+            constexpr int coutWidth{ 400 }, cerrWidth{ 600 };
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
 
             if (mCoutLogs.size() > 0)
             {
-                ImGui::Begin("stdout", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
+                ImGui::SetNextWindowSize({ coutWidth, -1 });
+                ImGui::SetNextWindowPos({ static_cast<float>(width - coutWidth - 20), 60.0f });
+
+                ImGui::Begin("Info Logs", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stdout logs", { -1, 400 });
                 for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
                     ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
@@ -251,7 +259,10 @@ namespace Poe
 
             if (mCerrLogs.size() > 0)
             {
-                ImGui::Begin("stderr", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
+                ImGui::SetNextWindowSize({ cerrWidth, -1 });
+                ImGui::SetNextWindowPos({ static_cast<float>(width / 2 - cerrWidth / 2), 20.0f });
+
+                ImGui::Begin("Error Logs", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stderr logs", { -1, 400 });
                 for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
                     ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
@@ -285,11 +296,15 @@ namespace Poe
             ImGui::End();
         }
 
-        static void Render_SkyboxInfo(RealisticSkyboxUB& block)
+        static void Render_SkyboxInfo(RealisticSkyboxUB& block, int width, int height)
         {
+            constexpr int wwidth{ 400 }, wheight{ 330 };
+
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
-            ImGui::SetNextWindowSize({ 750, 330 });
-            ImGui::Begin("Atmospheric Scattering", nullptr, ImGuiWindowFlags_NoResize);
+            ImGui::SetNextWindowPos({ static_cast<float>(width - wwidth - 20), 20 });
+            ImGui::SetNextWindowSize({ wwidth, wheight });
+            ImGui::Begin("Atmospheric Scattering", nullptr, ImGuiWindowFlags_NoResize |
+                                                            ImGuiWindowFlags_HorizontalScrollbar);
 
             RealisticSkyboxMaterial material{ block.Get() };
 
@@ -367,6 +382,47 @@ namespace Poe
             ImGui::ColorEdit3("Diffuse Color", glm::value_ptr(material.mDiffuse));
             ImGui::ColorEdit3("Specular Color", glm::value_ptr(material.mSpecular));
             ImGui::InputFloat("Shininess", &material.mShininess);
+
+            ImGui::End();
+        }
+
+        static void RenderStats(int width, int height, int thickness)
+        {
+            ImGui::SetNextWindowSize({ static_cast<float>(width), static_cast<float>(thickness) });
+            ImGui::SetNextWindowPos({ 0.0f, static_cast<float>(height - thickness) });
+            ImGui::SetNextWindowBgAlpha(1.0f);
+            ImGui::Begin("No Title", nullptr, ImGuiWindowFlags_NoTitleBar |
+                                              ImGuiWindowFlags_NoResize |
+                                              ImGuiWindowFlags_NoDecoration);
+
+            GLint numGLExtensions;
+            glGetIntegerv(GL_NUM_EXTENSIONS, &numGLExtensions);
+
+            GLint flags;
+            glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+            bool isRunningInDebugContext = flags & GL_CONTEXT_FLAG_DEBUG_BIT;
+
+            ImGui::Text("GL Version: %s | GLSL Version: %s | GL Renderer: %s | GL Vendor: %s | Num GL Extensions: %d | Debug Mode: %d", glGetString(GL_VERSION),
+                                                                                                                                        glGetString(GL_SHADING_LANGUAGE_VERSION),
+                                                                                                                                        glGetString(GL_RENDERER),
+                                                                                                                                        glGetString(GL_VENDOR),
+                                                                                                                                        numGLExtensions,
+                                                                                                                                        isRunningInDebugContext);
+
+            if (GLAD_GL_ATI_meminfo) {
+                constexpr GLenum VBO_FREE_MEMORY_ATI{ 0x87FB };
+                constexpr GLenum TEXTURE_FREE_MEMORY_ATI{ 0x87FC };
+                constexpr GLenum RENDERBUFFER_FREE_MEMORY_ATI{ 0x87FD };
+
+                GLint vboMemory[4], textureMemory[4], renderbufferMemory[4];
+
+                glGetIntegerv(VBO_FREE_MEMORY_ATI, vboMemory);
+                glGetIntegerv(TEXTURE_FREE_MEMORY_ATI, textureMemory);
+                glGetIntegerv(RENDERBUFFER_FREE_MEMORY_ATI, renderbufferMemory);
+
+                ImGui::Text("VBO: Total %d MB, Largest %d MB, Total Aux %d MB, Largest Aux %d MB | Texture: Total %d MB, Largest: %d MB, Total Aux: %d MB, Largest Aux: %d MB | Renderbuffer: Total %d MB, Largest: %d mb, Total Aux: %d MB, Largest Aux: %d MB", vboMemory[0] / 1000, vboMemory[1] / 1000, vboMemory[2] / 1000, vboMemory[3] / 1000, textureMemory[0] / 1000, textureMemory[1] / 1000, textureMemory[2] / 1000, textureMemory[3] / 1000, renderbufferMemory[0] / 1000, renderbufferMemory[1] / 1000, renderbufferMemory[2] / 1000, renderbufferMemory[3] / 1000);
+            }
+            ImGui::Text("# Draw Calls: %d | # Instanced Draw Calls: %d | # VAO Binds: %d | # Texture Binds: %d", RuntimeStats::NumDrawCalls, RuntimeStats::NumInstancedDrawCalls, RuntimeStats::NumVAOBinds, RuntimeStats::NumTextureBinds);
 
             ImGui::End();
         }

@@ -157,6 +157,39 @@ namespace Poe
     }
 
     ////////////////////////////////////////
+    int RuntimeStats::NumDrawCalls{};
+    int RuntimeStats::NumInstancedDrawCalls{};
+    int RuntimeStats::NumTextureBinds{};
+    int RuntimeStats::NumVAOBinds{};
+
+    ////////////////////////////////////////
+    void RuntimeStats::Reset()
+    {
+        NumDrawCalls = 0;
+        NumInstancedDrawCalls = 0;
+        NumTextureBinds = 0;
+        NumVAOBinds = 0;
+    }
+
+    ////////////////////////////////////////
+    GLuint RuntimeStats::CreateQuery(GLenum type)
+    {
+        GLuint id;
+        glGenQueries(1, &id);
+        glBeginQuery(type, id);
+        return id;
+    }
+
+    ////////////////////////////////////////
+    int RuntimeStats::GetQueryResult(GLuint query)
+    {
+        glEndQuery(query);
+        int result;
+        glGetQueryObjectiv(query, GL_QUERY_RESULT, &result);
+        return result;
+    }
+
+    ////////////////////////////////////////
     VertexBuffer::VertexBuffer(const std::vector<float>& vertices, unsigned mode)
         : mMode{mode}, mNumElements{vertices.size()}
     {

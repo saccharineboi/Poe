@@ -63,6 +63,20 @@ namespace Poe
     void APIENTRY GraphicsDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
 
     ////////////////////////////////////////
+    struct RuntimeStats
+    {
+        static int NumDrawCalls;
+        static int NumInstancedDrawCalls;
+        static int NumVAOBinds;
+        static int NumTextureBinds;
+
+        static void Reset();
+
+        static GLuint CreateQuery(GLenum type);
+        static int GetQueryResult(GLuint query);
+    };
+
+    ////////////////////////////////////////
     struct VertexBuffer
     {
     private:
@@ -1300,14 +1314,25 @@ namespace Poe
         VAO(VAO&&);
         VAO& operator=(VAO&&);
 
-        void Bind() const { glBindVertexArray(mId); }
+        void Bind() const
+        {
+            glBindVertexArray(mId);
+            ++RuntimeStats::NumVAOBinds;
+        }
+
         void UnBind() const { glBindVertexArray(0); }
 
         void Draw(unsigned mode = GL_TRIANGLES) const
-        { glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr); }
+        {
+            ++RuntimeStats::NumDrawCalls;
+            glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, nullptr);
+        }
 
         void DrawInstanced(unsigned mode = GL_TRIANGLES, int numInstances = 1) const
-        { glDrawElementsInstanced(mode, mNumIndices, GL_UNSIGNED_INT, nullptr, numInstances); }
+        {
+            ++RuntimeStats::NumInstancedDrawCalls;
+            glDrawElementsInstanced(mode, mNumIndices, GL_UNSIGNED_INT, nullptr, numInstances);
+        }
 
         unsigned GetId() const { return mId; }
         int GetNumIndices() const { return mNumIndices; }
@@ -1440,7 +1465,12 @@ namespace Poe
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
-        void Draw() const { glDrawArrays(GL_TRIANGLES, 0, 6); }
+
+        void Draw() const
+        {
+            ++RuntimeStats::NumDrawCalls;
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
         static inline constexpr int SCREEN_TEXTURE_LOC = 0;
         static inline constexpr int TEXELSTRETCH_LOC = 1;
@@ -1516,7 +1546,12 @@ namespace Poe
         int GetNumMipmaps() const { return mNumMipmaps; }
         glm::vec4 GetBorderColor() const { return mBorderColor; }
 
-        void Bind(unsigned loc = 0) const { glBindTextureUnit(loc, mId); }
+        void Bind(unsigned loc = 0) const
+        {
+            glBindTextureUnit(loc, mId);
+            ++RuntimeStats::NumTextureBinds;
+        }
+
         void UnBind(unsigned loc = 0) const { glBindTextureUnit(loc, 0); }
     };
 
@@ -1608,7 +1643,12 @@ namespace Poe
         int GetNumMipmaps() const { return mNumMipmaps; }
         glm::vec4 GetBorderColor() const { return mBorderColor; }
 
-        void Bind(unsigned loc = 0) const { glBindTextureUnit(loc, mId); }
+        void Bind(unsigned loc = 0) const
+        {
+            glBindTextureUnit(loc, mId);
+            ++RuntimeStats::NumTextureBinds;
+        }
+
         void UnBind(unsigned loc = 0) const { glBindTextureUnit(loc, 0); }
     };
 
@@ -1664,6 +1704,7 @@ namespace Poe
         {
             glActiveTexture(GL_TEXTURE0 + ind);
             glBindTexture(GL_TEXTURE_CUBE_MAP, mId);
+            ++RuntimeStats::NumTextureBinds;
         }
 
         void Unbind(unsigned ind = 0) const
@@ -1780,7 +1821,12 @@ namespace Poe
         unsigned GetType() const { return mType; }
         int GetNumSamples() const { return mNumSamples; }
 
-        void Bind() const { glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId); }
+        void Bind() const
+        {
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, mId);
+            ++RuntimeStats::NumTextureBinds;
+        }
+
         void UnBind() const { glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0); }
     };
 
@@ -2313,7 +2359,12 @@ namespace Poe
         void Halt() const { mProgram.Halt(); }
 
         void Draw() const
-        { mProgram.Use(); mCubemap.Bind(); glDrawArrays(GL_TRIANGLES, 0, 36); }
+        {
+            mProgram.Use();
+            mCubemap.Bind();
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            ++RuntimeStats::NumDrawCalls;
+        }
     };
 
     ////////////////////////////////////////
@@ -2531,7 +2582,11 @@ namespace Poe
         void Halt() const { mProgram.Halt(); }
 
         void Draw() const
-        { mProgram.Use(); glDrawArrays(GL_TRIANGLES, 0, 36); }
+        {
+            mProgram.Use();
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            ++RuntimeStats::NumDrawCalls;
+        }
     };
 
     ////////////////////////////////////////

@@ -97,7 +97,6 @@ namespace Poe::Window
         DebugUI::PushLog(stdout, "[DEBUG] GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
         DebugUI::PushLog(stdout, "[DEBUG] GL renderer: %s\n", glGetString(GL_RENDERER));
         DebugUI::PushLog(stdout, "[DEBUG] GL vendor: %s\n", glGetString(GL_VENDOR));
-        DebugUI::PushLog(stdout, "[DEBUG] GL extensions: %s\n", glGetString(GL_EXTENSIONS));
     }
 
     ////////////////////////////////////////
