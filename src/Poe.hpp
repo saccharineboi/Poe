@@ -678,6 +678,7 @@ namespace Poe
         glm::vec3 mDirection;
         float mIntensity;
         float mFarPlane;
+        std::vector<float> mCascadeRanges;
         std::vector<glm::mat4> mLightMatrices;
         bool mCastShadows;
     };
@@ -716,6 +717,7 @@ namespace Poe
         alignas(16) float direction[3];
         alignas(4) float intensity;
         alignas(4) float farPlane;
+        alignas(16) float cascadeRanges[static_cast<size_t>(NumCascades * 4)];
         alignas(16) float lightMatrices[static_cast<size_t>(NumCascades + 1)][4 * 4];
     };
 
@@ -750,7 +752,7 @@ namespace Poe
     ////////////////////////////////////////
     inline constexpr int NUM_DIR_LIGHTS{ 2 };
     inline constexpr int NUM_POINT_LIGHTS{ 4 };
-    inline constexpr int NUM_SPOT_LIGHTS{ 4 };
+    inline constexpr int NUM_SPOT_LIGHTS{ 2 };
 
     ////////////////////////////////////////
     template <int NumCascades>
@@ -770,6 +772,14 @@ namespace Poe
         void SetFarPlane(float farPlane)
         { data.farPlane = farPlane; }
 
+        void SetCascadeRanges(const std::vector<float>& cascadeRanges)
+        {
+            assert(cascadeRanges.size() == NumCascades);
+            for (size_t i = 0; i < cascadeRanges.size(); ++i) {
+                data.cascadeRanges[i * 4] = cascadeRanges[i];
+            }
+        }
+
         void SetLightMatrix(int cascade, const glm::mat4& lightMatrix)
         {
             assert(cascade >= 0 && cascade <= NumCascades);
@@ -785,6 +795,15 @@ namespace Poe
         float GetIntensity() const { return data.intensity; }
 
         float GetFarPlane() const { return data.farPlane; }
+
+        std::vector<float> GetCascadeRanges() const
+        {
+            std::vector<float> buffer;
+            for (int i = 0; i < NumCascades; ++i) {
+                buffer.push_back(data.cascadeRanges[i * 4]);
+            }
+            return buffer;
+        }
 
         glm::mat4 GetLightMatrix(int cascade) const
         {
@@ -920,7 +939,7 @@ namespace Poe
         DirLightUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(DirLightListElem__DATA<NumCascades>) * NUM_DIR_LIGHTS;
+        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
 
         void SetColor(int ind, const glm::vec3& color)
         {
@@ -954,9 +973,16 @@ namespace Poe
 
         void SetLightMatrices(int ind, const std::vector<glm::mat4>& lightMatrices)
         {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
             for (size_t i = 0; i < lightMatrices.size(); ++i) {
                 mLightsData[ind].SetLightMatrix(static_cast<int>(i), lightMatrices[i]);
             }
+        }
+
+        void SetCascadeRanges(int ind, const std::vector<float>& cascadeRanges)
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            mLightsData[ind].SetCascadeRanges(cascadeRanges);
         }
 
         void Update() const
@@ -969,6 +995,7 @@ namespace Poe
             SetIntensity(ind, dirLight.mIntensity);
             SetFarPlane(ind, dirLight.mFarPlane);
             SetLightMatrices(ind, dirLight.mLightMatrices);
+            SetCascadeRanges(ind, dirLight.mCascadeRanges);
         }
 
         glm::vec3 GetColor(int ind) const
@@ -1003,11 +1030,18 @@ namespace Poe
 
         std::vector<glm::mat4> GetLightMatrices(int ind) const
         {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
             std::vector<glm::mat4> buffer;
             for (int i = 0; i <= 4; ++i) {
                 buffer.push_back(mLightsData[ind].GetLightMatrix(i));
             }
             return buffer;
+        }
+
+        std::vector<float> GetCascadeRanges(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            return mLightsData[ind].GetCascadeRanges();
         }
 
         DirLight Get(int ind) const
@@ -1018,6 +1052,7 @@ namespace Poe
             dl.mIntensity = GetIntensity(ind);
             dl.mFarPlane = GetFarPlane(ind);
             dl.mLightMatrices = GetLightMatrices(ind);
+            dl.mCascadeRanges = GetCascadeRanges(ind);
             return dl;
         }
     };
@@ -1042,7 +1077,7 @@ namespace Poe
         PointLightUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(PointLightListElem__DATA) * NUM_POINT_LIGHTS;
+        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
 
         void SetColor(int ind, const glm::vec3& color)
         {
@@ -1152,7 +1187,7 @@ namespace Poe
         SpotLightUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(SpotLightListElem__DATA) * NUM_SPOT_LIGHTS;
+        inline static constexpr int DATA_SIZE = sizeof(mLightsData);
 
         void SetColor(int ind, const glm::vec3& color)
         {
