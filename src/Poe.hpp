@@ -708,17 +708,13 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    template <int NumCascades>
     struct DirLight__DATA
     {
         alignas(16) float color[3];
         alignas(16) float direction[3];
         alignas(4) float intensity;
-
-        alignas(16) float lightMatrix0[4 * 4];
-        alignas(16) float lightMatrix1[4 * 4];
-        alignas(16) float lightMatrix2[4 * 4];
-        alignas(16) float lightMatrix3[4 * 4];
-        alignas(16) float lightMatrix4[4 * 4];
+        alignas(16) float lightMatrices[static_cast<size_t>(NumCascades + 1)][4 * 4];
     };
 
     ////////////////////////////////////////
@@ -755,9 +751,10 @@ namespace Poe
     inline constexpr int NUM_SPOT_LIGHTS{ 4 };
 
     ////////////////////////////////////////
+    template <int NumCascades>
     struct alignas(16) DirLightListElem__DATA
     {
-        DirLight__DATA data;
+        DirLight__DATA<NumCascades> data;
 
         void SetColor(const glm::vec3& color)
         { std::memcpy(data.color, glm::value_ptr(color), sizeof(glm::vec3)); }
@@ -770,27 +767,8 @@ namespace Poe
 
         void SetLightMatrix(int cascade, const glm::mat4& lightMatrix)
         {
-            switch (cascade)
-            {
-            case 0:
-                std::memcpy(data.lightMatrix0, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
-                break;
-            case 1:
-                std::memcpy(data.lightMatrix1, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
-                break;
-            case 2:
-                std::memcpy(data.lightMatrix2, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
-                break;
-            case 3:
-                std::memcpy(data.lightMatrix3, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
-                break;
-            case 4:
-                std::memcpy(data.lightMatrix4, glm::value_ptr(lightMatrix), sizeof(glm::mat4));
-                break;
-            default:
-                assert(0 && "Unknown cascade was given");
-                break;
-            }
+            assert(cascade >= 0 && cascade <= NumCascades);
+            std::memcpy(data.lightMatrices[cascade], glm::value_ptr(lightMatrix), sizeof(glm::mat4));
         }
 
         glm::vec3 GetColor() const
@@ -803,24 +781,8 @@ namespace Poe
 
         glm::mat4 GetLightMatrix(int cascade) const
         {
-            const float* matrixPtr = [&]() -> const float*
-            {
-                switch (cascade)
-                {
-                    case 0:
-                        return data.lightMatrix0;
-                    case 1:
-                        return data.lightMatrix1;
-                    case 2:
-                        return data.lightMatrix2;
-                    case 3:
-                        return data.lightMatrix3;
-                    case 4:
-                        return data.lightMatrix4;
-                    default:
-                        return nullptr;
-                }
-            }();
+            assert(cascade >= 0 && cascade <= NumCascades);
+            const float* matrixPtr = glm::value_ptr(data.lightMatrices[cascade]);
 
             assert(nullptr != matrixPtr);
             return glm::mat4(matrixPtr[0],  matrixPtr[1],  matrixPtr[2],  matrixPtr[3],
@@ -940,17 +902,18 @@ namespace Poe
     };
 
     ////////////////////////////////////////
+    template <int NumCascades>
     struct DirLightUB
     {
     private:
         UniformBuffer mBuffer;
-        DirLightListElem__DATA mLightsData[NUM_DIR_LIGHTS];
+        DirLightListElem__DATA<NumCascades> mLightsData[NUM_DIR_LIGHTS];
 
     public:
         DirLightUB();
         const UniformBuffer& Buffer() const { return mBuffer; }
 
-        inline static constexpr int DATA_SIZE = sizeof(DirLightListElem__DATA) * NUM_DIR_LIGHTS;
+        inline static constexpr int DATA_SIZE = sizeof(DirLightListElem__DATA<NumCascades>) * NUM_DIR_LIGHTS;
 
         void SetColor(int ind, const glm::vec3& color)
         {
@@ -1037,6 +1000,15 @@ namespace Poe
             return dl;
         }
     };
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    DirLightUB<NumCascades>::DirLightUB()
+        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING)
+    {
+        std::memset(&mLightsData, 0, DATA_SIZE);
+        mBuffer.Modify(0, DATA_SIZE, mLightsData);
+    }
 
     ////////////////////////////////////////
     struct PointLightUB

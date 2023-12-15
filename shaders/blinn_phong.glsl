@@ -67,12 +67,7 @@ out VS_OUT
     vec3 vNorm;
     vec2 vTexCoord;
 
-    vec4 vFragPosInDirLightSpace0[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace1[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace2[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace3[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace4[NUM_DIR_LIGHTS];
-
+    vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS][NUM_CASCADES];
     vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
 }
 vs_out;
@@ -81,19 +76,14 @@ void ComputeDirLightSpace()
 {
     for (int i = 0; i < NUM_DIR_LIGHTS; ++i)
     {
+        for (int j = 0; j < NUM_CASCADES; ++j)
+        {
 #if POE_INSTANCED == 0
-        vs_out.vFragPosInDirLightSpace0[i] = uDirLights[i].lightSpace0 * uModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace1[i] = uDirLights[i].lightSpace1 * uModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace2[i] = uDirLights[i].lightSpace2 * uModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace3[i] = uDirLights[i].lightSpace3 * uModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace4[i] = uDirLights[i].lightSpace4 * uModel * vec4(aPos, 1.0f);
+            vs_out.vFragPosInDirLightSpace[i][j] = uDirLights[i].lightSpace[j] * uModel * vec4(aPos, 1.0f);
 #elif POE_INSTANCED == 1
-        vs_out.vFragPosInDirLightSpace0[i] = uDirLights[i].lightSpace0 * aModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace1[i] = uDirLights[i].lightSpace1 * aModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace2[i] = uDirLights[i].lightSpace2 * aModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace3[i] = uDirLights[i].lightSpace3 * aModel * vec4(aPos, 1.0f);
-        vs_out.vFragPosInDirLightSpace4[i] = uDirLights[i].lightSpace4 * aModel * vec4(aPos, 1.0f);
+            vs_out.vFragPosInDirLightSpace[i][j] = uDirLights[i].lightSpace[j] * aModel * vec4(aPos, 1.0f);
 #endif
+        }
     }
 }
 
@@ -174,12 +164,7 @@ in VS_OUT
     vec3 vNorm;
     vec2 vTexCoord;
 
-    vec4 vFragPosInDirLightSpace0[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace1[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace2[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace3[NUM_DIR_LIGHTS];
-    vec4 vFragPosInDirLightSpace4[NUM_DIR_LIGHTS];
-
+    vec4 vFragPosInDirLightSpace[NUM_DIR_LIGHTS][NUM_CASCADES];
     vec4 vFragPosInSpotLightSpace[NUM_SPOT_LIGHTS];
 }
 fs_in;
@@ -243,23 +228,8 @@ vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexCo
         float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
         vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
 
-        float shadowComp = 1.0f;
         int layer = ChooseCascade(length(fs_in.vFragPos));
-        if (layer == 0) {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace0[i], normal, lightDir, layer);
-        }
-        else if (layer == 1) {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace1[i], normal, lightDir, layer);
-        }
-        else if (layer == 2) {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace2[i], normal, lightDir, layer);
-        }
-        else if (layer == 3) {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace3[i], normal, lightDir, layer);
-        }
-        else if (layer == 4) {
-            shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace4[i], normal, lightDir, layer);
-        }
+        float shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i][layer], normal, lightDir, layer);
         result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
     }
     return result;

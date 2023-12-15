@@ -376,14 +376,6 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    DirLightUB::DirLightUB()
-        : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::DIR_LIGHT_BLOCK_BINDING)
-    {
-        std::memset(&mLightsData, 0, DATA_SIZE);
-        mBuffer.Modify(0, DATA_SIZE, mLightsData);
-    }
-
-    ////////////////////////////////////////
     PointLightUB::PointLightUB()
         : mBuffer(DATA_SIZE, GL_DYNAMIC_DRAW, UniformBuffer::POINT_LIGHT_BLOCK_BINDING)
     {
