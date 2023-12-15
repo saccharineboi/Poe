@@ -329,7 +329,7 @@ namespace CSItalyDemo
                 Poe::DebugUI::Render_PbrLightMaterialInfo(pbrLightMaterial);
                 Poe::DebugUI::Render_DirLightInfo(sun);
             Poe::DebugUI::End_GlobalInfo();
-            Poe::DebugUI::Render_LogInfo();
+            Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
 
             Poe::DebugUI::EndFrame();
 

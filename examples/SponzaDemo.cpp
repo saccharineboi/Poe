@@ -314,7 +314,7 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
                 Poe::DebugUI::Render_DirLightInfo(sun);
             Poe::DebugUI::End_GlobalInfo();
-            Poe::DebugUI::Render_LogInfo();
+            Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
 
             Poe::DebugUI::EndFrame();
 

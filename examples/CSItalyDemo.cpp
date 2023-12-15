@@ -400,12 +400,15 @@ namespace CSItalyDemo
                 Poe::DebugUI::Render_DirLightInfo(sun);
                 Poe::DebugUI::Render_PointLightInfo(playerLight);
                 Poe::DebugUI::Render_SpotLightInfo(flashlight);
-                Poe::DebugUI::Render_SkyboxInfo(skyboxBlock);
+                Poe::DebugUI::Render_SkyboxInfo(skyboxBlock, fbWidth, fbHeight);
                 Poe::DebugUI::Render_BlinnPhongMaterialInfo(blinnPhongMaterial);
             Poe::DebugUI::End_GlobalInfo();
-            Poe::DebugUI::Render_LogInfo();
+            Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
 
+            Poe::DebugUI::RenderStats(fbWidth, fbHeight, 75.0f);
             Poe::DebugUI::EndFrame();
+
+            Poe::RuntimeStats::Reset();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
