@@ -228,8 +228,8 @@ vec3 computeDirLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexCo
         float spec = pow(max(dot(normal, halfwayDir), 0.0f), uMaterialShininess);
         vec3 specular = spec * uDirLights[i].color * specularTexColor * uMaterialSpecular;
 
-        int layer = ChooseCascade(length(fs_in.vFragPos));
-        float shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i][layer], normal, lightDir, layer, uDirLights[i].farPlane);
+        int layer = ChooseCascade(length(fs_in.vFragPos), uDirLights[i].cascadeRanges);
+        float shadowComp = ComputeShadowForDirLights(fs_in.vFragPosInDirLightSpace[i][layer], normal, lightDir, layer, uDirLights[i].farPlane, uDirLights[i].cascadeRanges);
         result += shadowComp * uDirLights[i].intensity * (diffuse + specular);
     }
     return result;
@@ -261,7 +261,7 @@ vec3 computePointLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTex
 vec3 computeSpotLight(vec3 normal, vec3 pixelPos, vec3 viewDir, vec3 diffuseTexColor, vec3 specularTexColor)
 {
     vec3 result = vec3(0.0f);
-    for (int i = 0; i < NUM_POINT_LIGHTS; ++i)
+    for (int i = 0; i < NUM_SPOT_LIGHTS; ++i)
     {
         vec3 lightDir = normalize(uSpotLights[i].position - pixelPos);
         float theta = dot(lightDir, normalize(-uSpotLights[i].direction));

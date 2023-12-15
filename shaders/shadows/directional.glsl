@@ -2,9 +2,8 @@
 layout (location = POE_UDIR_LIGHT_DEPTH_MAP_LOC)  uniform sampler2DArrayShadow uDirLightDepthMap;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-int ChooseCascade(float fragDepth)
+int ChooseCascade(float fragDepth, float cascadeRanges[NUM_CASCADES])
 {
-    const float cascadeRanges[NUM_CASCADES] = { 20.0f, 50.0f, 100.0f, 500.0f };
     for (int i = 0; i < NUM_CASCADES; ++i)
     {
         if (fragDepth < cascadeRanges[i])
@@ -16,7 +15,7 @@ int ChooseCascade(float fragDepth)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layer, float farPlane)
+float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layer, float farPlane, float cascadeRanges[NUM_CASCADES])
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5f + 0.5f;
@@ -25,8 +24,6 @@ float ComputeShadowForDirLights(vec4 fragPosLightSpace, vec3 normal, vec3 lightD
     }
 
     float biasModifier = 0.5f;
-    const float cascadeRanges[NUM_CASCADES] = { 20.0f, 50.0f, 100.0f, 500.0f };
-
     float bias = max(SHADOW_BIAS_MAX * (1.0f - dot(normal, lightDir)), SHADOW_BIAS_MIN);
 
     if (layer == NUM_CASCADES)
