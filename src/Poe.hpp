@@ -677,6 +677,7 @@ namespace Poe
         glm::vec3 mColor;
         glm::vec3 mDirection;
         float mIntensity;
+        float mFarPlane;
         std::vector<glm::mat4> mLightMatrices;
         bool mCastShadows;
     };
@@ -714,6 +715,7 @@ namespace Poe
         alignas(16) float color[3];
         alignas(16) float direction[3];
         alignas(4) float intensity;
+        alignas(4) float farPlane;
         alignas(16) float lightMatrices[static_cast<size_t>(NumCascades + 1)][4 * 4];
     };
 
@@ -765,6 +767,9 @@ namespace Poe
         void SetIntensity(float intensity)
         { data.intensity = intensity; }
 
+        void SetFarPlane(float farPlane)
+        { data.farPlane = farPlane; }
+
         void SetLightMatrix(int cascade, const glm::mat4& lightMatrix)
         {
             assert(cascade >= 0 && cascade <= NumCascades);
@@ -778,6 +783,8 @@ namespace Poe
         { return glm::vec3(data.direction[0], data.direction[1], data.direction[2]); }
 
         float GetIntensity() const { return data.intensity; }
+
+        float GetFarPlane() const { return data.farPlane; }
 
         glm::mat4 GetLightMatrix(int cascade) const
         {
@@ -933,6 +940,12 @@ namespace Poe
             mLightsData[ind].SetIntensity(intensity);
         }
 
+        void SetFarPlane(int ind, float farPlane)
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            mLightsData[ind].SetFarPlane(farPlane);
+        }
+
         void SetLightMatrix(int ind, int cascade, const glm::mat4& lightMatrix)
         {
             assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
@@ -954,6 +967,7 @@ namespace Poe
             SetColor(ind, dirLight.mColor);
             SetDirection(ind, viewMatrix, dirLight.mDirection);
             SetIntensity(ind, dirLight.mIntensity);
+            SetFarPlane(ind, dirLight.mFarPlane);
             SetLightMatrices(ind, dirLight.mLightMatrices);
         }
 
@@ -973,6 +987,12 @@ namespace Poe
         {
             assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
             return mLightsData[ind].GetIntensity();
+        }
+
+        float GetFarPlane(int ind) const
+        {
+            assert(ind >= 0 && ind < NUM_DIR_LIGHTS);
+            return mLightsData[ind].GetFarPlane();
         }
 
         glm::mat4 GetLightMatrix(int ind, int cascade) const
@@ -996,6 +1016,7 @@ namespace Poe
             dl.mColor = GetColor(ind);
             dl.mDirection = GetDirection(ind);
             dl.mIntensity = GetIntensity(ind);
+            dl.mFarPlane = GetFarPlane(ind);
             dl.mLightMatrices = GetLightMatrices(ind);
             return dl;
         }
@@ -2093,6 +2114,22 @@ namespace Poe
             for (const StaticMesh& staticMesh : mMeshes) {
                 staticMesh.Bind();
                 staticMesh.BindTextures();
+                staticMesh.DrawInstanced(mode);
+            }
+        }
+
+        void DrawUntextured(unsigned mode = GL_TRIANGLES) const
+        {
+            for (const StaticMesh& staticMesh : mMeshes) {
+                staticMesh.Bind();
+                staticMesh.Draw(mode);
+            }
+        }
+
+        void DrawInstancedUntextured(unsigned mode = GL_TRIANGLES) const
+        {
+            for (const StaticMesh& staticMesh : mMeshes) {
+                staticMesh.Bind();
                 staticMesh.DrawInstanced(mode);
             }
         }
