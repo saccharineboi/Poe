@@ -2239,8 +2239,11 @@ namespace Poe
           mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
+          mRbo(GL_DEPTH24_STENCIL8, mWidth, mHeight),
           mFbo(mColor0)
     {
+        assert(numSamples > 1);
+
         mBlock.SetExposure(PP_DEFAULT_EXPOSURE);
         mBlock.SetGamma(PP_DEFAULT_GAMMA);
         mBlock.Buffer().TurnOn();
@@ -2257,7 +2260,28 @@ namespace Poe
           mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
           mFboMS(mColor0MS, mRboMS),
           mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
+          mRbo(GL_DEPTH24_STENCIL8, mWidth, mHeight),
           mFbo(mColor0)
+    {
+        assert(numSamples > 1);
+
+        mBlock.SetExposure(PP_DEFAULT_EXPOSURE);
+        mBlock.SetGamma(PP_DEFAULT_GAMMA);
+        mBlock.Buffer().TurnOn();
+    }
+
+    ////////////////////////////////////////
+    PostProcessStack::PostProcessStack(const std::string& shaderRootPath,
+                                       int width, int height,
+                                       ShaderLoader& loader)
+        : mWidth{width}, mHeight{height}, mOutputWidth{width}, mOutputHeight{height}, mNumSamples{1},
+          mProgram(shaderRootPath, loader),
+          mRboMS(GL_DEPTH24_STENCIL8, mWidth, mHeight, mNumSamples),
+          mColor0MS(mWidth, mHeight, GL_RGBA16F, mNumSamples),
+          mFboMS(mColor0MS, mRboMS),
+          mColor0{CreateFramebufferTexture2D(mOutputWidth, mOutputHeight)},
+          mRbo(GL_DEPTH24_STENCIL8, mWidth, mHeight),
+          mFbo(mColor0, mRbo)
     {
         mBlock.SetExposure(PP_DEFAULT_EXPOSURE);
         mBlock.SetGamma(PP_DEFAULT_GAMMA);

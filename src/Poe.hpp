@@ -2175,6 +2175,7 @@ namespace Poe
         Framebuffer mFboMS;
 
         Texture2D mColor0;
+        Renderbuffer mRbo;
         Framebuffer mFbo;
 
         PostProcessUB mBlock;
@@ -2189,8 +2190,35 @@ namespace Poe
                          int outputWidth, int outputHeight,
                          int numSamples, ShaderLoader&);
 
-        void FirstPass() const { glViewport(0, 0, mWidth, mHeight); mFboMS.Bind(); }
-        void SecondPass() const { mFboMS.Blit(mFbo, mWidth, mHeight); mFbo.UnBind(); glViewport(0, 0, mOutputWidth, mOutputHeight); }
+        PostProcessStack(const std::string& shaderRootPath,
+                         int width, int height,
+                         ShaderLoader&);
+
+        void FirstPass() const
+        {
+            glViewport(0, 0, mWidth, mHeight);
+
+            if (mNumSamples > 1) {
+                mFboMS.Bind();
+            }
+            else {
+                mFbo.Bind();
+            }
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        }
+
+        void SecondPass() const
+        {
+            if (mNumSamples > 1) {
+                mFboMS.Blit(mFbo, mWidth, mHeight);
+            }
+
+            mFbo.UnBind();
+            glViewport(0, 0, mOutputWidth, mOutputHeight);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        }
+
         void BindColor0() const { mColor0.Bind(); }
 
         PostProcessProgram& Program() { return mProgram; }
