@@ -19,6 +19,7 @@
 #include "Constants.hpp"
 #include "Suppress.hpp"
 #include "Utility.hpp"
+#include "Cameras.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -681,6 +682,8 @@ namespace Poe
         std::vector<float> mCascadeRanges;
         std::vector<glm::mat4> mLightMatrices;
         bool mCastShadows;
+        float mZOffset;
+        float mZMultiplier;
     };
 
     ////////////////////////////////////////
@@ -692,6 +695,7 @@ namespace Poe
         float mRadius;
         float mIntensity;
         bool mCastShadows;
+        float mNearPlane;
         float mFarPlane;
     };
 
@@ -731,6 +735,7 @@ namespace Poe
         alignas(4) float linear;
         alignas(4) float quadratic;
         alignas(4) float intensity;
+        alignas(4) float nearPlane;
         alignas(4) float farPlane;
     };
 
@@ -838,6 +843,7 @@ namespace Poe
             data.quadratic = 75.0f / (radius * radius);
         }
 
+        void SetNearPlane(float nearPlane) { data.nearPlane = nearPlane; }
         void SetFarPlane(float farPlane) { data.farPlane = farPlane; }
 
         void SetIntensity(float intensity) { data.intensity = intensity; }
@@ -859,6 +865,7 @@ namespace Poe
 
         float GetIntensity() const { return data.intensity; }
 
+        float GetNearPlane() const { return data.nearPlane; }
         float GetFarPlane() const { return data.farPlane; }
     };
 
@@ -1051,6 +1058,9 @@ namespace Poe
         void SetIntensity(int ind, float intensity)
         { mLightsData[static_cast<size_t>(ind)].SetIntensity(intensity); }
 
+        void SetNearPlane(int ind, float nearPlane)
+        { mLightsData[static_cast<size_t>(ind)].SetNearPlane(nearPlane); }
+
         void SetFarPlane(int ind, float farPlane)
         { mLightsData[static_cast<size_t>(ind)].SetFarPlane(farPlane); }
 
@@ -1061,6 +1071,7 @@ namespace Poe
             SetViewPosition(ind, pl.mViewPosition);
             SetRadius(ind, pl.mRadius);
             SetIntensity(ind, pl.mIntensity);
+            SetNearPlane(ind, pl.mNearPlane);
             SetFarPlane(ind, pl.mFarPlane);
         }
 
@@ -1079,6 +1090,9 @@ namespace Poe
         float GetIntensity(int ind) const
         { return mLightsData[static_cast<size_t>(ind)].GetIntensity(); }
 
+        float GetNearPlane(int ind) const
+        { return mLightsData[static_cast<size_t>(ind)].GetNearPlane(); }
+
         float GetFarPlane(int ind) const
         { return mLightsData[static_cast<size_t>(ind)].GetFarPlane(); }
 
@@ -1090,6 +1104,7 @@ namespace Poe
                                GetRadius(ind),
                                GetIntensity(ind),
                                false,
+                               GetNearPlane(ind),
                                GetFarPlane(ind) };
         }
 
@@ -1768,7 +1783,7 @@ namespace Poe
         unsigned GetId() const { return mId; }
 
         void BindTarget(unsigned attachmentType, const Cubemap& cubemap, unsigned faceIndex) const
-        { glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, faceIndex, cubemap.GetId(), 0); }
+        { glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, cubemap.GetId(), 0); }
     };
 
     ////////////////////////////////////////
@@ -2067,6 +2082,14 @@ namespace Poe
         template <typename Func>
         void ApplyToAllInstances(int numXMeshes, int numYMeshes, int numZMeshes, float xOffset, float yOffset, float zOffset, Func func)
         { std::ranges::for_each(mMeshes, [&](auto& m){ m.ApplyToAllInstances(numXMeshes, numYMeshes, numZMeshes, xOffset, yOffset, zOffset, func); }); }
+
+        std::vector<std::reference_wrapper<const StaticMesh>> ExtractMeshes() const
+        {
+            std::vector<std::reference_wrapper<const StaticMesh>> meshList;
+            for (const StaticMesh& mesh : mMeshes)
+                meshList.push_back(mesh);
+            return meshList;
+        }
     };
 
     ////////////////////////////////////////
@@ -2563,4 +2586,214 @@ namespace Poe
         void SetModelMatrix(const glm::mat4& model) const
         { glUniformMatrix4fv(MODEL_LOC, 1, GL_FALSE, glm::value_ptr(model)); }
     };
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    struct LightingStack
+    {
+    private:
+        DepthProgram mDepthProgram;
+        DepthOmniProgram mDepthOmniProgram;
+
+        DirLightUB<NumCascades> mDirLightBlock;
+        PointLightUB mPointLightBlock;
+        SpotLightUB mSpotLightBlock;
+
+        Texture2DArray mDirLightDepthMap;
+        std::vector<Framebuffer> mDirLightDepthFBOs;
+
+        Cubemap mPointLightDepthMap;
+        Framebuffer mPointLightDepthFBO;
+
+        Texture2D mSpotLightDepthMap;
+        Framebuffer mSpotLightDepthFBO;
+
+        int mNumDirLights;
+        int mNumPointLights;
+        int mNumSpotLights;
+
+        int mShadowSize;
+
+    public:
+
+        LightingStack(int numDirLights,
+                      int numPointLights,
+                      int numSpotLights,
+                      int shadowSize,
+                      const std::string& rootPath,
+                      ShaderLoader& loader);
+
+        int GetNumDirLights() const { return mNumDirLights; }
+        int GetNumPointLights() const { return mNumPointLights; }
+        int GetNumSpotLights() const { return mNumSpotLights; }
+
+        int GetShadowSize() const { return mShadowSize; }
+
+        void PrepareState() const { glDisable(GL_CULL_FACE); }
+        void ResetState() const { glEnable(GL_CULL_FACE); }
+
+        void DirectionalShadowPrepass(const AbstractCamera& camera,
+                                      const std::vector<std::reference_wrapper<DirLight>>& lights,
+                                      const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                      const std::vector<std::reference_wrapper<const StaticMesh>>& meshes);
+
+        void OmnidirectionalShadowPrepass(const std::vector<std::reference_wrapper<const PointLight>>& lights,
+                                          const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                          const std::vector<std::reference_wrapper<const StaticMesh>>& meshes);
+
+        void PerspectiveShadowPrepass(const std::vector<std::reference_wrapper<const SpotLight>>& lights,
+                                      const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                      const std::vector<std::reference_wrapper<const StaticMesh>>& meshes);
+    };
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    LightingStack<NumCascades>::LightingStack(int numDirLights,
+                                              int numPointLights,
+                                              int numSpotLights,
+                                              int shadowSize,
+                                              const std::string& rootPath,
+                                              ShaderLoader& loader)
+        : mDepthProgram(rootPath, loader),
+          mDepthOmniProgram(rootPath, loader),
+          mDirLightBlock(numDirLights),
+          mPointLightBlock(numPointLights),
+          mSpotLightBlock(numSpotLights),
+          mDirLightDepthMap{ CreateCascadedDepthMap(shadowSize, shadowSize, NumCascades + 1) },
+          mPointLightDepthMap{ CreateDepthCubemap(shadowSize, shadowSize) },
+          mPointLightDepthFBO(mPointLightDepthMap, GL_DEPTH_ATTACHMENT),
+          mSpotLightDepthMap{ CreateDepthMap(shadowSize, shadowSize) },
+          mSpotLightDepthFBO(mSpotLightDepthMap, GL_DEPTH_ATTACHMENT),
+          mNumDirLights{numDirLights},
+          mNumPointLights{numPointLights},
+          mNumSpotLights{numSpotLights},
+          mShadowSize{shadowSize}
+    {
+        for (int i = 0; i <= NumCascades; ++i) {
+            mDirLightDepthFBOs.push_back(Framebuffer(mDirLightDepthMap, GL_DEPTH_ATTACHMENT, i));
+        }
+
+        mDirLightBlock.Buffer().TurnOn();
+        mPointLightBlock.Buffer().TurnOn();
+        mSpotLightBlock.Buffer().TurnOn();
+
+        mDirLightDepthMap.Bind(DIR_LIGHT_DEPTH_MAP_BIND_POINT);
+        mPointLightDepthMap.Bind(POINT_LIGHT_DEPTH_MAP_BIND_POINT);
+        mSpotLightDepthMap.Bind(SPOT_LIGHT_DEPTH_MAP_BIND_POINT);
+    }
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    void LightingStack<NumCascades>::DirectionalShadowPrepass(const AbstractCamera& camera,
+                                                              const std::vector<std::reference_wrapper<DirLight>>& lights,
+                                                              const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                                              const std::vector<std::reference_wrapper<const StaticMesh>>& meshes)
+    {
+        for (const Framebuffer& fbo : mDirLightDepthFBOs) {
+            fbo.Bind();
+            glViewport(0, 0, mDirLightDepthMap.GetWidth(), mDirLightDepthMap.GetHeight());
+            glClear(GL_DEPTH_BUFFER_BIT);
+        }
+
+        mDepthProgram.Use();
+
+        int lightIndex{};
+        for (DirLight& light : lights) {
+            if (light.mCastShadows) {
+                assert(light.mCascadeRanges.size() == NumCascades);
+                for (int i = 0; i <= NumCascades; ++i) {
+                    std::vector<glm::vec4> frustumCorners = [&](){
+                        if (i == 0) {
+                            return camera.GetFrustumCornersInWorldSpace(camera.GetNear() - light.mZOffset, light.mCascadeRanges.front() + light.mZOffset);
+                        }
+                        else if (i == NumCascades) {
+                            return camera.GetFrustumCornersInWorldSpace(light.mCascadeRanges.back() - light.mZOffset, camera.GetFar() + light.mZOffset);
+                        }
+                        size_t ind{ static_cast<size_t>(i) };
+                        return camera.GetFrustumCornersInWorldSpace(light.mCascadeRanges[ind - 1] - light.mZOffset, light.mCascadeRanges[ind] + light.mZOffset);
+                    }();
+                    glm::vec3 frustumCenter{ Utility::ComputeFrustumCenter(frustumCorners) };
+                    glm::mat4 lightView{ glm::lookAt(frustumCenter + -light.mDirection, frustumCenter, glm::cross(-light.mDirection, glm::vec3(1.0f, 0.0f, 0.0f))) };
+                    glm::mat4 lightProjection{ Utility::FitLightProjectionToFrustum(lightView, frustumCorners, light.mZMultiplier) };
+                    light.mLightMatrices[static_cast<size_t>(i)] = lightProjection * lightView;
+                }
+                for (size_t i = 0; i < meshes.size(); ++i) {
+                    const glm::mat4& modelMatrix{ modelMatrices.size() == meshes.size() ? modelMatrices[i] : modelMatrices[modelMatrices.size() - 1] };
+                    mDepthProgram.SetModelMatrix(modelMatrix);
+
+                    for (int j = 0; j <= NumCascades; ++j) {
+                        mDirLightDepthFBOs[static_cast<size_t>(j)].Bind();
+                        glViewport(0, 0, mDirLightDepthMap.GetWidth(), mDirLightDepthMap.GetHeight());
+                        mDepthProgram.SetLightMatrix(light.mLightMatrices[static_cast<size_t>(j)]);
+                        meshes[i].get().Bind();
+                        meshes[i].get().Draw();
+                    }
+                }
+            }
+            mDirLightBlock.Set(lightIndex, camera.GetViewMatrix(), light);
+            ++lightIndex;
+        }
+        mDirLightBlock.Update();
+    }
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    void LightingStack<NumCascades>::OmnidirectionalShadowPrepass(const std::vector<std::reference_wrapper<const PointLight>>& lights,
+                                                                  const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                                                  const std::vector<std::reference_wrapper<const StaticMesh>>& meshes)
+    {
+        mPointLightDepthFBO.Bind();
+        for (unsigned i = 0; i < 6; ++i) {
+            mPointLightDepthFBO.BindTarget(GL_DEPTH_ATTACHMENT, mPointLightDepthMap, i);
+            glViewport(0, 0, mPointLightDepthMap.GetWidth(), mPointLightDepthMap.GetHeight());
+            glClear(GL_DEPTH_BUFFER_BIT);
+        }
+
+        mDepthOmniProgram.Use();
+
+        int lightIndex{};
+        for (const PointLight& light : lights) {
+            if (light.mCastShadows) {
+                glm::mat4 perspectiveProjection{ glm::perspective(glm::radians(90.0f),
+                                                                  static_cast<float>(mPointLightDepthMap.GetWidth()) / static_cast<float>(mPointLightDepthMap.GetHeight()),
+                                                                  light.mNearPlane, light.mFarPlane) };
+                glm::mat4 lightMatrices[]{ glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+                                           glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+                                           glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+                                           glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+                                           glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+                                           glm::lookAt(light.mWorldPosition, light.mWorldPosition + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)) };
+
+                mDepthOmniProgram.SetLightPositionInWorldSpace(light.mWorldPosition);
+                mDepthOmniProgram.SetFarPlane(light.mFarPlane);
+
+                for (unsigned i = 0; i < 6; ++i) {
+                    glm::mat4 lightMatrix{ perspectiveProjection * lightMatrices[i] };
+                    mPointLightDepthFBO.BindTarget(GL_DEPTH_ATTACHMENT, mPointLightDepthMap, i);
+                    mDepthOmniProgram.SetLightMatrix(lightMatrix);
+
+                    for (size_t j = 0; j < meshes.size(); ++j) {
+                        const glm::mat4& modelMatrix{ modelMatrices.size() == meshes.size() ? modelMatrices[j] : modelMatrices[modelMatrices.size() - 1] };
+                        mDepthOmniProgram.SetModelMatrix(modelMatrix);
+                        meshes[j].get().Draw();
+                        meshes[j].get().Draw();
+                    }
+                }
+            }
+            mPointLightBlock.Set(lightIndex, light);
+            ++lightIndex;
+        }
+        mPointLightBlock.Update();
+    }
+
+    ////////////////////////////////////////
+    template <int NumCascades>
+    void LightingStack<NumCascades>::PerspectiveShadowPrepass(const std::vector<std::reference_wrapper<const SpotLight>>& lights,
+                                                              const std::vector<std::reference_wrapper<const glm::mat4>>& modelMatrices,
+                                                              const std::vector<std::reference_wrapper<const StaticMesh>>& meshes)
+    {
+        mSpotLightDepthFBO.Bind();
+        glViewport(0, 0, mSpotLightDepthMap.GetWidth(), mSpotLightDepthMap.GetHeight());
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
 }
