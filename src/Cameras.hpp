@@ -47,12 +47,19 @@ namespace Poe
         glm::mat4 mViewMatrix;
 
     public:
+
         explicit AbstractCamera(CameraProjectionType type);
 
         virtual ~AbstractCamera() {}
 
         glm::mat4 GetProjectionMatrix() const { return mProjectionMatrix; }
         glm::mat4 GetViewMatrix() const { return mViewMatrix; }
+        std::vector<glm::vec4> GetFrustumCornersInWorldSpace(float near, float far) const;
+
+        virtual float GetFovy() const = 0;
+        virtual float GetAspectRatio() const = 0;
+        virtual float GetNear() const = 0;
+        virtual float GetFar() const = 0;
     };
 
     ////////////////////////////////////////
@@ -111,6 +118,9 @@ namespace Poe
         void SetAspectRatio(int width, int height)
         { mAspectRatio = static_cast<float>(width) / static_cast<float>(height); }
 
-        std::vector<glm::vec4> GetFrustumCornersInWorldSpace(float near, float far) const;
+        float GetFovy() const override { return mFovy; }
+        float GetAspectRatio() const override { return mAspectRatio; }
+        float GetNear() const override { return mNear; }
+        float GetFar() const override { return mFar; }
     };
 }
