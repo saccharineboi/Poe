@@ -111,22 +111,36 @@ namespace CSItalyDemo
         glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), mainCamera.mPosition + glm::vec3(0.0f, 0.0f, -30.0f)) *
                               glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
 
+        int numDirLights{ 2 }, numPointLights{ 4 }, numSpotLights{ 2 };
+        int shadowSize{ 1024 };
+        float directionalShadowMinBias{ 0.01f }, directionalShadowMaxBias{ 0.1f };
+        float omniShadowBias{ 0.005f };
+        constexpr int numCascades{ 4 };
+
         Poe::ShaderLoader shaderLoader;
+        Poe::LightingStack<numCascades> lightingStack(numDirLights, numPointLights, numSpotLights, shadowSize, "..", shaderLoader);
+
         Poe::EmissiveColorProgram emissiveColorProgram("..", shaderLoader);
         Poe::RealisticSkyboxProgram skybox("..", shaderLoader);
-        Poe::BlinnPhongProgram blinnPhongProgram("..", shaderLoader, 2, 4, 2, 4, 0.005f, 0.05f, 0.005f);
-        Poe::DepthProgram depthProgram("..", shaderLoader);
-        Poe::DepthOmniProgram depthOmniProgram("..", shaderLoader);
+        Poe::BlinnPhongProgram blinnPhongProgram("..",
+                                                 shaderLoader,
+                                                 numDirLights,
+                                                 numPointLights,
+                                                 numSpotLights,
+                                                 numCascades,
+                                                 directionalShadowMinBias,
+                                                 directionalShadowMaxBias,
+                                                 omniShadowBias);
 
         Poe::Texture2DLoader texture2DLoader;
-        auto staticModel = LoadCsItaly("..", texture2DLoader);
+        Poe::StaticModel staticModel = LoadCsItaly("..", texture2DLoader);
+        std::vector<std::reference_wrapper<const Poe::StaticMesh>> staticModelMeshList = staticModel.ExtractMeshes();
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f));
         model = glm::rotate(model, glm::radians(-180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
 
-        constexpr int fbSizeMultiplier{ 1 };
-        Poe::PostProcessStack ppStack("..", fbWidth / fbSizeMultiplier, fbHeight / fbSizeMultiplier, fbWidth, fbHeight, 1, shaderLoader);
+        Poe::PostProcessStack ppStack("..", fbWidth, fbHeight, shaderLoader);
         mainCamera.SetAspectRatio(ppStack.GetWidth(), ppStack.GetHeight());
 
         Poe::FogUB fogBlock(glm::vec3(1.0f), 1000.0f, 2.0f);
@@ -138,15 +152,6 @@ namespace CSItalyDemo
         Poe::EmissiveColorMaterial gridMaterial{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) };
         Poe::EmissiveColorMaterial cubeMaterial{ glm::vec4(0.25f, 0.5f, 1.0f, 1.0f) };
 
-        Poe::DirLightUB dirLightBlock;
-        dirLightBlock.Buffer().TurnOn();
-
-        Poe::PointLightUB pointLightBlock;
-        pointLightBlock.Buffer().TurnOn();
-
-        Poe::SpotLightUB spotLightBlock;
-        spotLightBlock.Buffer().TurnOn();
-
         Poe::BlinnPhongMaterialUB blinnPhongBlock;
         blinnPhongBlock.Buffer().TurnOn();
 
@@ -157,15 +162,16 @@ namespace CSItalyDemo
         blinnPhongBlock.Set(blinnPhongMaterial);
         blinnPhongBlock.Update();
 
-        constexpr int shadowSize{ 1024 };
-        constexpr int numCascades{ 4 };
-
         Poe::DirLight sun{
             glm::vec3(1.0f, 1.0f, 1.0f),    // color
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
+            1000.0f,                        // far plane
+            { 50.0f, 100.0f, 250.0f, 500.0f }, // cascades
             std::vector<glm::mat4>(numCascades + 1),       // light matrix
-            true                            // cast shadows
+            true,                           // cast shadows
+            10.0f,                          // z-offset
+            10.0f                           // z-multiplier
         };
 
         Poe::PointLight playerLight{
@@ -175,6 +181,7 @@ namespace CSItalyDemo
             50.0f,                          // radius
             10.0f,                          // intensity
             false,                          // cast shadows,
+            0.3f,                           // near plane
             200.0f                          // far plane
         };
 
@@ -195,18 +202,6 @@ namespace CSItalyDemo
 
         float ambientFactor{0.1f};
 
-        Poe::Texture2DArray dirLightDepthMap = Poe::CreateCascadedDepthMap(shadowSize, shadowSize, numCascades + 1);
-        std::vector<Poe::Framebuffer> dirLightDepthFBOs;
-        for (int i = 0; i <= numCascades; ++i) {
-            dirLightDepthFBOs.push_back(Poe::Framebuffer(dirLightDepthMap, GL_DEPTH_ATTACHMENT, i));
-        }
-
-        Poe::Cubemap pointLightDepthMap = Poe::CreateDepthCubemap(shadowSize, shadowSize);
-        Poe::Framebuffer pointLightDepthFBO(pointLightDepthMap, GL_DEPTH_ATTACHMENT);
-
-        dirLightDepthMap.Bind(Poe::DIR_LIGHT_DEPTH_MAP_BIND_POINT);
-        pointLightDepthMap.Bind(Poe::POINT_LIGHT_DEPTH_MAP_BIND_POINT);
-
         float totalDt{};
         while (!glfwWindowShouldClose(window)) {
 
@@ -221,123 +216,23 @@ namespace CSItalyDemo
 
             sun.mDirection = glm::normalize(-skyboxBlock.GetSunPosition());
             sun.mIntensity = glm::max(0.0f, skyboxBlock.GetSunIntensity() * glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), glm::normalize(skyboxBlock.GetSunPosition())));
-            dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
-            dirLightBlock.Update();
 
             playerLight.mWorldPosition = mainCamera.mPosition;
             playerLight.mViewPosition = mainCamera.GetViewMatrix() * glm::vec4(mainCamera.mPosition, 1.0f);
-            pointLightBlock.Set(0, playerLight);
-            pointLightBlock.Update();
 
             flashlight.mPosition = mainCamera.mPosition;
             flashlight.mDirection = mainCamera.mDirection;
-            spotLightBlock.Set(0, mainCamera.GetViewMatrix(), flashlight);
-            spotLightBlock.Update();
 
             blinnPhongBlock.Set(blinnPhongMaterial);
             blinnPhongBlock.Update();
 
-            // directional light shadow pass
-            {
-                for (int i = 0; i <= numCascades; ++i) {
-                    dirLightDepthFBOs[static_cast<size_t>(i)].Bind();
-                    glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                }
-
-                if (sun.mCastShadows) {
-                    std::vector<float> cascadeLevels{ mainCamera.mFar / 50.0f,
-                                                      mainCamera.mFar / 25.0f,
-                                                      mainCamera.mFar / 10.0f,
-                                                      mainCamera.mFar / 2.0f };
-
-                    for (int i = 0; i <= numCascades; ++i) {
-
-                        std::vector<glm::vec4> frustumCorners = [&]() {
-                            float zOffset{ 10.0f };
-                            if (i == 0) {
-                                return mainCamera.GetFrustumCornersInWorldSpace(mainCamera.mNear - zOffset, cascadeLevels.front() + zOffset);
-                            }
-                            else if (i == numCascades) {
-                                return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels.back() - zOffset, mainCamera.mFar + zOffset);
-                            }
-                            size_t ind = static_cast<size_t>(i);
-                            return mainCamera.GetFrustumCornersInWorldSpace(cascadeLevels[ind - 1] - zOffset, cascadeLevels[ind] + zOffset);
-                        }();
-
-                        glm::vec3 frustumCenter = Poe::Utility::ComputeFrustumCenter(frustumCorners);
-
-                        glm::mat4 lightView = glm::lookAt(frustumCenter + skyboxBlock.GetSunPosition(), frustumCenter, glm::cross(skyboxBlock.GetSunPosition(), glm::vec3(1.0f, 0.0f, 0.0f)));
-                        glm::mat4 lightProjection = Poe::Utility::FitLightProjectionToFrustum(lightView, frustumCorners, 10.0f);
-
-                        sun.mLightMatrices[static_cast<size_t>(i)] = lightProjection * lightView;
-                    }
-                    dirLightBlock.Set(0, mainCamera.GetViewMatrix(), sun);
-                    dirLightBlock.Update();
-
-                    depthProgram.Use();
-                    depthProgram.SetModelMatrix(model);
-
-                    glDisable(GL_CULL_FACE);
-                    for (int i = 0; i <= numCascades; ++i) {
-                        dirLightDepthFBOs[static_cast<size_t>(i)].Bind();
-                        glViewport(0, 0, dirLightDepthMap.GetWidth(), dirLightDepthMap.GetHeight());
-                        if (sun.mCastShadows) {
-                            depthProgram.SetLightMatrix(sun.mLightMatrices[static_cast<size_t>(i)]);
-                            staticModel.Draw();
-                        }
-                    }
-                    glEnable(GL_CULL_FACE);
-                    depthProgram.Halt();
-                }
-            }
-
-            // point light shadow pass
-            {
-                pointLightDepthFBO.Bind();
-                glViewport(0, 0, pointLightDepthMap.GetWidth(), pointLightDepthMap.GetHeight());
-
-                for (unsigned i = 0; i < 6; ++i) {
-                    pointLightDepthFBO.BindTarget(GL_DEPTH_ATTACHMENT, pointLightDepthMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                }
-
-                if (playerLight.mCastShadows) {
-                    depthOmniProgram.Use();
-                    glDisable(GL_CULL_FACE);
-
-                    glm::mat4 shadowPerspective = glm::perspective(glm::radians(90.0f),
-                                                                   static_cast<float>(pointLightDepthMap.GetWidth()) / static_cast<float>(pointLightDepthMap.GetHeight()),
-                                                                   1.0f, playerLight.mFarPlane);
-
-                    glm::mat4 lightMatrices[]{ glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                               glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                               glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-                                               glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
-                                               glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
-                                               glm::lookAt(playerLight.mWorldPosition, playerLight.mWorldPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)) };
-
-                    for (size_t i = 0; i < 6; ++i) {
-                        glm::mat4 lightMatrix = shadowPerspective * lightMatrices[i];
-
-                        pointLightDepthFBO.BindTarget(GL_DEPTH_ATTACHMENT, pointLightDepthMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<unsigned>(i));
-
-                        depthOmniProgram.SetLightMatrix(lightMatrix);
-                        depthOmniProgram.SetModelMatrix(model);
-                        depthOmniProgram.SetLightPositionInWorldSpace(playerLight.mWorldPosition);
-                        depthOmniProgram.SetFarPlane(playerLight.mFarPlane);
-
-                        staticModel.Draw();
-                    }
-                    glEnable(GL_CULL_FACE);
-
-                    depthOmniProgram.Halt();
-                }
-                // pointLightDepthFBO.UnBind();
-            }
+            lightingStack.PrepareState();
+            lightingStack.DirectionalShadowPrepass(mainCamera, { sun }, { model }, staticModelMeshList);
+            lightingStack.OmnidirectionalShadowPrepass({ playerLight }, { model }, staticModelMeshList);
+            lightingStack.PerspectiveShadowPrepass({ flashlight }, { model }, staticModelMeshList);
+            lightingStack.ResetState();
 
             ppStack.FirstPass();
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             if (Poe::DebugUI::mEnableWireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -382,7 +277,6 @@ namespace CSItalyDemo
 
             ppStack.SecondPass();
             ppStack.BindColor0();
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glEnable(GL_CULL_FACE);
@@ -397,14 +291,14 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppStack.GetBlock());
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
                 Poe::DebugUI::Draw_GlobalIlluminationInfo(ambientFactor);
-                Poe::DebugUI::Render_DirLightInfo(sun);
-                Poe::DebugUI::Render_PointLightInfo(playerLight);
-                Poe::DebugUI::Render_SpotLightInfo(flashlight);
-                Poe::DebugUI::Render_SkyboxInfo(skyboxBlock, fbWidth, fbHeight);
-                Poe::DebugUI::Render_BlinnPhongMaterialInfo(blinnPhongMaterial);
             Poe::DebugUI::End_GlobalInfo();
-            Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
 
+            Poe::DebugUI::Render_SkyboxInfo(skyboxBlock, fbWidth, fbHeight);
+            Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
+            Poe::DebugUI::Render_DirectionalLightsInfo({ sun }, fbWidth, fbHeight);
+            Poe::DebugUI::Render_PointLightsInfo({ playerLight }, fbWidth, fbHeight);
+            Poe::DebugUI::Render_SpotLightsInfo({ flashlight }, fbWidth, fbHeight);
+            Poe::DebugUI::Render_BlinnPhongMaterialsInfo({ blinnPhongMaterial }, fbWidth, fbHeight);
             Poe::DebugUI::RenderStats(fbWidth, fbHeight, 75.0f);
             Poe::DebugUI::EndFrame();
 

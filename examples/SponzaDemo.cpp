@@ -242,15 +242,18 @@ namespace CSItalyDemo
         Poe::PbrLightMaterialUB pbrBlock;
         pbrBlock.Buffer().TurnOn();
 
-        Poe::DirLightUB dirLightBlock;
+        Poe::DirLightUB<4> dirLightBlock(2);
         dirLightBlock.Buffer().TurnOn();
 
         Poe::DirLight sun{
             glm::vec3(1.0f, 1.0f, 1.0f),    // color
             glm::vec3(0.0f, 0.0f, -1.0f),   // direction
             1.0f,                           // intensity,
+            1000.0f,                        // far plane
+            { 25.0f, 50.0f, 200.0f, 500.0f }, // cascade ranges
             std::vector<glm::mat4>(4),
-            false                           // cast shadows
+            false,                          // cast shadows
+            10.0f, 10.0f
         };
 
         while (!glfwWindowShouldClose(window)) {
@@ -312,7 +315,6 @@ namespace CSItalyDemo
                 Poe::DebugUI::Draw_GlobalInfo_Camera(mainCamera);
                 Poe::DebugUI::Draw_GlobalInfo_PostProcess(ppBlock);
                 Poe::DebugUI::Draw_GlobalInfo_Fog(fogBlock);
-                Poe::DebugUI::Render_DirLightInfo(sun);
             Poe::DebugUI::End_GlobalInfo();
             Poe::DebugUI::Render_LogInfo(fbWidth, fbHeight);
 
