@@ -340,6 +340,7 @@ namespace Poe
                 ImGui::Text("Direction: %.2f %.2f %.2f", light.mDirection.x, light.mDirection.y, light.mDirection.z);
                 ImGui::Text("Intensity: %.2f", light.mIntensity);
                 ImGui::Checkbox("Cast Shadows", &light.mCastShadows);
+                ImGui::InputScalarN("Cascades", ImGuiDataType_Float, light.mCascadeRanges.data(), static_cast<int>(light.mCascadeRanges.size()));
 
                 ++dirLightIndex;
 
