@@ -7,5 +7,6 @@ struct PointLight_t
     float linear;
     float quadratic;
     float intensity;
+    float nearPlane;
     float farPlane;
 };
