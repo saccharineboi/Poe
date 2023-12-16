@@ -341,6 +341,8 @@ namespace Poe
                 ImGui::Text("Intensity: %.2f", light.mIntensity);
                 ImGui::Checkbox("Cast Shadows", &light.mCastShadows);
                 ImGui::InputScalarN("Cascades", ImGuiDataType_Float, light.mCascadeRanges.data(), static_cast<int>(light.mCascadeRanges.size()));
+                ImGui::InputFloat("Z-Offset", &light.mZOffset);
+                ImGui::InputFloat("Z-Multiplier", &light.mZMultiplier);
 
                 ++dirLightIndex;
 
