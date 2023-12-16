@@ -2775,7 +2775,7 @@ namespace Poe
                     for (size_t j = 0; j < meshes.size(); ++j) {
                         const glm::mat4& modelMatrix{ modelMatrices.size() == meshes.size() ? modelMatrices[j] : modelMatrices[modelMatrices.size() - 1] };
                         mDepthOmniProgram.SetModelMatrix(modelMatrix);
-                        meshes[j].get().Draw();
+                        meshes[j].get().Bind();
                         meshes[j].get().Draw();
                     }
                 }
