@@ -40,7 +40,6 @@ Poe is a physically-based deferred renderer that uses the OpenGL (version: 4.5) 
 
 ## License
 
-Poe: OpenGL 4.5 Renderer
 Copyright (C) 2024 Omar Huseynov
 
 This program is free software: you can redistribute it and/or modify
