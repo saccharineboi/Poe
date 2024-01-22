@@ -1,26 +1,47 @@
-# Experimental OpenGL 4.6 renderer named after E.A.Poe
+## 🎮 Poe: OpenGL 4.5 Renderer
 
-### cs_italy (using AI-enhanced textures):
-![poe_0](https://user-images.githubusercontent.com/95090318/199044550-a4383677-596d-403f-afd9-35dbae4763e1.png)
+Poe is a physically-based deferred renderer that uses the OpenGL (version: 4.5) API. Programmed in C++.
 
-### light-based pbr test:
-![poe_1](https://user-images.githubusercontent.com/95090318/199044671-1286df74-ecdd-4065-bf72-6ce8a1c9614f.png)
+## Features
 
-### Features
-* Written in C++20
-* Using OpenGL 4.6 DSA
-* Texture-loading via stb_image
-* Model-loading via Assimp
-* UI via ImGui
-* Cubemap skybox
-* Gamma correction and tone-mapping
-* PBR (IBL is in progress)
-* Post-processing via a kernel
-* Using MSAA for anti-aliasing
+- [x] Trigonometry-based first-person camera
+- [ ] Quaternion-based space camera
+- [ ] Quaternion-based orbital camera
+- [x] Cubemap-based skybox
+- [x] Rayleigh-Mie scattering-based skybox
+- [x] Post-processing with custom kernels
+- [x] Blinn-Phong shading
+- [ ] Physically-based shading
+- [ ] Image-based lighting
+- [ ] Directional, point, spot lights
+- [x] Cascaded shadow mapping
+- [ ] Omni-directional shadow mapping
+- [ ] Perspective directional shadow mapping
+- [x] Shader pre-processing
+- [x] Multisampled offscreen rendering
+- [x] Texture loading and caching via [stb](https://github.com/nothings/stb)
+- [x] Model loading via [assimp](https://github.com/assimp/assimp)
+- [x] Instanced drawing
+- [x] Triangle, quad, circle, cube, grid, pyramid, uv-sphere, and ico-sphere generation
+- [x] HDR
+- [ ] Normal mapping
+- [ ] Parallax mapping
+- [ ] Deferred shading
+- [ ] SSAO
+- [ ] Order-independent transparency
+- [ ] Skeletal animation
+- [x] Direct state access
+- [ ] Physically-based bloom
+- [ ] Area lights
+- [ ] Scene generation
+- [x] On-screen debug UI via [imgui](https://github.com/ocornut/imgui)
+- [x] Math via [glm](https://github.com/g-truc/glm)
+- [x] Window opening via [glfw](https://github.com/glfw/glfw)
 
-### License
-Poe: OpenGL Renderer
-Copyright (C) 2023 saccharineboi
+## License
+
+Poe: OpenGL 4.5 Renderer
+Copyright (C) 2024 Omar Huseynov
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
