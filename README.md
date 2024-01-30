@@ -1,4 +1,4 @@
-## 🎮 Poe: OpenGL 4.5 Renderer
+## 🎮 Poe: OpenGL 4.5 Physically-Based Deferred Renderer
 
 Poe is a physically-based deferred renderer that uses the OpenGL (version: 4.5) API. Programmed in C++.
 
