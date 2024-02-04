@@ -19,36 +19,36 @@
 namespace Poe
 {
     ////////////////////////////////////////
-    inline constexpr int POE_VERSION_MAJOR{ 0 };
-    inline constexpr int POE_VERSION_MINOR{ 1 };
+    inline constexpr int POE_VERSION_MAJOR                  { 0 };
+    inline constexpr int POE_VERSION_MINOR                  { 1 };
 
     ////////////////////////////////////////
-    inline constexpr int POE_OPENGL_VERSION_MAJOR{ 4 };
-    inline constexpr int POE_OPENGL_VERSION_MINOR{ 5 };
+    inline constexpr int POE_OPENGL_VERSION_MAJOR           { 4 };
+    inline constexpr int POE_OPENGL_VERSION_MINOR           { 5 };
 
     ////////////////////////////////////////
-    inline constexpr float PI{ 3.1415926f };
-    inline constexpr float PI2{ 6.2831853f };
-    inline constexpr float PIH{ 1.5707963f };
-    inline constexpr float R2D{ 57.295779f };
-    inline constexpr float D2R{ 0.017453293f };
-    inline constexpr float EPSILON{ 0.000001f };
+    inline constexpr float PI                               { 3.1415926f };
+    inline constexpr float PI2                              { 6.2831853f };
+    inline constexpr float PIH                              { 1.5707963f };
+    inline constexpr float R2D                              { 57.295779f };
+    inline constexpr float D2R                              { 0.017453293f };
+    inline constexpr float EPSILON                          { 0.000001f };
 
     ////////////////////////////////////////
-    inline constexpr int DIR_LIGHT_DEPTH_MAP_BIND_POINT{ 13 };
-    inline constexpr int POINT_LIGHT_DEPTH_MAP_BIND_POINT{ 14 };
-    inline constexpr int SPOT_LIGHT_DEPTH_MAP_BIND_POINT{ 15 };
+    inline constexpr int DIR_LIGHT_DEPTH_MAP_BIND_POINT     { 13 };
+    inline constexpr int POINT_LIGHT_DEPTH_MAP_BIND_POINT   { 14 };
+    inline constexpr int SPOT_LIGHT_DEPTH_MAP_BIND_POINT    { 15 };
 
     ////////////////////////////////////////
-    inline constexpr float PP_DEFAULT_EXPOSURE{ 1.0f };
-    inline constexpr float PP_DEFAULT_GAMMA{ 2.2f };
+    inline constexpr float PP_DEFAULT_EXPOSURE              { 1.0f };
+    inline constexpr float PP_DEFAULT_GAMMA                 { 2.2f };
 
     ////////////////////////////////////////
-    inline constexpr int ATTRIB_POS_LOC{ 0 };
-    inline constexpr int ATTRIB_TEXCOORD_LOC{ 1 };
-    inline constexpr int ATTRIB_NORMAL_LOC{ 2 };
+    inline constexpr int ATTRIB_POS_LOC                     { 0 };
+    inline constexpr int ATTRIB_TEXCOORD_LOC                { 1 };
+    inline constexpr int ATTRIB_NORMAL_LOC                  { 2 };
 
     ////////////////////////////////////////
-    inline constexpr int INSTANCED_MODEL_LOC{ 8 };
-    inline constexpr int INSTANCED_NORMAL_LOC{ 12 };
+    inline constexpr int INSTANCED_MODEL_LOC                { 8 };
+    inline constexpr int INSTANCED_NORMAL_LOC               { 12 };
 }

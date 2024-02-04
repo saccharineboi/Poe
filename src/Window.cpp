@@ -112,8 +112,9 @@ namespace Poe::Window
             glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
             Poe::DebugUI::PushLog(stdout, "[DEBUG] GL debug output is ON\n");
         }
-        else
+        else {
             Poe::DebugUI::PushLog(stdout, "[DEBUG] GL debug output is OFF\n");
+        }
 #endif
     }
 

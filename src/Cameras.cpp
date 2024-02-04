@@ -68,16 +68,18 @@ namespace Poe
                 mState.movingForward = true;
                 mState.movingBackward = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingForward = false;
+            }
         }
         else if (key == mInputConfig.moveBackwardKey) {
             if (action == GLFW_PRESS) {
                 mState.movingBackward = true;
                 mState.movingForward = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingBackward = false;
+            }
         }
 
         if (key == mInputConfig.moveLeftKey) {
@@ -85,16 +87,18 @@ namespace Poe
                 mState.movingLeft = true;
                 mState.movingRight = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingLeft = false;
+            }
         }
         else if (key == mInputConfig.moveRightKey) {
             if (action == GLFW_PRESS) {
                 mState.movingRight = true;
                 mState.movingLeft = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingRight = false;
+            }
         }
 
         if (key == mInputConfig.moveUpKey) {
@@ -102,36 +106,44 @@ namespace Poe
                 mState.movingUp = true;
                 mState.movingDown = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingUp = false;
+            }
         }
         else if (key == mInputConfig.moveDownKey) {
             if (action == GLFW_PRESS) {
                 mState.movingDown = true;
                 mState.movingUp = false;
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE) {
                 mState.movingDown = false;
+            }
         }
     }
 
     ////////////////////////////////////////
     void FirstPersonCamera::Update(float dt)
     {
-        if (mState.movingForward)
+        if (mState.movingForward) {
             mTargetPosition += mDirection * mSpeed * dt;
-        else if (mState.movingBackward)
+        }
+        else if (mState.movingBackward) {
             mTargetPosition -= mDirection * mSpeed * dt;
+        }
 
-        if (mState.movingLeft)
+        if (mState.movingLeft) {
             mTargetPosition -= glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
-        else if (mState.movingRight)
+        }
+        else if (mState.movingRight) {
             mTargetPosition += glm::normalize(glm::cross(mDirection, mUp)) * mSpeed * dt;
+        }
 
-        if (mState.movingUp)
+        if (mState.movingUp) {
             mTargetPosition += mUp * mSpeed * dt;
-        else if (mState.movingDown)
+        }
+        else if (mState.movingDown) {
             mTargetPosition -= mUp * mSpeed * dt;
+        }
 
         mPosition = Utility::Lerp(mPosition, mTargetPosition, mSmoothness * dt);
 
@@ -159,10 +171,12 @@ namespace Poe
         if (mIsMouseCaptured) {
             yaw += dx;
             pitch -= dy;
-            if (pitch < -PITCH_LIMIT)
+            if (pitch < -PITCH_LIMIT) {
                 pitch = -PITCH_LIMIT;
-            else if (pitch > PITCH_LIMIT)
+            }
+            else if (pitch > PITCH_LIMIT) {
                 pitch = PITCH_LIMIT;
+            }
 
             float sin_pitch = glm::sin(pitch);
             float cos_pitch = glm::cos(pitch);

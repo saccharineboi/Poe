@@ -156,8 +156,7 @@ namespace Poe
 
             static int currentKernel{};
             static const char* kernelNames[]{ "Identity", "Sharpen", "Blur", "EdgeDetect", "Emboss" };
-            if (ImGui::Combo("Kernel Type", &currentKernel, kernelNames, sizeof(kernelNames) / sizeof(char*)))
-            {
+            if (ImGui::Combo("Kernel Type", &currentKernel, kernelNames, sizeof(kernelNames) / sizeof(char*))) {
                 switch (currentKernel) {
                     case 0:
                         block.SetIdentityKernel();
@@ -192,18 +191,21 @@ namespace Poe
             ImGui::TextColored({ HEADER_COLOR.r, HEADER_COLOR.g, HEADER_COLOR.b, HEADER_COLOR.a }, "[Fog Settings]");
             float fogDistance = fogBlock.GetDistance();
             ImGui::SliderFloat("Distance", &fogDistance, 1.0f, 1000.0f);
-            if (!Utility::FloatEquals(fogDistance, fogBlock.GetDistance()))
+            if (!Utility::FloatEquals(fogDistance, fogBlock.GetDistance())) {
                 fogBlock.SetDistance(fogDistance);
+            }
             float fogExponent = fogBlock.GetExponent();
             ImGui::SliderFloat("Exponent", &fogExponent, 0.01f, 3.0f);
-            if (!Utility::FloatEquals(fogExponent, fogBlock.GetExponent()))
+            if (!Utility::FloatEquals(fogExponent, fogBlock.GetExponent())) {
                 fogBlock.SetExponent(fogExponent);
+            }
             glm::vec3 color = fogBlock.GetColor();
             float colorF[]{ color.x, color.y, color.z };
             ImGui::ColorEdit3("Color", colorF);
             color = glm::vec3(colorF[0], colorF[1], colorF[2]);
-            if (color != fogBlock.GetColor())
+            if (color != fogBlock.GetColor()) {
                 fogBlock.SetColor(color);
+            }
             ImGui::NewLine();
         }
 
@@ -213,10 +215,10 @@ namespace Poe
             ImGui::SliderFloat("Ambient Factor", &ambientFactor, 0.0f, 1.0f);
         }
 
-        static inline constexpr int MAX_COUT_LOGS = 500;
-        static inline constexpr int MAX_CERR_LOGS = 500;
+        static constexpr int MAX_COUT_LOGS{ 500 };
+        static constexpr int MAX_CERR_LOGS{ 500 };
 
-        static inline constexpr float BG_ALPHA = 0.8f;
+        static constexpr float BG_ALPHA{ 0.8f };
 
         static std::vector<std::string> mCoutLogs;
         static std::vector<std::string> mCerrLogs;
@@ -224,8 +226,9 @@ namespace Poe
         static void PushLog(FILE* file, const char* format, ...)
         {
             if ((file == stdout && mCoutLogs.size() > MAX_COUT_LOGS) ||
-                (file == stderr && mCerrLogs.size() > MAX_CERR_LOGS))
+                (file == stderr && mCerrLogs.size() > MAX_CERR_LOGS)) {
                 return;
+            }
 
             std::va_list args;
             va_start(args, format);
@@ -233,10 +236,12 @@ namespace Poe
             char buffer[BUFFER_MAX];
             std::vsnprintf(buffer, BUFFER_MAX, format, args);
             va_end(args);
-            if (file == stdout)
+            if (file == stdout) {
                 mCoutLogs.push_back(buffer);
-            else if (file == stderr)
+            }
+            else if (file == stderr) {
                 mCerrLogs.push_back(buffer);
+            }
         }
 
         static void Render_LogInfo(int width, int height)
@@ -244,28 +249,28 @@ namespace Poe
             constexpr int coutWidth{ 400 }, cerrWidth{ 600 };
             ImGui::SetNextWindowBgAlpha(BG_ALPHA);
 
-            if (mCoutLogs.size() > 0)
-            {
+            if (mCoutLogs.size() > 0) {
                 ImGui::SetNextWindowSize({ coutWidth, -1 });
                 ImGui::SetNextWindowPos({ static_cast<float>(width - coutWidth - 20), 60.0f });
 
                 ImGui::Begin("Info Logs", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stdout logs", { -1, 400 });
-                for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i)
+                for (size_t i = 0; i < MAX_COUT_LOGS && i < mCoutLogs.size(); ++i) {
                     ImGui::TextWrapped("%s", mCoutLogs[i].c_str());
+                }
                 ImGui::EndChild();
                 ImGui::End();
             }
 
-            if (mCerrLogs.size() > 0)
-            {
+            if (mCerrLogs.size() > 0) {
                 ImGui::SetNextWindowSize({ cerrWidth, -1 });
                 ImGui::SetNextWindowPos({ static_cast<float>(width / 2 - cerrWidth / 2), 20.0f });
 
                 ImGui::Begin("Error Logs", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoResize);
                 ImGui::BeginChild("stderr logs", { -1, 400 });
-                for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i)
+                for (size_t i = 0; i < MAX_CERR_LOGS && i < mCerrLogs.size(); ++i) {
                     ImGui::TextWrapped("%s", mCerrLogs[i].c_str());
+                }
                 ImGui::EndChild();
                 ImGui::End();
             }
@@ -445,8 +450,8 @@ namespace Poe
             ImGui::SetNextWindowPos({ 0.0f, static_cast<float>(height - thickness) });
             ImGui::SetNextWindowBgAlpha(1.0f);
             ImGui::Begin("No Title", nullptr, ImGuiWindowFlags_NoTitleBar |
-                                              ImGuiWindowFlags_NoResize |
-                                              ImGuiWindowFlags_NoDecoration);
+                                                                   ImGuiWindowFlags_NoResize |
+                                                                   ImGuiWindowFlags_NoDecoration);
 
             GLint numGLExtensions;
             glGetIntegerv(GL_NUM_EXTENSIONS, &numGLExtensions);
@@ -456,12 +461,11 @@ namespace Poe
             bool isRunningInDebugContext = flags & GL_CONTEXT_FLAG_DEBUG_BIT;
 
             ImGui::Text("GL Version: %s | GLSL Version: %s | GL Renderer: %s | GL Vendor: %s | Num GL Extensions: %d | Debug Mode: %d", glGetString(GL_VERSION),
-                                                                                                                                        glGetString(GL_SHADING_LANGUAGE_VERSION),
-                                                                                                                                        glGetString(GL_RENDERER),
-                                                                                                                                        glGetString(GL_VENDOR),
-                                                                                                                                        numGLExtensions,
-                                                                                                                                        isRunningInDebugContext);
-
+                                                                                                                                             glGetString(GL_SHADING_LANGUAGE_VERSION),
+                                                                                                                                             glGetString(GL_RENDERER),
+                                                                                                                                             glGetString(GL_VENDOR),
+                                                                                                                                             numGLExtensions,
+                                                                                                                                             isRunningInDebugContext);
             if (GLAD_GL_ATI_meminfo) {
                 constexpr GLenum VBO_FREE_MEMORY_ATI{ 0x87FB };
                 constexpr GLenum TEXTURE_FREE_MEMORY_ATI{ 0x87FC };

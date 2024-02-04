@@ -55,7 +55,9 @@ namespace Poe::Utility
     ////////////////////////////////////////
     template <typename T, typename TS>
     T Lerp(const T& x0, const T& x1, const TS s)
-    { return x0 + (x1 - x0) * s; }
+    {
+        return x0 + (x1 - x0) * s;
+    }
 
     ////////////////////////////////////////
     inline bool FloatEquals(float a, float b, float epsilon = EPSILON)
