@@ -40,7 +40,7 @@ ENABLE_WARNINGS()
 namespace Poe
 {
     ////////////////////////////////////////
-    static inline std::string ComputeOpenGLVersionStringForShader()
+    static std::string ComputeOpenGLVersionStringForShader()
     {
         GLint major, minor;
         glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -51,7 +51,7 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    static inline std::string ComputeShaderTypeStringForShader(GLuint type)
+    static std::string ComputeShaderTypeStringForShader(GLuint type)
     {
         switch (type) {
             case GL_VERTEX_SHADER:
@@ -69,14 +69,14 @@ namespace Poe
     }
 
     ////////////////////////////////////////
-    static inline std::string ComputeDefineStringForShader(const std::string& param)
+    static std::string ComputeDefineStringForShader(const std::string& param)
     {
         return std::string("#define ") + param + '\n';
     }
 
     ////////////////////////////////////////
     template <typename T>
-    static inline std::string ComputeDefineStringForShader(const std::string& param, T value)
+    static std::string ComputeDefineStringForShader(const std::string& param, T value)
     {
         if constexpr (std::is_floating_point<T>()) {
             int integralPart{ static_cast<int>(value) };

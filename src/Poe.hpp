@@ -159,15 +159,15 @@ namespace Poe
         unsigned mBindLoc;
 
     public:
-        static inline constexpr int FOG_BLOCK_BINDING{ 0 };
-        static inline constexpr int TRANSFORM_BLOCK_BINDING{ 1 };
-        static inline constexpr int PBR_LIGHT_MATERIAL_BLOCK_BINDING{ 2 };
-        static inline constexpr int DIR_LIGHT_BLOCK_BINDING{ 3 };
-        static inline constexpr int POSTPROCESS_BLOCK_BINDING{ 4 };
-        static inline constexpr int BLINN_PHONG_MATERIAL_BLOCK_BINDING{ 5 };
-        static inline constexpr int POINT_LIGHT_BLOCK_BINDING{ 6 };
-        static inline constexpr int SPOT_LIGHT_BLOCK_BINDING{ 7 };
-        static inline constexpr int REALISTIC_SKYBOX_BLOCK_BINDING{ 8 };
+        static constexpr int FOG_BLOCK_BINDING{ 0 };
+        static constexpr int TRANSFORM_BLOCK_BINDING{ 1 };
+        static constexpr int PBR_LIGHT_MATERIAL_BLOCK_BINDING{ 2 };
+        static constexpr int DIR_LIGHT_BLOCK_BINDING{ 3 };
+        static constexpr int POSTPROCESS_BLOCK_BINDING{ 4 };
+        static constexpr int BLINN_PHONG_MATERIAL_BLOCK_BINDING{ 5 };
+        static constexpr int POINT_LIGHT_BLOCK_BINDING{ 6 };
+        static constexpr int SPOT_LIGHT_BLOCK_BINDING{ 7 };
+        static constexpr int REALISTIC_SKYBOX_BLOCK_BINDING{ 8 };
 
         UniformBuffer(size_t size, unsigned mode, unsigned bindLoc);
 
@@ -1387,8 +1387,8 @@ namespace Poe
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        static inline constexpr int SCREEN_TEXTURE_LOC = 0;
-        static inline constexpr int TEXELSTRETCH_LOC = 1;
+        static constexpr int SCREEN_TEXTURE_LOC = 0;
+        static constexpr int TEXELSTRETCH_LOC = 1;
     };
 
     ////////////////////////////////////////
@@ -2200,8 +2200,8 @@ namespace Poe
 
         virtual ~AbstractEmissiveColorProgram() {}
 
-        static inline constexpr int COLOR_LOC = 0;
-        static inline constexpr int MODEL_LOC = 1;
+        static constexpr int COLOR_LOC = 0;
+        static constexpr int MODEL_LOC = 1;
 
         void SetMaterial(const EmissiveColorMaterial& m) const
         { glUniform4fv(COLOR_LOC, 1, glm::value_ptr(m.mColor)); }
@@ -2247,10 +2247,10 @@ namespace Poe
 
         virtual ~AbstractEmissiveTextureProgram() {}
 
-        static inline constexpr int EMISSIVE_TEXTURE_LOC = 0;
-        static inline constexpr int TILE_MULTIPLIER_LOC = 1;
-        static inline constexpr int TILE_OFFSET_LOC = 2;
-        static inline constexpr int MODEL_LOC = 3;
+        static constexpr int EMISSIVE_TEXTURE_LOC = 0;
+        static constexpr int TILE_MULTIPLIER_LOC = 1;
+        static constexpr int TILE_OFFSET_LOC = 2;
+        static constexpr int MODEL_LOC = 3;
 
         void SetMaterial(const EmissiveTextureMaterial& m) const
         {
@@ -2318,7 +2318,7 @@ namespace Poe
         TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader&, std::initializer_list<std::pair<CubemapFace, std::string_view>> faces);
         TexturedSkyboxProgram(const std::string& rootPath, ShaderLoader&, DefaultSkyboxTexture);
 
-        static inline constexpr int SKYBOX_LOC = 0;
+        static constexpr int SKYBOX_LOC = 0;
 
         const Cubemap& GetCubemap() const { return mCubemap; }
 
@@ -2372,18 +2372,18 @@ namespace Poe
         float GetShadowBiasMax() const { return mShadowBiasMax; }
         float GetPointShadowBias() const { return mPointShadowBias; }
 
-        static inline constexpr int MODEL_MATRIX_LOC{ 0 };
-        static inline constexpr int NORMAL_MATRIX_LOC{ 1 };
-        static inline constexpr int TEX_OFFSET_LOC{ 2 };
-        static inline constexpr int TEX_MULTIPLIER_LOC{ 3 };
-        static inline constexpr int MATERIAL_AMBIENT_TEXTURE_LOC{ 4 };
-        static inline constexpr int MATERIAL_DIFFUSE_TEXTURE_LOC{ 5 };
-        static inline constexpr int MATERIAL_SPECULAR_TEXTURE_LOC{ 6 };
-        static inline constexpr int AMBIENT_FACTOR_LOC{ 7 };
+        static constexpr int MODEL_MATRIX_LOC{ 0 };
+        static constexpr int NORMAL_MATRIX_LOC{ 1 };
+        static constexpr int TEX_OFFSET_LOC{ 2 };
+        static constexpr int TEX_MULTIPLIER_LOC{ 3 };
+        static constexpr int MATERIAL_AMBIENT_TEXTURE_LOC{ 4 };
+        static constexpr int MATERIAL_DIFFUSE_TEXTURE_LOC{ 5 };
+        static constexpr int MATERIAL_SPECULAR_TEXTURE_LOC{ 6 };
+        static constexpr int AMBIENT_FACTOR_LOC{ 7 };
 
-        static inline constexpr int DIR_LIGHT_DEPTH_MAP{ 8 };
-        static inline constexpr int POINT_LIGHT_DEPTH_MAP{ 9 };
-        static inline constexpr int SPOT_LIGHT_DEPTH_MAP{ 10 };
+        static constexpr int DIR_LIGHT_DEPTH_MAP{ 8 };
+        static constexpr int POINT_LIGHT_DEPTH_MAP{ 9 };
+        static constexpr int SPOT_LIGHT_DEPTH_MAP{ 10 };
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
@@ -2449,10 +2449,10 @@ namespace Poe
 
         virtual ~AbstractDepthProgram() {}
 
-        static inline constexpr int LIGHT_MATRIX_LOC{ 0 };
-        static inline constexpr int MODEL_MATRIX_LOC{ 1 };
-        static inline constexpr int FAR_PLANE_LOC{ 2 };
-        static inline constexpr int LIGHT_POS_LOC{ 3 };
+        static constexpr int LIGHT_MATRIX_LOC{ 0 };
+        static constexpr int MODEL_MATRIX_LOC{ 1 };
+        static constexpr int FAR_PLANE_LOC{ 2 };
+        static constexpr int LIGHT_POS_LOC{ 3 };
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
@@ -2578,7 +2578,7 @@ namespace Poe
     public:
         PbrLightProgram(const std::string& rootPath, ShaderLoader&);
 
-        static inline constexpr int MODEL_LOC = 0;
+        static constexpr int MODEL_LOC = 0;
 
         void Use() const { mProgram.Use(); }
         void Halt() const { mProgram.Halt(); }
